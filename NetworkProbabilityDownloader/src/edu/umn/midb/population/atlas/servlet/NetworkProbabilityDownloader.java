@@ -24,7 +24,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	public static final String BUILD_DATE = "Version 0.0.0.2  10_30_2020:14:05__war=NPDownloader_0916.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
-	public static final String ROOT_PATH = "/Users/jjfair/midb/";
+	public static final String ROOT_PATH = "/Users/jjfair/midb/"; 
 	public static Logger LOGGER = null;
 	
 	public static final String ECLIPSE_RESOURCES_PATH = "/Users/jjfair/git/network_probability_downloader/NetworkProbabilityDownloader/build/classes/edu/umn/midb/population/atlas/config/files/";
