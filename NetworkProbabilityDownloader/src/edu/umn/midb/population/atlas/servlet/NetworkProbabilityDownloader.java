@@ -31,7 +31,7 @@ import logs.ThreadLocalLogTracker;
  * threshold in 1% steps from 1% to 100%.  The client can then send a request to
  * download the NII file related to the selected probabilistic threshold.
  * 
- * @author jjfair  
+ * @author jjfair   
  * 
  * Move button (side by side)
  * 
