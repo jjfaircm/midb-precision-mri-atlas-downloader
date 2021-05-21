@@ -1,0 +1,18 @@
+LEVEL=INFO
+
+Valid values going from most verbose to least:
+
+ALL
+TRACE
+DEBUG
+INFO
+WARN
+ERROR
+FATAL
+
+
+To change level just put the new value after the = sign and restart tomcat
+
+Each level will include all levels underneath it.  For example, WARN will include ERROR and FATAL
+
+

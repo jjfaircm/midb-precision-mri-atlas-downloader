@@ -7,7 +7,7 @@ package edu.umn.midb.population.atlas.base;
  * @author jjfair
  *
  */
-public class ApplicationContext {
+public class ApplicationContext { 
 	
 	private static final String LOGGER_ID_PREFIX = "::LOGGERID=";
 	private String loggerId;

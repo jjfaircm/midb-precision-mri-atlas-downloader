@@ -1,6 +1,6 @@
 package edu.umn.midb.population.atlas.utils;
 
-public class NetworkMapData {
+public class NetworkMapData { 
 	
 	private String networkName = null;
 	private String networkMapImage_Base64_String = null;

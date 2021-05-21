@@ -153,7 +153,7 @@ public class DirectoryAccessor {
 		    }
 		});
 		
-		File aFile = directories[0];
+		File aFile = directories[0]; 
 		
 		String path = aFile.getAbsolutePath();
 		return path;

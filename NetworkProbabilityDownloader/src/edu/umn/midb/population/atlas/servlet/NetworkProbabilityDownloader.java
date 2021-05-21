@@ -20,7 +20,9 @@ import edu.umn.midb.population.response.handlers.WebResponder;
 import logs.ThreadLocalLogTracker;
 
 /**
- * https://github.com/jjfaircm/midb-precision-mri-atlas-downloader
+ * https://github.com/jjfaircm/midb-precision-mri-atlas-downloader 
+ * 
+ * https://github.com/jjfaircm/midb-precision-mri-atlas-downloader.git
  * 
  * https://gitlab.com/Fair_lab/midb-precision-functional-atas
  * 
@@ -33,7 +35,7 @@ import logs.ThreadLocalLogTracker;
  * 
  * @author jjfair   
  *  
- * Move button (side by side)
+ * Move button (side by side) 
  * 
  * Integration Zone Atlas instead of Number of Networks
  * 
@@ -89,7 +91,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	private static final long VERSION_NUMBER = 0;
-	public static final String BUILD_DATE = "Version 0.0.0.36  0518__2021:23:15__war=NPDownloader_0518.war"; 
+	public static final String BUILD_DATE = "Version beta_0.1  0521__2021:18:52__war=NPDownloader_0521.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String ROOT_PATH = "/midb/networks_small_package-compressed/"; 

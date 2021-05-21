@@ -18,7 +18,7 @@ import logs.LogConfigurator;
  */
 public final class PropertyManager {
 	
-	/** the singleton instance. */
+	/** the singleton instance. */ 
 	private static PropertyManager instance;
 	  
 	private static Logger LOGGER = null;

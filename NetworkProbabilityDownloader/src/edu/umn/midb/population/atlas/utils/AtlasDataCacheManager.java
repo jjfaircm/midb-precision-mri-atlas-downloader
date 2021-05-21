@@ -118,7 +118,7 @@ public class AtlasDataCacheManager {
 		this.neuralNetworkNamesMap.put("combined_clusters", "combined_clusters");
 		this.neuralNetworkNamesMap.put("overlapping", "Number_of_overlapping_networks_Compressed");
 		
-		LOGGER.trace(loggerId + "loadNeuralNetworkNamesMap()...exit.");
+		LOGGER.trace(loggerId + "loadNeuralNetworkNamesMap()...exit."); 
 	}
 	
 	/**

@@ -1,9 +1,9 @@
-		 var version_buildString = "Version 0.0.0.36  0518__2021:23:15__war=NPDownloader_0518.war"; 
+		 var version_buildString = "Version beta_0.1  0521__2021:18:52__war=NPDownloader_0521.war"; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;
          var ajaxRequest;
-         var autoScrollEnabled = true;
+         var autoScrollEnabled = true; 
          var programName;
          var restart = false;
          var allDivNames = new Array();

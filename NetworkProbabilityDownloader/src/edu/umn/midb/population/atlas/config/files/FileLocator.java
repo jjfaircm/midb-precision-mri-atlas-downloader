@@ -8,6 +8,6 @@ package edu.umn.midb.population.atlas.config.files;
  * @author jjfair
  *
  */
-public class FileLocator {
+public class FileLocator { 
 
 }

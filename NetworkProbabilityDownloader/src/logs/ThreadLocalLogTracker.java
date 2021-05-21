@@ -1,6 +1,6 @@
 package logs;
 
-public class ThreadLocalLogTracker {
+public class ThreadLocalLogTracker { 
 
 	private static ThreadLocal<String> threadLocal = new ThreadLocal<String>();
 	

@@ -123,7 +123,7 @@ public class WebResponder {
 		int filePathsSize = filePathsCleaned.length();
 		filePathsCleaned = filePathsCleaned.substring(1, filePathsSize);
 		
-		String responseString = null;
+		String responseString = null; 
 		
 		if(networkMapData == null) {
 			responseString = jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned;

@@ -21,7 +21,7 @@ import edu.umn.midb.population.atlas.config.files.FileLocator;
  * @author jjfair
  *
  */
-public class LogConfigurator {
+public class LogConfigurator { 
 	
 	static {
 		configureLOG4J2();
