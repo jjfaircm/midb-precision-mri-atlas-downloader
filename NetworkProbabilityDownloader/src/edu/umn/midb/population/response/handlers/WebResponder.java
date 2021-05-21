@@ -12,14 +12,40 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+
+import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
+import edu.umn.midb.population.atlas.utils.NetworkMapData;
 import logs.ThreadLocalLogTracker;
 
+
+/**
+ * The WebResponder is responsible for sending responses for the various requests that
+ * come to the {@link NetworkProbabilityDownloader}. It will answer the following requests:
+ * <ul>
+ * <li>retrieve the list  of neural network types
+ * <li>retrieve the .png images associated with the probabilistic thresholds for a given network type
+ * <li>retrieve the NII file for a selected threshold
+ * </ul>
+ * @author jjfair
+ *
+ */
 public class WebResponder {
 	
 	private static final String DELIMITER = ":@:";
+	private static final String DELIMITER_NEURAL_NAMES = "!@!";
+	private static final String DELIMITER_NETWORK_MAP_DATA = "$@$";
+	private static final String DELIMITER_NETWORK_MAP_ITEMS = "&@&";
+
+
 	private static final Logger LOGGER = LogManager.getLogger(WebResponder.class);
 	
-	
+	/**
+	 * Sends the requested NII file related to a selected probabilistic threshold.
+	 * 
+	 * @param response The current HttpServletResponse object
+	 * @param fileBinaryBuffer binaryBuffer containing the requested NII file
+	 * @param fileName String representing the name of the requested NII file to download
+	 */
 	public static void sendFileDownloadResponse(HttpServletResponse response, byte[] fileBinaryBuffer, String fileName) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
@@ -31,8 +57,6 @@ public class WebResponder {
 			String headerKey = "Content-Disposition";
             String headerValue = String.format("attachment; filename=\"%s\"", fileName);
             response.setHeader(headerKey, headerValue);
-			//response.setHeader("Content-Disposition","attachment;filename=" + fileName);
-			//response.getWriter().println(encodedString);
 			response.getOutputStream().write(fileBinaryBuffer);
 			response.getOutputStream().flush();
 		}
@@ -44,103 +68,92 @@ public class WebResponder {
 
 	}
 	
-	public static void sendNeuralNetworkNamesResponse(HttpServletResponse response, ArrayList<String> networkTypes) {
+	/**
+	 * Builds a JsonArray representing a list of the different neural network types.
+	 * 
+	 * @param networkTypes ArrayList of the different neural network types
+	 * 
+	 * @return JsonArray A json representation of the neural network types
+	 */
+	public static JsonArray buildNeuralNetworkNamesResponse(ArrayList<String> networkTypes) {
 		
 		  String loggerId = ThreadLocalLogTracker.get();
 		  LOGGER.trace(loggerId + "sendNeuralNetworkNamesResponse()...invoked.");
 
-		
 	      JsonArray jsonArray1 = new Gson().toJsonTree(networkTypes).getAsJsonArray();
-	      
-	      try {
-	    	  response.getWriter().println(jsonArray1);
-	      }
-	      catch(IOException ioE) {
-	    	  LOGGER.error(ioE.getLocalizedMessage(), ioE);
-	      }
 		  LOGGER.trace(loggerId + "sendNeuralNetworkNamesResponse()...exit.");
+
+	      return jsonArray1;
 	}
 	
-	public static void sendThresholdImagesResponse(HttpServletResponse response, ArrayList<String> filePaths, ArrayList<byte[]> fileByteBuffers) {
+	/**
+	 * Sends the .png files associated with the different probabilistic threhsolds for a selected
+	 * neural network.  The files are sent as a list of base64 encoded strings.
+	 * 
+	 * @param response The current HttpServletResponse object
+	 * @param filePaths ArrayList of all the .png file names representing the different probabilistic thresholds
+	 * @param imageBase64Strings ArrayList of the .png files in base64 encoded format
+	 * @param neuralNetworkNames ArrayList of the neural network names
+	 */
+	public static void sendThresholdImagesResponse(HttpServletResponse response, ArrayList<String> filePaths, ArrayList<String> imageBase64Strings,
+			                                       ArrayList<String> neuralNetworkNames, NetworkMapData networkMapData) {
 		
 		 String loggerId = ThreadLocalLogTracker.get();
 		 LOGGER.trace(loggerId + "sendThresholdImagesResponse()...invoked.");
+		 
+		 LOGGER.trace(filePaths);
+		 
+		 JsonArray jsonArray = null;
+		 
+		 if(neuralNetworkNames != null) {
+			 jsonArray = buildNeuralNetworkNamesResponse(neuralNetworkNames);
+		 }
 
-		//parse out the threshold numbers
-		String aFileName = null;
-		String beginIndexMarker = "thresh";
-		String endIndexMarker = ".png";
-		int beginIndexMarkerLength = beginIndexMarker.length();
-		int beginIndex = 0;
-		int endIndex = 0;
-		int numOfFiles = filePaths.size();
-		int counter = 0;
-		
-		ArrayList<String> theshValues = new ArrayList<String>();
-		String aThreshValue = null;
-		String threshMin = null;
-		float threshMinFloat = 0;
-		String threshMax = null;
-		float threshMaxFloat = 0;
-		float threshStepFloat = 0;
-		float floatValue = 0;
-		
-		Iterator<String> filePathsIt = filePaths.iterator();
-		
-		while(filePathsIt.hasNext()) {
-			aFileName = filePathsIt.next();
-			beginIndex = aFileName.indexOf(beginIndexMarker) + beginIndexMarkerLength+1;
-			endIndex = aFileName.indexOf(endIndexMarker);
-			aThreshValue = aFileName.substring(beginIndex, endIndex);
-			theshValues.add(aThreshValue);
-			
-			if(counter==0) {
-				threshMin = aThreshValue;
-				threshMinFloat = Float.parseFloat(threshMin);
-			}
-			else if(counter==numOfFiles-1) {
-				threshMax = aThreshValue;
-				threshMaxFloat = Float.parseFloat(threshMax);
-			}
-			else if(counter==1) {
-				floatValue = Float.parseFloat(aThreshValue);
-				threshStepFloat = floatValue - threshMinFloat;
-			}
-			counter++;
-		}
-		
-		String threshStepString = Float.toString(threshStepFloat);
-		int threshStepIndex = threshStepString.indexOf(".")+3;
-		threshStepString = threshStepString.substring(0, threshStepIndex);
-		
-		Iterator<byte[]> bufferIt = fileByteBuffers.iterator();
-		byte[] imageBuffer = null;
-		ArrayList<String> base64ImageStrings = new ArrayList<String>();
-		String encodedString = null;
-		
-		while(bufferIt.hasNext()) {
-			imageBuffer = bufferIt.next();
-			encodedString = Base64.getEncoder().encodeToString(imageBuffer);
-			base64ImageStrings.add(encodedString);
-		}
-		
-		String base64ImageStringsCleaned = base64ImageStrings.toString();
+		String base64ImageStringsCleaned = imageBase64Strings.toString();
+		long preClean = System.currentTimeMillis();
+		int b64StringSize = base64ImageStringsCleaned.length();
+		//base64ImageStringsCleaned = base64ImageStringsCleaned.substring(1, b64StringSize);
 		base64ImageStringsCleaned = base64ImageStringsCleaned.replace("[", "");
 		base64ImageStringsCleaned = base64ImageStringsCleaned.replace("]", "");
+		long postClean = System.currentTimeMillis();
+		long cleanTime = postClean-preClean;
 		
 		String filePathsCleaned = filePaths.toString();
-		filePathsCleaned = filePathsCleaned.replace("[", "");
-		filePathsCleaned = filePathsCleaned.replace("]", "");
-				
-		try {
-	      response.getWriter().println(base64ImageStringsCleaned + DELIMITER + filePathsCleaned);	      
+		
+		int filePathsSize = filePathsCleaned.length();
+		filePathsCleaned = filePathsCleaned.substring(1, filePathsSize);
+		
+		String responseString = null;
+		
+		if(networkMapData == null) {
+			responseString = jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
 		}
-	    catch(IOException ioE) {
-	    	  System.out.println(ioE.getMessage());
+		else {
+			String networkMapImagePNG = networkMapData.getNetworkMapImage_Base64_String();
+			String networkMapImageNIIPath = networkMapData.getCorrespondingNiftiFilePathName();
+			responseString = jsonArray + DELIMITER_NEURAL_NAMES + networkMapImagePNG + 
+					         DELIMITER_NETWORK_MAP_ITEMS +  networkMapImageNIIPath + DELIMITER_NETWORK_MAP_DATA +
+					         base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
+			System.out.println(filePaths.get(0));
+		}
+						
+		try {
+	      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
+		  response.getWriter().println(responseString);
+	      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
 	     }
 		 LOGGER.trace(loggerId + "sendThresholdImagesResponse()...exit.");
 	}
 	
+	/**
+	 * Utilitarian method for testing the download functionality.
+	 * 
+	 * @param resp The current HttpServletResponse object
+	 * @param req The current HttpServletRequest object
+	 */
 	public static void sendTestFile(HttpServletResponse resp, HttpServletRequest req) {
 		
 		 resp.setContentType("image/png");

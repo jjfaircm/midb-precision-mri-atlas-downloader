@@ -1,8 +1,9 @@
-		 var version_buildString =  "Version -0.00  08_23_2020:15:00__war=0822.war";
+		 var version_buildString = "Version 0.0.0.36  0518__2021:23:15__war=NPDownloader_0518.war"; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;
          var ajaxRequest;
+         var autoScrollEnabled = true;
          var programName;
          var restart = false;
          var allDivNames = new Array();
@@ -12,7 +13,7 @@
          var imageDataURLArray = null;
          var imageDataURLMap = null;
          var targetDownloadFilesMap = null;
-         var span_RangeThresholdValue = null;
+         var number_RangeThresholdValue = null;
          var selected_thresholdImage = null;
          var range_thresholdSlider = null;
          var downloadFilePathAndName = null;
@@ -20,7 +21,19 @@
          var range_slider_minValue = 0;
          var range_slider_maxValue = 0;
          var range_slider_stepValue = 0;
-         
+         var autoScrollHelpMsg = "double click slider button to toggle auto-scroll on/off";
+         var autoScrollHelpPending = true;
+   	     var div_snackbar = null;
+         var ajaxRequest_startTime = null;
+         var selectedSubmenu = null;
+         var selectedNeuralNetworkName = null;
+         var selectElement = null;
+         var firstTimeSelectingSingle = true;
+         var currentNetworkMapImage = null;
+         var DELIMITER_NETWORK_MAP_ITEMS = "&@&";
+         var DELIMITER_NETWORK_MAP_DATA = "$@$";
+         var download_target_map_nii = null;
+         var downloadZIP_path = null;
          
          
          function startup() {
@@ -29,13 +42,65 @@
         	 sessionStorage.clear();
         	 setAjaxStyle();
         	 loadAllDivNames();
-        	 getNeuralNetworkNames();
-        	 span_RangeThresholdValue = document.getElementById("span_thresholdValue");
+        	 hideAllDivs();
+        	 selectElement = document.getElementById("select_neuralNetworkName");
+           	 var div_submitNotification = document.getElementById("div_submitNotification");
+        	 div_submitNotification.style.display = "block";
+        	 var anchor_combined = document.getElementById("anchor_combined");
+        	 menuClicked(anchor_combined, true);
+        	 number_RangeThresholdValue = document.getElementById("number_thresholdValue");
         	 range_thresholdSlider = document.getElementById("range_threshold");
         	 anchor_downloadFile = document.getElementById("anchor_downloadFile");
+        	 
+        	 range_thresholdSlider.addEventListener('dblclick', function (e) {
+        		   toggleAutoScroll();
+        	 });
+        	 
+       	     div_snackbar = document.getElementById("snackbar");
+        	 number_inputThresholdValueControl = document.getElementById("number_thresholdValue");
+
+        	 resetSelectedTab();
+        	 
+        	 // do a little centering adjustment so that the menu element
+        	 // lines up nicely with the dropdown
+        	 var element_ul_menu_atlasType = document.getElementById("ul_submenu").parentElement;
+        	 var x_offset = getOffset(element_ul_menu_atlasType).left;
+        	 //was -27
+        	 var new_x_offset = x_offset - 148;
+        	 var new_px_value = new_x_offset + "px";
+        	 //myEl.style.position = "absolute";
+        	 element_ul_menu_atlasType.style.left = new_px_value;
+        	 
+        	 // do same adjustment for button
+        	 var button_dscalar = document.getElementById("button_downloadNetworkDscalar");
+        	 var button_dscalar_x_offset = getOffset(button_dscalar).right;
+        	 var new_button_dscalar_x_offset = button_dscalar_x_offset - 78;
+        	 button_dscalar.style.right = new_button_dscalar_x_offset;
+
+       	     //registerScrollEventListener();
         	 console.log("startup()...exit.");
          }
          
+         function registerScrollEventListener() {
+        	 
+        	 document.addEventListener('keydown', function(e){
+        		    if(e.keyCode === 40) {
+        		        //down();
+        		        e.preventDefault();
+        		    } else if(e.keyCode === 38) {
+        		        //up();
+        		        e.preventDefault();
+        		    }
+        	 })
+        	 
+         }
+         
+    
+         function alertOK() {
+        	 
+         }
+         
+       
          function copyStackTrace() {
          	console.log("copyStackTrace()...invoked...");
          	
@@ -50,41 +115,115 @@
          
          function displayNeuralNetworkList(responseText) {
         	 console.log("displayNeuralNetworkList()...invoked...");
-        	 var neuralNetworkNames = JSON.parse(responseText);   	 
+        	 var neuralNetworkNames = JSON.parse(responseText); 
+        	 //alert(neuralNetworkNames);
         	 let option;
+        	 let selectedIndex = 0;
         	 let dropdown_neuralNetworkName = document.getElementById("select_neuralNetworkName");
         	 
         	 for(let i=0; i<neuralNetworkNames.length; i++) {
         		 option = document.createElement('option');
         	 	 option.text = neuralNetworkNames[i];
+        	 	 option.classList.add("networkOption");
+        	 	 if(option.text.includes("combined_clusters")) {
+        	 		selectedIndex = i; 
+        	 	 }
         	 	 option.value = neuralNetworkNames[i];
         	 	 dropdown_neuralNetworkName.add(option);
          	 }
         	 
+        	 dropdown_neuralNetworkName.selectedIndex = selectedIndex;
         	 let div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
-        	 div_selectNeuralNetworkName.style.display = "block";
-        	 div_getThresholdImagesButton = document.getElementById("div_getThresholdImagesButton");
-        	 div_getThresholdImagesButton.style.display = "block";
+        	 //div_selectNeuralNetworkName.style.display = "block";
+        	 //div_getThresholdImagesButton = document.getElementById("div_getThresholdImagesButton");
+        	 //div_getThresholdImagesButton.style.display = "block";
 
         	 console.log("displayNeuralNetworkList()...exit...");
+         }
+         
+         function disableScroll() {
+        	 console.log("disableScroll()...invoked.");
+        	 //var body_element = document.getElementById("body");
+        	 //body_element.classList.add("disable_scrolling");
+         }
+         
+         function enableScroll() {
+        	 console.log("enableScroll()...invoked.");
+        	 //var body_element = document.getElementById("body");
+        	 //body_element.classList.remove("disable_scrolling");
          }
          
          function displayThresholdImageElements() {
         	 console.log("displayThresholdImageElements()...invoked.");
         	 
         	 hideAllDivs();
+        	 
+        	 var div_menu = document.getElementById("div_submenu");
+        	 div_menu.style.display = "block";
         	         	 
         	 selected_thresholdImage = document.getElementById("img_threshold");
         	 //get first label
         	 var minValueLabel = probabilityValueArray[0];
+        	 console.log("probabilityValueArray[0]=" + probabilityValueArray[0]);
         	 //alert("displayThresholdImageElements()...minValueLabel=" + minValueLabel);
         	 var imageSrcURL = imageDataURLMap.get(minValueLabel);
+        	 console.log("displayThresholdImageElements()...minValueLabel=" + minValueLabel);
         	 //alert("imageSrcURL=" + imageSrcURL);
-        	 selected_thresholdImage.src = imageSrcURL;
+        	 selected_thresholdImage.src = null;
+           	 let div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
+        	 //div_selectNeuralNetworkName.style.display = "block";
+           	 var div_networkMapImage = document.getElementById("div_networkMapImage");
+        	 
         	 div_thresholdImage = document.getElementById("div_thresholdImage");
         	 div_thresholdImage.style.display = "block";
+        	 selected_thresholdImage.src = imageSrcURL;
+        	 
+        	 var div_networkMapImage = document.getElementById("div_networkMapImage");
+        	 div_networkMapImage.style.display = "block";
+        	 //selected_thresholdImage.src = imageSrcURL;
+        	 
+        	 var div_dummyNetworkMap = document.getElementById("div_dummyNetworkMap");
+        	 //var div_instructions = document.getElementById("div_instructions");
+        	 
+        	 //div_instructions.style.display = "block";
+        	 
+
         	 //window.URL.revokeObjectURL(imageSrcURL); 
         	 displayThresholdRangeSlider();
+        	 
+    		 var div_selectNeuralNetwork = document.getElementById("div_selectNeuralNetworkName");
+
+        	 if(selectedSubmenu.id.includes("Single") || selectedSubmenu.id.includes("Overlapping")) {
+        		 div_selectNeuralNetwork.style.display = "block";
+        		 div_dummyNetworkMap.style.display = "none";
+        	 }
+        	 
+        	 if(selectedSubmenu.id.includes("Overlapping")) {
+          		 div_selectNeuralNetwork.style.display = "none"; 
+        	 }
+        	 
+        	 if(selectedSubmenu.id.includes("Combined")) {
+        		 div_networkMapImage.style.display = "none";
+          		 div_selectNeuralNetwork.style.display = "none"; 
+        		 div_dummyNetworkMap.style.display = "block";
+        		 //div_dummyNetworkMap.style.visibility = "hidden";
+		         /*
+        		 var img_networkMap = document.getElementById("img_networkMap");
+        		 img_networkMap.src = "/NetworkProbabilityDownloader/images/DCAN.png";
+        		 */
+        	 }
+        	
+        	 else {
+        		 div_networkMapImage.style.display = "block";
+        	 }
+         	 
+         	 var div_submitNotification = document.getElementById("div_submitNotification");
+         	 div_submitNotification.style.display = "none";
+         	 
+             var ul_atlasMenu = document.getElementById("ul_atlasMenu");
+             ul_atlasMenu.style.display = "block";
+         	 
+        	 trackThresholdValue(true);
         	 console.log("displayThresholdImageElements()...exit.");
          }
          
@@ -111,14 +250,14 @@
         	 var div_rangeSlider = document.getElementById("div_thresholdSlider");
         	 
              var span_leftRangeLabel = document.getElementById("span_leftRangeLabel");
-             span_leftRangeLabel.innerHTML = "0" + range_thresholdSlider.min + "&nbsp;";
+             span_leftRangeLabel.innerHTML = range_thresholdSlider.min + "&nbsp;";
              
              var span_rightRangeLabel = document.getElementById("span_rightRangeLabel");
-             span_rightRangeLabel.innerHTML = "&nbsp;" + "0" + range_thresholdSlider.max;
+             span_rightRangeLabel.innerHTML = "&nbsp;" + range_thresholdSlider.max;
         	 
         	 div_rangeSlider.style.display = "block";
         	 range_thresholdSlider.value = range_thresholdSlider.min;
-        	 span_RangeThresholdValue.innerHTML = "0" + range_thresholdSlider.value;
+        	 number_RangeThresholdValue.value = range_thresholdSlider.value;
 
 
         	 range_thresholdSlider.focus();
@@ -153,11 +292,52 @@
           	console.log("doErrorAlert()...exit...");
          }
          
-         function downloadFile() {
+         function doAlert(msg, okFn) {
+         	var alertBox = $("#alertBox");
+             alertBox.find(".message").text(msg);
+             alertBox.find(".ok").unbind().click(function()
+             {
+                 alertBox.hide();
+             });
+             alertBox.find(".ok").click(okFn);
+             console.log("doAlert()...msg=" + msg);
+             alertBox.show();
+         }
+         
+         
+         function doSubmissionAlert(selectedNeuralNetworkName) {
+
+         	console.log("doSubmissionAlert()...invoked.");
+         	         	
+         	var div_selectNeuralNetwork = document.getElementById("div_selectNeuralNetworkName");
+         	div_selectNeuralNetwork.style.display = "none";
+         	         	
+         	//var textArea = document.getElementById("textArea_progressUpdateId");
+         	//textArea.value = "Retrieving images for " + selectedNeuralNetworkName;
+        	//textArea.scrollTop = textArea.scrollHeight - textArea.getBoundingClientRect().height;
+         	alert("progressDiv=" + div_progressUpdateDiv);
+
+         }
+         
+         function downloadFile(choice) {
         	 console.log("downloadFile()...invoked.");
+        	 if(choice==1) {
+            	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadZIP_path;
+            	 anchor_downloadFile.click();
+            	 return;
+        	 }
+        	 else if(choice==2) {
+        		 downloadFilePathAndName = download_target_map_nii;
+            	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadFilePathAndName;
+            	 anchor_downloadFile.click();
+            	 return;
+        	 }
         	 var key = range_thresholdSlider.value;
+        	 if(key.indexOf(".")==-1) {
+        		 key = key + ".0";
+        	 }
         	 console.log("key=" + key);
-        	 var downloadFilePathAndName = targetDownloadFilesMap.get(key);
+        	 downloadFilePathAndName = targetDownloadFilesMap.get(key);
         	 console.log("downloadTargetFile name=" + downloadFilePathAndName);
         	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadFilePathAndName;
         	 anchor_downloadFile.click();
@@ -251,6 +431,8 @@
          function getNeuralNetworkNames() {
 
          	console.log("getNeuralNetworkNames()...invoked...");
+         	
+         	ajaxRequest_startTime = performance.now();
 
          	var ajaxRequest = getAjaxRequest();
          	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getNeuralNetworkNames";
@@ -273,7 +455,12 @@
                      	doErrorAlert(msg1, msg2, errorAlertOK);
                      	return;
                      }
-                     displayNeuralNetworkList(ajaxRequest.responseText);
+                     var responseArray = ajaxRequest.responseText.split("!@!");
+                   	 var div_submitNotification = document.getElementById("div_submitNotification");
+                	 div_submitNotification.style.display = "none";
+           
+                     displayNeuralNetworkList(responseArray[0]);
+                     processThresholdImagesResponse(responseArray[1]);
                  }
                  if (ajaxRequest.readyState==4 && ajaxRequest.status==503) {
                  	alert("The server is not responding.")
@@ -286,10 +473,25 @@
          
          }
          
+         function getOffset(el) {
+        	  const rect = el.getBoundingClientRect();
+        	  return {
+        	    left: rect.left + window.scrollX,
+        	    top: rect.top + window.scrollY
+        	  };
+        	}
+         
          function getProbabilityValueSubstring(aFilePath) {
         	 
         	 var beginIndexMarker = "thresh";
-        	 var beginIndexAdjustment = beginIndexMarker.length+1;
+        	 var beginIndexAdjustment = 0;
+        	 
+        	 if(!aFilePath.includes("thresh1.0")) {
+        		 beginIndexAdjustment = beginIndexMarker.length+1; 
+        	 }
+        	 else {
+        		 beginIndexAdjustment = beginIndexMarker.length;
+        	 }
         	 
         	 var beginIndex = aFilePath.indexOf(beginIndexMarker) + beginIndexAdjustment;
         	 var endIndex = aFilePath.indexOf(".png");
@@ -300,13 +502,34 @@
      
          }
          
+         function getRawProbabilityValue(aFilePath) {
+        	 
+            	//console.log("getRawProbabilityValue()...invoked...fileName=" + aFilePath);
+
+        		var beginIndex = aFilePath.indexOf("_thresh") + 7;
+        		var endIndex = aFilePath.lastIndexOf(".");
+        		
+        		var digitPortion = aFilePath.substring(beginIndex, endIndex);
+            	//console.log("getRawProbabilityValue()...exit...digitPortion=" + digitPortion);
+        		return digitPortion;
+         }
+         
          function getThresholdImages() {
         	 
            	console.log("getThresholdImages()...invoked...");
            	
-           	var selectElement = document.getElementById("select_neuralNetworkName");
-           	var selectedNeuralNetworkName = selectElement.options[selectElement.selectedIndex].value
-
+         	ajaxRequest_startTime = performance.now();
+    
+           	//var alertMsg = "Retrieving image data for " + selectedNeuralNetworkName;
+           	//doAlert(alertMsg, alertOK);
+           	
+        	 var div_submitNotification = document.getElementById("div_submitNotification");
+        	 div_submitNotification.style.display = "block";
+        	 
+          	 var div_selectNeuralNetwork = document.getElementById("div_selectNeuralNetworkName");
+         	 div_selectNeuralNetwork.style.display = "none";
+ 
+           	
            	var ajaxRequest = getAjaxRequest();
            	var paramString = "&neuralNetworkName=" + selectedNeuralNetworkName; 
            	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getThresholdImages" + paramString;
@@ -331,7 +554,16 @@
                        	return;
                        }
                        
-                       processThresholdImagesResponse(ajaxRequest.responseText);
+                       var responseArray = ajaxRequest.responseText.split("!@!");
+                       
+                       if(selectedSubmenu.id.includes("Combined")) {
+                            processThresholdImagesResponse(responseArray[1]);
+                       }
+                       else {
+                    	   var combinedDataArray = responseArray[1].split(DELIMITER_NETWORK_MAP_DATA);
+                    	   processNetworkProbabilityMapData(combinedDataArray[0]);
+                    	   processThresholdImagesResponse(combinedDataArray[1]);
+                       }
                    }
                    if (ajaxRequest.readyState==4 && ajaxRequest.status==503) {
                    	alert("The server is not responding.")
@@ -344,6 +576,60 @@
             	console.log("getThresholdImages()...exit...");
           }
          
+         function handleTabSelected(element) {
+
+             console.log("handleTabSelected()...invoked, id=" + element.id);
+
+             var div_overview = document.getElementById("div_overview");
+             var div_download = document.getElementById("div_download");
+             var div_resources = document.getElementById("div_resources");
+             var div_midbAtlas = document.getElementById("div_midbAtlas");
+             var div_contactUs = document.getElementById("div_contactUs");
+
+
+             var id = element.id;
+
+             if(id.includes("tab_overview")) {
+               div_overview.style.display = "block";
+               div_download.style.display = "none";
+               div_resources.style.display = "none";
+               div_midbAtlas.style.display = "none";
+               div_contactUs.style.display = "none";
+             }
+             else if(id.includes("tab_download")) {
+               div_overview.style.display = "none";
+               div_resources.style.display = "none";
+               mouseOutInstructions();
+               div_download.style.display = "block";
+               div_midbAtlas.style.display = "none";
+               div_contactUs.style.display = "none";
+             }
+             else if(id.includes("tab_resources")) {
+                 div_overview.style.display = "none";
+                 div_resources.style.display = "block";
+                 div_download.style.display = "none";
+                 div_midbAtlas.style.display = "none";
+                 div_contactUs.style.display = "none";
+             }
+             else if(id.includes("tab_midbAtlas")) {
+                 div_overview.style.display = "none";
+                 div_resources.style.display = "none";
+                 div_download.style.display = "none";
+                 div_midbAtlas.style.display = "block";
+                 div_contactUs.style.display = "none";
+             }
+             else if(id.includes("tab_contactUs")) {
+                 div_overview.style.display = "none";
+                 div_resources.style.display = "none";
+                 div_download.style.display = "none";
+                 div_midbAtlas.style.display = "none";
+                 div_contactUs.style.display = "block";
+             }
+             
+             console.log("handleTabSelected()...exit.");
+        }
+
+         
          function hideAllDivs() {
         	 console.log("hideAllDivs()...invoked...");
         	 var divName = null;
@@ -352,13 +638,76 @@
         	 for(var i=0;i<allDivNames.length;i++) {
         		divName = allDivNames[i];
         		divElement = document.getElementById(divName);
-        		divElement.style.display = "none";
+        		if(divElement != null) {
+        			divElement.style.display = "none";
+        		}
         	 }
         	 console.log("hideAllDivs()...exit...");
          }
          
-         function preProcessGetThresholdImages() {
+         function hideSubmenu() {
+
+             //console.log("hideSubmenu()...invoked.");
+            
+             //var ul_atlasMenu = document.getElementById("ul_atlasMenu");
+             //ul_atlasMenu.style.display = "none";
+            
+             var submenuCombined = document.getElementById("li_Combined");
+             var submenuOverlapping = document.getElementById("li_Overlapping");
+             var submenuSingle = document.getElementById("li_Single");
+
+             submenuCombined.style.display = "none";      
+             submenuOverlapping.style.display = "none";      
+             submenuSingle.style.display = "none";  
+            
+             
+             if(selectedSubmenu) {
+                selectedSubmenu.style.display = "inline";
+             }  
+            
+             //console.log("hideSubmenu()...exit.");
+         
+         }
+         
+         function hideMenu() {
+             //console.log("hideMenu()...invoked.");
+            
+              var ul_atlasMenu = document.getElementById("ul_atlasMenu");
+              ul_atlasMenu.style.display = "none";
+             /*
+             var submenuCombined = document.getElementById("li_Combined");
+             var submenuOverlapping = document.getElementById("li_Overlapping");
+             var submenuSingle = document.getElementById("li_Single");
+
+             submenuCombined.style.display = "none";      
+             submenuOverlapping.style.display = "none";      
+             submenuSingle.style.display = "none";  
+             */
+             
+             if(selectedSubmenu) {
+                selectedSubmenu.style.display = "inline";
+             }  
+            
+             //console.log("hideMenu()...exit.");
+         }
+         
+         
+         function playRangeSlider() {
+        	 range_thresholdSlider.value = 0.98;
+        	 range_thresholdSlider.value = 0.99;
+        	 range_thresholdSlider.value = 1.0;
+         }
+         
+         function preProcessGetThresholdImages(isDropdownChanged) {
         	 console.log("preProcessGetThresholdImages()...invoked.");
+        	 
+        	 hideAllDivs();
+        	 
+        	 //when dropdown changes, we don't go into menuClicked() function
+        	 //so we must set the selectedNeuralNetworkName
+        	 if(isDropdownChanged) {
+                 selectedNeuralNetworkName = selectElement.options[selectElement.selectedIndex].value; 
+        	 }
         	 getThresholdImages();
         	 console.log("preProcessGetThresholdImages()...exit.");
          }
@@ -372,7 +721,73 @@
         	 allDivNames.push("div_errorStackTrace");
         	 allDivNames.push("errorBox");
         	 allDivNames.push("div_selectNeuralNetworkName");
+        	 allDivNames.push("div_networkMapImage");
+        	 //allDivNames.push("div_instructions");
+        	 allDivNames.push("div_submenu");
+
+
+        	 //allDivNames.push("div_overview");
+        	 //allDivNames.push("div_resources");
+
         	 console.log("loadAllDivNames()...exit.");
+         }
+         
+         function mouseOverInstructions() {
+        	   console.log("mouseOverInstructions()...invoked.");
+        	   //instructionsSpan = document.getElementById("span_instructions");
+        	   //instructionsSpan.style.display = "block";
+         }
+         
+         function mouseOutInstructions() {
+      	       console.log("mouseOutInstructions()...invoked.");
+        	   //instructionsSpan = document.getElementById("span_instructions");
+        	   //instructionsSpan.style.display = "none";
+         }
+
+         
+         function menuClicked(element, startupTrigger) {
+             console.log("menuClicked()...invoked.");
+             var parent = element.parentElement;
+             var grandParent = parent.parentElement;
+             var networkTypeId = parent.id;
+             //alert("clicked:id=" + parent.id);
+             hideMenu(); 
+             grandParent.style.display = "inline";  
+             selectedSubmenu = parent;   
+             parent.style.display = "inline";
+             
+             if(networkTypeId.includes("li_Single")) {
+            	 /*
+            	 var div_thresholdImagePanel = document.getElementById("div_thresholdImage");
+            	 div_thresholdImagePanel.style.display = "none";
+            	 var div_selectNeuralNetwork = document.getElementById("div_selectNeuralNetworkName");
+            	 div_selectNeuralNetwork.style.display = "block";
+            	 */
+            	 var select_neuralNetworkName = document.getElementById("select_neuralNetworkName");
+            	 if(firstTimeSelectingSingle) {
+            		 select_neuralNetworkName.selectedIndex = 3;
+            		 selectedNeuralNetworkName = selectElement.options[selectElement.selectedIndex].value;
+            		 firstTimeSelectingSingle = false;
+            	 }
+            	 else {
+                     selectedNeuralNetworkName = selectElement.options[selectElement.selectedIndex].value;
+            	 }
+            	 preProcessGetThresholdImages();
+             }
+             else if(startupTrigger) {
+            	 getNeuralNetworkNames();
+             }
+             else if(networkTypeId.includes("li_Combined")) {
+            	 selectedNeuralNetworkName = "combined_clusters";
+            	 preProcessGetThresholdImages();
+             }
+             else if(networkTypeId.includes("li_Overlapping")) {
+            	 selectedNeuralNetworkName = "overlapping";
+            	 preProcessGetThresholdImages();
+             }
+     
+             
+             console.log("menuClicked()...exit.");
          }
          
          /*
@@ -385,14 +800,35 @@
         	 var hrefURL = imageSrcURLPrefix + aBase64String;
          }
          
-         /*
-          * The response from the server is an array delimited by :@:
-          * array[0] = base64Strings 
-          * array[1] = names of the image files
-          */
+         function processNetworkProbabilityMapData(responseData) {
+        	 
+       	  	  console.log("processNetworkProbabilityMapData()...invoked.")
+
+       	  	  var networkMapDataArray = responseData.split(DELIMITER_NETWORK_MAP_ITEMS);
+       	  	  var base64_png_for_map = networkMapDataArray[0];
+       	  	  download_target_map_nii = networkMapDataArray[1];
+       	  	  console.log(download_target_map_nii);
+       	  	  var imageSrcURLPrefix = "data:image/png;base64,";
+       	  	  
+       	  	  var mapImageSrcURL = imageSrcURLPrefix + base64_png_for_map;
+       	  	  
+       	  	  var networkProbabilityMapImage = document.getElementById("img_networkMap");
+       	  	  
+       	  	  networkProbabilityMapImage.src = mapImageSrcURL;
+       	  	  
+       	  	  console.log("processNetworkProbabilityMapData()...exit.")
+
+         }
+              
           function processThresholdImagesResponse(ajaxResponseText) {
         	  
         	  console.log("processThresholdImagesResponse()...invoked.")
+        	  
+        	  var ajaxRequest_endTime = performance.now();
+        	  var ajaxRequest_elapsedTime = ajaxRequest_startTime - ajaxRequest_endTime;
+        	  
+        	  console.log("processThresholdImagesResponse()...ajaxRequest_elapsedTime=" + ajaxRequest_elapsedTime);
+        	  
         	  imageDataURLArray = new Array();
         	  probabilityValueArray = new Array();
         	  targetDownloadFilePathsArray = new Array();
@@ -401,9 +837,20 @@
         	  var responseArray = ajaxResponseText.split(":@:");
 
         	  var base64Strings = responseArray[0];
+        	  console.log("processThresholdImagesResponse()...base64Strings.length=" + base64Strings.length);
+
         	  base64ImageStringArray = base64Strings.split(",");
+        	  console.log("processThresholdImagesResponse()...size of base64ImageStringArray=" + base64ImageStringArray.length);
+        	  //console.log("b64_0=" + base64ImageStringArray[0]);
+        	  //console.log("b64_1=" + base64ImageStringArray[1]);
         	  var filePathsString = responseArray[1];
+        	  //console.log("processThresholdImagesResponse()...size of filePathsString=" + filePathsString.length);
+
         	  var imageFilePathsArray = filePathsString.split(",");
+        	  //console.log("processThresholdImagesResponse()...size of filePathsString=" + filePathsString.length);
+        	  //console.log("processThresholdImagesResponse()...size of imageFilePathsArray=" + imageFilePathsArray.length);
+        	  //console.log(imageFilePathsArray[0]);
+        	  //console.log(filePathsString);
         	  //alert("tempFilePathsArray length=" + tempFilePathsArray.length);
         	  var aFilePath = null;
         	  var anImageFileAndPath = null;
@@ -416,11 +863,16 @@
         	  var pngMarker = ".png";
         	  var pngIndex = 0;
         	  
+        	  //currentNetworkMapImage = base64ImageStringArray[0];
+        	  
         	  for(var i=0; i<base64ImageStringArray.length; i++) {
         		  aBase64String = base64ImageStringArray[i];
         		  anImageSrcURL = imageSrcURLPrefix + aBase64String;
         		  imageDataURLArray.push(anImageSrcURL);
         	  }
+        	  
+        	  //var compareResult = imageDataURLArray[98].localeCompare(imageDataURLArray[99]);
+        	  //console.log("String.compare result=" + compareResult);
         	  
         	  var substringIndex = 1;
         	  
@@ -430,9 +882,20 @@
         		  }
         		  anImageFileAndPath = imageFilePathsArray[i].trim();
         		  if(i==0) {
+        			  var zipPathIndex = anImageFileAndPath.lastIndexOf("/");
+        			  var downloadZIP_root = anImageFileAndPath.substring(0, zipPathIndex+1);
+        			  var downloadZIP_fileName = downloadZIP_root.substring(0, zipPathIndex);
+        			  var fileName = anImageFileAndPath.substring(0, zipPathIndex);
+        			  var fileNameIndex = fileName.lastIndexOf("/");
+        			  fileName = fileName.substring(fileNameIndex+1);
+        			  fileName = fileName + ".zip";
+        			  downloadZIP_path = downloadZIP_root + fileName;
+        			  console.log("downloadZIP_path=" + downloadZIP_path);
+        			  console.log("imageFileAndPath for min=" + anImageFileAndPath);
         			  setRangeValue(anImageFileAndPath, "min");
         		  }
         		  else if(i==imageFilePathsArray.length-1) {
+        			  console.log("imageFileAndPath for max=" + anImageFileAndPath);
         			  setRangeValue(anImageFileAndPath, "max");
         		  }
         		  else if(i==1) {
@@ -443,9 +906,11 @@
         		  downloadTargetFile = anImageFileAndPath.substring(0, pngIndex);
         		  downloadTargetFile = downloadTargetFile + ".dlabel.nii";
         		  targetDownloadFilePathsArray.push(downloadTargetFile);
-        		  aProbabilityValue = getProbabilityValueSubstring(imageFilePathsArray[i]);
+        		  aProbabilityValue = getRawProbabilityValue(imageFilePathsArray[i]);
+        		  
         		  if(aProbabilityValue.startsWith(".")) {
         			  aProbabilityValue = "0" + aProbabilityValue;
+        			  //console.log(aProbabilityValue);
         		  }
         		  probabilityValueArray.push(aProbabilityValue);
         	  }
@@ -465,10 +930,33 @@
         	  }
         	  
         	  displayThresholdImageElements();
-        	  console.log("processThresholdImagesResponse()...exit.")
+       	  
+        	  console.log("processThresholdImagesResponse()...exit.");
           }
          
 
+         
+
+         function resetSelectedTab() {
+        	 console.log("resetSelectedTab()...invoked");
+        	 var tab_overview = document.getElementById("tab_overview");
+        	 var tab_resources = document.getElementById("tab_resources");
+        	 var tab_download = document.getElementById("tab_download");
+
+        	 tab_overview.checked = true;
+        	 tab_resources.checked = false;
+        	 tab_download.checked = false;
+
+        	 handleTabSelected(tab_overview);
+        	 console.log("resetSelectedTab()...exit");
+         }
+         
+         function scrollToInstructions() {
+        	 
+    		 document.getElementById("h4_instructions").scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+         }
+         
          function setAjaxStyle() {
 	        var ajaxRequestForCompatibility;  // The variable that makes Ajax possible!
 	
@@ -499,30 +987,181 @@
          function setRangeStep(path1, path2) {
         	 
         	 var value1 = getProbabilityValueSubstring(path1);
+        	 console.log("setting slider step value 1=" + value1);
         	 var value2 = getProbabilityValueSubstring(path2);
+        	 console.log("setting slider step value 2=" + value2);
         	 var stepValue = value2 - value1;
         	 var stepValue2Digits = stepValue.toFixed(2);        	 
-        	 
+        	 console.log("setting slider step value=" + stepValue2Digits);
         	 range_thresholdSlider.step = stepValue2Digits;
+        	 number_inputThresholdValueControl.step = stepValue2Digits;
          }
          
          function setRangeValue(aFilePath, propToSet) {
         	 console.log("setRangeValue()...invoked");
         	 
-        	 var valueString = getProbabilityValueSubstring(aFilePath);
+        	 //var valueString = getProbabilityValueSubstring(aFilePath);
+        	 var valueString = getRawProbabilityValue(aFilePath);
         	 
         	 if(propToSet.includes("min")) {
+        		 console.log("setting min range value:" + valueString);
         		 range_thresholdSlider.min = valueString;
+        		 number_inputThresholdValueControl.min = valueString;
         	 }
         	 else if(propToSet.includes("max")) {
+        		 console.log("setting max range value:" + valueString);
         		 range_thresholdSlider.max = valueString;
+        		 number_inputThresholdValueControl.max = valueString;
         	 }
          }
          
-         function trackThresholdValue(thresholdRangeControl) {
-        	 //console.log("trackThresholdValue()...invoked.");
-        	 span_RangeThresholdValue.innerHTML = range_thresholdSlider.value;
-        	 selected_thresholdImage.src = imageDataURLMap.get(thresholdRangeControl.value);
+         function sliderRefreshGate() {
+        	 trackThresholdValue();
+        	 /*
+        	 if(range_thresholdSlider.disabled) {
+        		 return;
+        	 }
+        	 range_thresholdSlider.disabled = true; 
+        	 setTimeout(trackThresholdValue, 100);
+        	 //range_thresholdSlider.disabled = false; 
+        	 */
+         }
+         
+         function showSnackbar(message, timeoutMS) {
+        	 
+        	  console.log("showSnackbar()...invoked...message=" + message);
+        	  div_snackbar.innerHTML = message;
+
+        	  // Add the "show" class to DIV
+        	  div_snackbar.className = "show";
+
+        	  // After 3 seconds, remove the show class from DIV
+        	  setTimeout(function(){ div_snackbar.className = div_snackbar.className.replace("show", ""); }, timeoutMS);
+         } 
+         
+         function showSubmenu() {
+             //alert("onmouseover");
+             var submenuCombined = document.getElementById("li_Combined");
+             var submenuOverlapping = document.getElementById("li_Overlapping");
+             var submenuSingle = document.getElementById("li_Single");
+
+             submenuCombined.style.display = "inline";      
+             submenuOverlapping.style.display = "inline";      
+             submenuSingle.style.display = "inline";     
+          }
+
+         
+         function showSubmenu_alternate() {
+        	
+             console.log("showSubmenu()...invoked.");
+             var submenu_ul_block = document.getElementById("ul_submenu");;
+             var submenuCombined = document.getElementById("li_Combined");
+             var submenuOverlapping = document.getElementById("li_Overlapping");
+             var submenuSingle = document.getElementById("li_Single");
+
+             submenu_ul_block.style.display = "block";      
+             submenuCombined.style.display = "block";      
+             submenuOverlapping.style.display = "block";      
+             submenuSingle.style.display = "block"; 
+             //alert("submenuCombined.style.display=" + submenuCombined.style.display);
+             console.log("showSubmenu()...exit.");
+             
+         }
+         
+         
+         function toggleAutoScroll() {
+        	        	         	 
+        	 if(autoScrollEnabled) {
+        		 autoScrollEnabled = false;
+        		 message = "auto-scroll disabled"
+            	 console.log("toggleAutoScroll()...autoScrollEnabled=" + autoScrollEnabled);
+        	 }
+        	 else {
+        		 autoScrollEnabled = true;
+        		 message = "auto-scroll enabled";
+            	 console.log("toggleAutoScroll()...autoScrollEnabled=" + autoScrollEnabled);
+        	 }
+        	 showSnackbar(message, 2000);
+         }
+         
+         function trackInputNumberChange() {
+        	 
+        	 //console.log("trackInputNumberChange()...invoked.");
+        	 var newValue = number_inputThresholdValueControl.value;
+        	 
+        	 if(newValue.startsWith(".")) {
+        		 newValue = "0" + newValue;
+        		 number_inputThresholdValueControl.value = newValue;
+        	 }
+        	 
+        	 range_thresholdSlider.value = number_inputThresholdValueControl.value;
+        	 //console.log("trackInputNumberChange()...new value =" + range_thresholdSlider.value); 
+        	 trackThresholdValue(false);
+         }
+         
+         
+         function trackThresholdValue(isFirstTrackingEvent) {
+        	 //console.log("trackThresholdValue()...invoked...autoScrollEnabled=" + autoScrollEnabled);
+        	 /*
+        	 if(autoScrollEnabled) {
+        		 console.log("autoScrolling into view...");
+        		 document.getElementById("div_thresholdImage").scrollIntoView({ behavior: 'smooth', block: 'center' });
+        	 }
+        	 */
+        	 
+        	 if(range_thresholdSlider==null) {
+        		 range_thresholdSlider = document.getElementById("range_threshold");
+        	 }
+        	 var usedAdjustedLabel = false;
+        	 var selectedValue = range_thresholdSlider.value;
+        	 
+        	 if(selectedValue.indexOf(".")== -1) {
+        		 usedAdjustedLabel = true;
+        	 }
+        	 
+        	 
+        	 /*
+        	 if(range_thresholdSlider.value==1) {
+        		 //console.log("adjusting range_thresholdSlider.value to 1.0");
+        		 usedAdjustedLabel = true;
+        	 }
+        	 */
+        	 
+        	 if(usedAdjustedLabel) {
+        		 //console.log("setting imageSrc with key=" + adjustedLabel);
+            	 number_RangeThresholdValue.value = selectedValue + ".0";
+            	 
+            	 selected_thresholdImage.src = imageDataURLMap.get(number_RangeThresholdValue.value);
+            	 //console.log(selected_thresholdImage.src);
+        	 }
+        	 
+        	 else if(isFirstTrackingEvent) {
+            	 //console.log("trackThresholdValue()...isFirstTrackingEvent=true");
+            	 //console.log("trackThresholdValue()...probabilityValueArray[0]=" + probabilityValueArray[0]);
+            	 //range_thresholdSlider.value = probabilityValueArray[1];
+         	     //selected_thresholdImage.src = imageDataURLMap.get(probabilityValueArray[1]);
+            	 range_thresholdSlider.value = probabilityValueArray[0];
+         	     selected_thresholdImage.src = imageDataURLMap.get(probabilityValueArray[0]);
+        	 }
+        	 else {
+        	    selected_thresholdImage.src = imageDataURLMap.get(range_thresholdSlider.value);
+           	    //console.log("trackThresholdValue()...range_thresholdSlider.value=" + range_thresholdSlider.value);
+           	    number_RangeThresholdValue.value = range_thresholdSlider.value; 
+        	 }
+
+        	 range_thresholdSlider.focus({preventScroll: true});
+        	 range_thresholdSlider.disabled = false; 
+        	 range_thresholdSlider.focus({preventScroll: false});
+        	 
+        	 /*
+        	 if(autoScrollHelpPending) {
+           	     //setTimeout(function(){ showSnackbar(autoScrollHelpMsg, 6000); }, 1000);
+        		 div_snackbar.innerHTML = autoScrollHelpMsg;
+           	     div_snackbar.className = "show_4";
+           	     setTimeout(function(){ div_snackbar.className = div_snackbar.className.replace("show_4", ""); }, 4000);
+           	     autoScrollHelpPending = false;
+        	 }
+        	 */
         	 //console.log("trackThresholdValue()...exit.");
          }
          

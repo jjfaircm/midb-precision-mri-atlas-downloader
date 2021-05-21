@@ -1,0 +1,530 @@
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr" prefix="content: http://purl.org/rss/1.0/modules/content/  dc: http://purl.org/dc/terms/  foaf: http://xmlns.com/foaf/0.1/  og: http://ogp.me/ns#  rdfs: http://www.w3.org/2000/01/rdf-schema#  schema: http://schema.org/  sioc: http://rdfs.org/sioc/ns#  sioct: http://rdfs.org/sioc/types#  skos: http://www.w3.org/2004/02/skos/core#  xsd: http://www.w3.org/2001/XMLSchema# ">
+  <head>
+  <script src="/NetworkProbabilityDownloader/javascript/jquery.js"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/np_downloader.js"></script>
+
+  
+    <!-- Google Tag Manager -->
+      <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-MMSDVQV');</script>
+    <!-- End Google Tag Manager -->
+    <meta charset="utf-8" /><script type="text/javascript">(window.NREUM||(NREUM={})).loader_config={licenseKey:"415912e0c7",applicationID:"539479763"};window.NREUM||(NREUM={}),__nr_require=function(e,n,t){function r(t){if(!n[t]){var i=n[t]={exports:{}};e[t][0].call(i.exports,function(n){var i=e[t][1][n];return r(i||n)},i,i.exports)}return n[t].exports}if("function"==typeof __nr_require)return __nr_require;for(var i=0;i<t.length;i++)r(t[i]);return r}({1:[function(e,n,t){function r(){}function i(e,n,t){return function(){return o(e,[u.now()].concat(c(arguments)),n?null:this,t),n?void 0:this}}var o=e("handle"),a=e(5),c=e(6),f=e("ee").get("tracer"),u=e("loader"),s=NREUM;"undefined"==typeof window.newrelic&&(newrelic=s);var d=["setPageViewName","setCustomAttribute","setErrorHandler","finished","addToTrace","inlineHit","addRelease"],p="api-",l=p+"ixn-";a(d,function(e,n){s[n]=i(p+n,!0,"api")}),s.addPageAction=i(p+"addPageAction",!0),s.setCurrentRouteName=i(p+"routeName",!0),n.exports=newrelic,s.interaction=function(){return(new r).get()};var m=r.prototype={createTracer:function(e,n){var t={},r=this,i="function"==typeof n;return o(l+"tracer",[u.now(),e,t],r),function(){if(f.emit((i?"":"no-")+"fn-start",[u.now(),r,i],t),i)try{return n.apply(this,arguments)}catch(e){throw f.emit("fn-err",[arguments,this,e],t),e}finally{f.emit("fn-end",[u.now()],t)}}}};a("actionText,setName,setAttribute,save,ignore,onEnd,getContext,end,get".split(","),function(e,n){m[n]=i(l+n)}),newrelic.noticeError=function(e,n){"string"==typeof e&&(e=new Error(e)),o("err",[e,u.now(),!1,n])}},{}],2:[function(e,n,t){function r(e,n){var t=e.getEntries();t.forEach(function(e){"first-paint"===e.name?d("timing",["fp",Math.floor(e.startTime)]):"first-contentful-paint"===e.name&&d("timing",["fcp",Math.floor(e.startTime)])})}function i(e,n){var t=e.getEntries();t.length>0&&d("lcp",[t[t.length-1]])}function o(e){e.getEntries().forEach(function(e){e.hadRecentInput||d("cls",[e])})}function a(e){if(e instanceof m&&!g){var n=Math.round(e.timeStamp),t={type:e.type};n<=p.now()?t.fid=p.now()-n:n>p.offset&&n<=Date.now()?(n-=p.offset,t.fid=p.now()-n):n=p.now(),g=!0,d("timing",["fi",n,t])}}function c(e){d("pageHide",[p.now(),e])}if(!("init"in NREUM&&"page_view_timing"in NREUM.init&&"enabled"in NREUM.init.page_view_timing&&NREUM.init.page_view_timing.enabled===!1)){var f,u,s,d=e("handle"),p=e("loader"),l=e(4),m=NREUM.o.EV;if("PerformanceObserver"in window&&"function"==typeof window.PerformanceObserver){f=new PerformanceObserver(r);try{f.observe({entryTypes:["paint"]})}catch(v){}u=new PerformanceObserver(i);try{u.observe({entryTypes:["largest-contentful-paint"]})}catch(v){}s=new PerformanceObserver(o);try{s.observe({type:"layout-shift",buffered:!0})}catch(v){}}if("addEventListener"in document){var g=!1,y=["click","keydown","mousedown","pointerdown","touchstart"];y.forEach(function(e){document.addEventListener(e,a,!1)})}l(c)}},{}],3:[function(e,n,t){function r(e,n){if(!i)return!1;if(e!==i)return!1;if(!n)return!0;if(!o)return!1;for(var t=o.split("."),r=n.split("."),a=0;a<r.length;a++)if(r[a]!==t[a])return!1;return!0}var i=null,o=null,a=/Version\/(\S+)\s+Safari/;if(navigator.userAgent){var c=navigator.userAgent,f=c.match(a);f&&c.indexOf("Chrome")===-1&&c.indexOf("Chromium")===-1&&(i="Safari",o=f[1])}n.exports={agent:i,version:o,match:r}},{}],4:[function(e,n,t){function r(e){function n(){e(a&&document[a]?document[a]:document[i]?"hidden":"visible")}"addEventListener"in document&&o&&document.addEventListener(o,n,!1)}n.exports=r;var i,o,a;"undefined"!=typeof document.hidden?(i="hidden",o="visibilitychange",a="visibilityState"):"undefined"!=typeof document.msHidden?(i="msHidden",o="msvisibilitychange"):"undefined"!=typeof document.webkitHidden&&(i="webkitHidden",o="webkitvisibilitychange",a="webkitVisibilityState")},{}],5:[function(e,n,t){function r(e,n){var t=[],r="",o=0;for(r in e)i.call(e,r)&&(t[o]=n(r,e[r]),o+=1);return t}var i=Object.prototype.hasOwnProperty;n.exports=r},{}],6:[function(e,n,t){function r(e,n,t){n||(n=0),"undefined"==typeof t&&(t=e?e.length:0);for(var r=-1,i=t-n||0,o=Array(i<0?0:i);++r<i;)o[r]=e[n+r];return o}n.exports=r},{}],7:[function(e,n,t){n.exports={exists:"undefined"!=typeof window.performance&&window.performance.timing&&"undefined"!=typeof window.performance.timing.navigationStart}},{}],ee:[function(e,n,t){function r(){}function i(e){function n(e){return e&&e instanceof r?e:e?f(e,c,o):o()}function t(t,r,i,o){if(!p.aborted||o){e&&e(t,r,i);for(var a=n(i),c=v(t),f=c.length,u=0;u<f;u++)c[u].apply(a,r);var d=s[w[t]];return d&&d.push([b,t,r,a]),a}}function l(e,n){h[e]=v(e).concat(n)}function m(e,n){var t=h[e];if(t)for(var r=0;r<t.length;r++)t[r]===n&&t.splice(r,1)}function v(e){return h[e]||[]}function g(e){return d[e]=d[e]||i(t)}function y(e,n){u(e,function(e,t){n=n||"feature",w[t]=n,n in s||(s[n]=[])})}var h={},w={},b={on:l,addEventListener:l,removeEventListener:m,emit:t,get:g,listeners:v,context:n,buffer:y,abort:a,aborted:!1};return b}function o(){return new r}function a(){(s.api||s.feature)&&(p.aborted=!0,s=p.backlog={})}var c="nr@context",f=e("gos"),u=e(5),s={},d={},p=n.exports=i();p.backlog=s},{}],gos:[function(e,n,t){function r(e,n,t){if(i.call(e,n))return e[n];var r=t();if(Object.defineProperty&&Object.keys)try{return Object.defineProperty(e,n,{value:r,writable:!0,enumerable:!1}),r}catch(o){}return e[n]=r,r}var i=Object.prototype.hasOwnProperty;n.exports=r},{}],handle:[function(e,n,t){function r(e,n,t,r){i.buffer([e],r),i.emit(e,n,t)}var i=e("ee").get("handle");n.exports=r,r.ee=i},{}],id:[function(e,n,t){function r(e){var n=typeof e;return!e||"object"!==n&&"function"!==n?-1:e===window?0:a(e,o,function(){return i++})}var i=1,o="nr@id",a=e("gos");n.exports=r},{}],loader:[function(e,n,t){function r(){if(!x++){var e=E.info=NREUM.info,n=l.getElementsByTagName("script")[0];if(setTimeout(s.abort,3e4),!(e&&e.licenseKey&&e.applicationID&&n))return s.abort();u(w,function(n,t){e[n]||(e[n]=t)});var t=a();f("mark",["onload",t+E.offset],null,"api"),f("timing",["load",t]);var r=l.createElement("script");r.src="https://"+e.agent,n.parentNode.insertBefore(r,n)}}function i(){"complete"===l.readyState&&o()}function o(){f("mark",["domContent",a()+E.offset],null,"api")}function a(){return O.exists&&performance.now?Math.round(performance.now()):(c=Math.max((new Date).getTime(),c))-E.offset}var c=(new Date).getTime(),f=e("handle"),u=e(5),s=e("ee"),d=e(3),p=window,l=p.document,m="addEventListener",v="attachEvent",g=p.XMLHttpRequest,y=g&&g.prototype;NREUM.o={ST:setTimeout,SI:p.setImmediate,CT:clearTimeout,XHR:g,REQ:p.Request,EV:p.Event,PR:p.Promise,MO:p.MutationObserver};var h=""+location,w={beacon:"bam.nr-data.net",errorBeacon:"bam.nr-data.net",agent:"js-agent.newrelic.com/nr-1177.min.js"},b=g&&y&&y[m]&&!/CriOS/.test(navigator.userAgent),E=n.exports={offset:c,now:a,origin:h,features:{},xhrWrappable:b,userAgent:d};e(1),e(2),l[m]?(l[m]("DOMContentLoaded",o,!1),p[m]("load",r,!1)):(l[v]("onreadystatechange",i),p[v]("onload",r)),f("mark",["firstbyte",c],null,"api");var x=0,O=e(7)},{}],"wrap-function":[function(e,n,t){function r(e){return!(e&&e instanceof Function&&e.apply&&!e[a])}var i=e("ee"),o=e(6),a="nr@original",c=Object.prototype.hasOwnProperty,f=!1;n.exports=function(e,n){function t(e,n,t,i){function nrWrapper(){var r,a,c,f;try{a=this,r=o(arguments),c="function"==typeof t?t(r,a):t||{}}catch(u){p([u,"",[r,a,i],c])}s(n+"start",[r,a,i],c);try{return f=e.apply(a,r)}catch(d){throw s(n+"err",[r,a,d],c),d}finally{s(n+"end",[r,a,f],c)}}return r(e)?e:(n||(n=""),nrWrapper[a]=e,d(e,nrWrapper),nrWrapper)}function u(e,n,i,o){i||(i="");var a,c,f,u="-"===i.charAt(0);for(f=0;f<n.length;f++)c=n[f],a=e[c],r(a)||(e[c]=t(a,u?c+i:i,o,c))}function s(t,r,i){if(!f||n){var o=f;f=!0;try{e.emit(t,r,i,n)}catch(a){p([a,t,r,i])}f=o}}function d(e,n){if(Object.defineProperty&&Object.keys)try{var t=Object.keys(e);return t.forEach(function(t){Object.defineProperty(n,t,{get:function(){return e[t]},set:function(n){return e[t]=n,n}})}),n}catch(r){p([r])}for(var i in e)c.call(e,i)&&(n[i]=e[i]);return n}function p(n){try{e.emit("internal-error",n)}catch(t){}}return e||(e=i),t.inPlace=u,t.flag=a,t}},{}]},{},["loader"]);</script>
+<script>(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,"script","https://www.google-analytics.com/analytics.js","ga");ga("create", "UA-16999842-1", {"cookieDomain":"auto"});ga("set", "anonymizeIp", true);ga("send", "pageview");</script>
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:site_name" content="University of Minnesota Twin Cities" />
+<link rel="shortlink" href="https://twin-cities.umn.edu/" />
+<link rel="canonical" href="https://twin-cities.umn.edu/home" />
+<meta name="twitter:title" content="University of Minnesota Twin Cities" />
+<meta property="og:type" content="website" />
+<meta name="twitter:description" content="The University of Minnesota, Twin Cities is among the nation’s top public research universities offering a wide range of undergraduate and graduate programs." />
+<meta name="description" content="The University of Minnesota, Twin Cities is among the nation’s top public research universities offering a wide range of undergraduate and graduate programs." />
+<meta name="twitter:site:id" content="@umnews" />
+<meta property="og:url" content="https://twin-cities.umn.edu/home" />
+<link rel="image_src" href="https://twin-cities.umn.edu/sites/twin-cities.umn.edu/files/umn-lawn.jpg" />
+<meta name="twitter:creator" content="@umnews" />
+<meta property="og:title" content="University of Minnesota Twin Cities" />
+<meta name="twitter:url" content="https://twin-cities.umn.edu/home" />
+<meta property="og:description" content="The University of Minnesota, Twin Cities is among the nation’s top public research universities offering a wide range of undergraduate and graduate programs." />
+<meta name="twitter:image:alt" content="The University of Minnesota, Twin Cities is among the nation’s top public research universities offering a wide range of undergraduate and graduate programs." />
+<meta name="twitter:image" content="https://twin-cities.umn.edu/sites/twin-cities.umn.edu/files/umn-lawn.jpg" />
+<meta property="og:image" content="https://twin-cities.umn.edu/sites/twin-cities.umn.edu/files/umn-lawn.jpg" />
+<meta property="og:image:url" content="https://twin-cities.umn.edu/sites/twin-cities.umn.edu/files/umn-lawn.jpg" />
+<meta property="og:image:secure_url" content="https://twin-cities.umn.edu/sites/twin-cities.umn.edu/files/umn-lawn.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:alt" content="The University of Minnesota, Twin Cities is among the nation’s top public research universities offering a wide range of undergraduate and graduate programs." />
+<meta name="Generator" content="Drupal 8 (https://www.drupal.org)" />
+<meta name="MobileOptimized" content="width" />
+<meta name="HandheldFriendly" content="true" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="shortcut icon" href="https://twin-cities.umn.edu/sites/twin-cities.umn.edu/files/favicon.ico" type="image/vnd.microsoft.icon" />
+<link rel="revision" href="https://twin-cities.umn.edu/home" />
+
+    <title>University of Minnesota Twin Cities</title>
+    <link rel="stylesheet" media="all" href="/NetworkProbabilityDownloader/css/css_8yUZtKgzykymCYQ3lNkCjvd6jDn-w-AboIL41LJfkxU.css" />
+<link rel="stylesheet" media="all" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,600,600i,700,700i,800,800i&amp;display=swap" />
+<link rel="stylesheet" media="all" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+<link rel="stylesheet" media="all" href="/NetworkProbabilityDownloader/css/css_gnOYhm56MK0QKADQSYysmDU0tiPBlAnEC__3yt9qyK8.css" />
+<link href='https://fonts.googleapis.com/css?family=Amaranth:ital@1&display=swap' rel='stylesheet'>
+
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/np_downloader.css" media="all" />
+
+    
+<!--[if lte IE 8]>
+<script src="/sites/twin-cities.umn.edu/files/js/js_VtafjXmRvoUgAzqzYTA3Wrjkx9wcWhjP0G4ZnnqRamA.js"></script>
+<![endif]-->
+
+  </head>
+  <body itemscope itemtype="http://schema.org/WebPage"  class="node-1611 path-frontpage page-node-type-homepage page-title__university-of-minnesota-twin-cities" onload="startup()">
+    <!-- Google Tag Manager (noscript) -->
+      <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MMSDVQV"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+        <a href="#main-content" class="visually-hidden focusable skip-link">
+      Skip to main content
+    </a>
+    
+      <div class="dialog-off-canvas-main-canvas" data-off-canvas-main-canvas>
+    
+  <header class="site-header" role="banner">
+      <div class="region region-header">
+    <div id="block-systemheaderwithcse" class="_bg--white wordmark" data-block-plugin-id="block_content:387ec591-cedf-4eb8-b985-6199d2c5a17f">
+  
+    
+      
+          <div class="system-header">
+
+  <div class="wordmark-campuses">
+
+    <a class="wordmark__anchor" href="/" title="Wordmark of the University of Minnesota Twin Cities" alt="link to front page">
+      
+<!-- mobile wordmark -->
+      <span class="visuallyhidden">Wordmark of the University of Minnesota Twin Cities</span>
+      <svg class="wordmark wordmark-mobile" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="wordmark__mobile" x="0px" y="0px" viewBox="0 0 328.38 34.03" style="enable-background:new 0 0 328.38 34.03;" xml:space="preserve">
+  <style type="text/css">
+  	.fill__dark-gray{fill:#231F20;stroke:#000000;stroke-width:0.1;stroke-miterlimit:10;}
+  	.fill__maroon{fill:#7A0019;}
+  </style>
+
+	<g class="wordmark block_m">
+			<path class="fill__maroon" d="M60.67,30.95c0.18,0.07,0.33,0.17,0.46,0.3c0.13,0.13,0.23,0.27,0.3,0.42c0.1,0.2,0.15,0.41,0.15,0.64     c0,0.26-0.06,0.5-0.19,0.73c-0.13,0.23-0.31,0.41-0.54,0.54c-0.23,0.13-0.47,0.19-0.72,0.19c-0.25,0-0.49-0.06-0.72-0.19     c-0.23-0.13-0.41-0.31-0.54-0.54c-0.13-0.23-0.19-0.47-0.19-0.73c0-0.22,0.04-0.42,0.13-0.59c0.08-0.18,0.19-0.33,0.31-0.45     c0.13-0.12,0.26-0.22,0.41-0.28c0.2-0.09,0.4-0.13,0.6-0.13C60.31,30.84,60.49,30.88,60.67,30.95z M61.69,31.59     c-0.08-0.18-0.19-0.34-0.33-0.49c-0.14-0.15-0.32-0.27-0.53-0.37c-0.21-0.1-0.44-0.15-0.7-0.15c-0.26,0-0.51,0.06-0.75,0.17     c-0.17,0.08-0.33,0.19-0.48,0.34c-0.14,0.14-0.26,0.32-0.36,0.53c-0.09,0.21-0.14,0.44-0.14,0.68c0,0.3,0.08,0.59,0.23,0.86     c0.15,0.27,0.36,0.48,0.63,0.63c0.27,0.15,0.56,0.23,0.85,0.23c0.27,0,0.52-0.06,0.75-0.17c0.18-0.09,0.35-0.21,0.5-0.36     c0.15-0.15,0.27-0.33,0.35-0.54c0.08-0.21,0.12-0.42,0.12-0.64C61.85,32.06,61.8,31.82,61.69,31.59z M60.07,32.55     c0.11,0,0.19,0.01,0.25,0.04c0.06,0.03,0.1,0.07,0.12,0.12c0.03,0.05,0.04,0.13,0.05,0.25c0.01,0.16,0.02,0.26,0.03,0.29h0.4     C60.91,33.2,60.9,33.11,60.9,33c0-0.11-0.01-0.2-0.02-0.24c-0.02-0.08-0.04-0.14-0.08-0.19c-0.04-0.05-0.08-0.09-0.13-0.12     c-0.05-0.03-0.12-0.05-0.21-0.07c0.1-0.01,0.17-0.03,0.21-0.05c0.08-0.04,0.14-0.09,0.18-0.17c0.05-0.07,0.07-0.16,0.07-0.25     c0-0.1-0.02-0.18-0.07-0.26c-0.04-0.07-0.1-0.13-0.17-0.18c-0.07-0.04-0.16-0.08-0.26-0.1c-0.08-0.01-0.19-0.02-0.34-0.02h-0.68     v1.9h0.42v-0.7H60.07z M60.29,31.67c0.07,0.02,0.12,0.05,0.15,0.1c0.04,0.05,0.05,0.1,0.05,0.17c0,0.06-0.02,0.12-0.05,0.16     c-0.03,0.05-0.08,0.09-0.14,0.11c-0.06,0.02-0.13,0.04-0.2,0.04h-0.28v-0.6h0.28C60.17,31.65,60.23,31.66,60.29,31.67z"/>
+		<polygon class="fill__maroon" points="53.61,25.34 43.58,8.68 46.34,8.68 46.34,0 29.66,0 29.66,8.68 32.42,8.68 28.59,15.05 24.76,8.68     27.52,8.68 27.52,0 10.84,0 10.84,8.68 13.6,8.68 3.58,25.34 0,25.34 0,34.03 17.02,34.03 17.02,25.34 13.96,25.34 19.18,16.66     21.21,20.03 19.26,20.03 19.26,28.71 37.92,28.71 37.92,20.03 35.98,20.03 38,16.66 43.22,25.34 40.17,25.34 40.17,34.03     57.18,34.03 57.18,25.34   "/>
+	</g>
+
+  <g class="wordmark u-of-m">
+		<path class="fill__dark-gray" d="M317.27,12.67l0.09,3.21h-0.42c-0.39-2.06-0.89-2.4-3.6-2.4v9.6c0,1.12,0.57,1.62,1.62,1.62v0.45h-5.02V24.7    c1.05,0,1.62-0.5,1.62-1.62v-9.6c-2.71,0-3.21,0.34-3.6,2.4h-0.42l0.1-3.21H317.27z"/>
+		<path class="fill__dark-gray" d="M300.61,12.43c-3.08,0-5.57,2.53-5.57,6.47s2.49,6.46,5.57,6.46c3.08,0,5.57-2.53,5.57-6.46    S303.68,12.43,300.61,12.43z M300.61,24.63c-2.34,0-3.67-2.25-3.67-5.73c0-3.49,1.34-5.73,3.67-5.73c2.34,0,3.68,2.24,3.68,5.73    C304.28,22.38,302.94,24.63,300.61,24.63z"/>
+		<path class="fill__dark-gray" d="M327.02,23.61c-0.23-0.58-4.41-11.12-4.41-11.12h-0.42c0,0-3.7,9.66-4.15,10.79c-0.46,1.14-1,1.41-1.44,1.41    v0.45h3.4V24.7c-0.5,0-1.06-0.35-1.06-0.89c0-0.16,0.01-0.36,0.06-0.47c0.03-0.1,0.38-1.04,0.83-2.25h4.32    c0.44,1.2,0.78,2.12,0.79,2.17c0.06,0.16,0.13,0.39,0.13,0.55c0,0.49-0.39,0.89-1.12,0.89v0.45h4.38V24.7    C327.8,24.7,327.24,24.2,327.02,23.61z M320.15,20.21c0.85-2.29,1.84-4.99,1.84-4.99s1,2.72,1.83,4.99H320.15z"/>
+		<path class="fill__dark-gray" d="M282.61,21.91c-0.55,1.3-1.26,2.43-3.24,2.43c-0.42,0-1.3,0-1.98,0c-0.72,0-1.04-0.25-1.04-0.85    c0-0.23,0-2.29,0-4.44c0.49,0,1.97,0,2.69,0c1.04,0,1.59,0.59,1.75,1.69h0.42v-4.31h-0.45c-0.06,1.2-0.68,1.78-1.62,1.78    c-0.8,0-2.34,0-2.79,0c0-2.06,0-3.98,0-4.18c0-0.46,0.29-0.55,0.68-0.55c0.39,0,1.27,0,2.4,0c1.49,0,2.01,0.61,2.34,2.01h0.42    l-0.1-2.82h-8.98v0.45c1.05,0,1.52,0.5,1.52,1.62v8.33c0,1.12-0.48,1.62-1.52,1.62v0.45h9.21l0.81-3.24H282.61z"/>
+		<path class="fill__dark-gray" d="M292.11,12.41l0.36,4.12h-0.46c-0.61-2.03-1.65-3.28-3.14-3.28c-1.07,0-1.69,0.72-1.69,1.69    c0,1.1,0.81,1.75,1.82,2.43c1,0.68,1.68,1.14,2.01,1.36c0.93,0.65,1.82,1.81,1.82,3.15c0,2.03-1.52,3.53-3.53,3.53    c-1.23,0-2.01-0.62-2.63-0.62c-0.34,0-0.5,0.34-0.58,0.62h-0.42l-0.52-4.15h0.45c0.76,2.13,1.88,3.37,3.44,3.37    c1.16,0,2.04-0.8,2.04-2.1c0-1.18-0.62-1.75-1.36-2.27c-0.82-0.58-1.85-1.3-2.46-1.72c-0.96-0.66-1.56-1.54-1.56-2.98    c0-1.72,1.13-3.14,3.08-3.14c0.84,0,1.78,0.55,2.3,0.55c0.39,0,0.55-0.26,0.58-0.55H292.11z"/>
+		<path class="fill__dark-gray" d="M267.31,12.67v0.45c0.97,0,1.55,0.75,1.55,1.88c0,0.77,0,4.35,0,6.57l-6.48-8.9h-2.82v0.45    c0.55,0,1,0.26,1.23,0.55c0.03,0.03,0.16,0.21,0.36,0.48c0,1.36,0,7.26,0,8.37c0,1.43-0.49,2.17-1.62,2.17v0.45h3.99V24.7    c-0.97,0-1.55-0.65-1.55-1.79c0-0.92,0-5.83,0-7.67c2.36,3.19,7.45,10.1,7.45,10.1h0.26c0,0,0-8.79,0-10.05    c0-1.59,0.64-2.17,1.62-2.17v-0.45H267.31z"/>
+		<path class="fill__dark-gray" d="M253.46,12.67v0.45c0.97,0,1.55,0.75,1.55,1.88c0,0.77,0,4.35,0,6.57l-6.48-8.9h-2.82v0.45    c0.55,0,1,0.26,1.23,0.55c0.02,0.03,0.16,0.21,0.36,0.48c0,1.36,0,7.26,0,8.37c0,1.43-0.49,2.17-1.62,2.17v0.45h3.99V24.7    c-0.97,0-1.56-0.65-1.56-1.79c0-0.92,0-5.83,0-7.67c2.36,3.19,7.46,10.1,7.46,10.1h0.26c0,0,0-8.79,0-10.05    c0-1.59,0.65-2.17,1.62-2.17v-0.45H253.46z"/>
+		<path class="fill__dark-gray" d="M236.73,9.07V8.61h-3.86l-5.03,13.49l-5.06-13.49h-3.93v0.45c1.65,0,2.11,0.91,2.11,2.53s0,9.82,0,10.15    c0,2.35-0.66,2.95-2.14,2.95v0.45h5.09V24.7c-1.43,0-2.11-0.61-2.11-2.95c0-2.33,0-10.6,0-10.6l5.25,14.04h0.49l5.35-14.3    c0,0,0,10.44,0,10.86c0,2.35-0.53,2.95-2.01,2.95v0.45h5.84V24.7c-1.43,0-1.98-0.61-1.98-2.95c0-0.91,0-9.01,0-10.37    C234.75,9.49,235.76,9.07,236.73,9.07z"/>
+		<path class="fill__dark-gray" d="M241.49,14.74c0-1.12,0.57-1.62,1.62-1.62v-0.45h-5.03v0.45c1.05,0,1.62,0.5,1.62,1.62v8.33    c0,1.12-0.57,1.62-1.62,1.62v0.45h5.03V24.7c-1.05,0-1.62-0.5-1.62-1.62V14.74z"/>
+		<path class="fill__dark-gray" d="M195.47,12.44c-3.08,0-5.58,2.53-5.58,6.47c0,3.93,2.5,6.46,5.58,6.46c3.08,0,5.57-2.53,5.57-6.46    C201.05,14.98,198.55,12.44,195.47,12.44z M195.47,24.64c-2.34,0-3.68-2.24-3.68-5.73c0-3.49,1.34-5.73,3.68-5.73    c2.33,0,3.67,2.24,3.67,5.73C199.14,22.4,197.8,24.64,195.47,24.64z"/>
+		<path class="fill__dark-gray" d="M211.86,12.67h-9.08v0.45c1.05,0,1.52,0.5,1.52,1.62v8.33c0,1.12-0.48,1.62-1.52,1.62v0.45h4.83V24.7    c-1,0-1.59-0.49-1.59-1.62c0-0.22,0-2.06,0-4.02c0.48,0,1.87,0,2.59,0c1.04,0,1.59,0.59,1.75,1.69h0.42v-4.31h-0.45    c-0.06,1.2-0.68,1.78-1.62,1.78c-0.79,0-2.26,0-2.69,0c0-2.03,0-3.96,0-4.18c0-0.46,0.29-0.55,0.68-0.55c0.39,0,1.36,0,2.5,0    c1.49,0,2.01,0.61,2.33,2.01h0.42L211.86,12.67z"/>
+		<path class="fill__dark-gray" d="M170.18,12.68l0.1,3.21h-0.42c-0.39-2.06-0.89-2.4-3.6-2.4v9.6c0,1.12,0.57,1.62,1.62,1.62v0.45h-5.02v-0.45    c1.05,0,1.62-0.5,1.62-1.62v-9.6c-2.71,0-3.21,0.34-3.6,2.4h-0.42l0.1-3.21H170.18z"/>
+		<path class="fill__dark-gray" d="M179.81,13.14v-0.45h3.83v0.45c-0.55,0-1.42,0.6-1.78,1.2c-0.41,0.67-3.08,5.12-3.08,5.12v3.63    c0,1.21,0.44,1.62,1.75,1.62v0.45h-5.29v-0.45c1.31,0,1.75-0.41,1.75-1.62v-3.44c0,0-2.95-4.7-3.31-5.29    c-0.36-0.58-1.07-1.23-1.75-1.23v-0.45h4.93v0.45c-0.68,0-1.17,0.31-1.17,0.67c0,0.23,0.12,0.51,0.2,0.65    c0.08,0.15,2.5,4.12,2.5,4.12s2.4-4.17,2.46-4.28c0.07-0.12,0.1-0.26,0.1-0.4C180.94,13.54,180.75,13.14,179.81,13.14z"/>
+		<path class="fill__dark-gray" d="M150.27,12.41l0.36,4.12h-0.45c-0.62-2.03-1.65-3.28-3.15-3.28c-1.07,0-1.69,0.72-1.69,1.69    c0,1.1,0.81,1.75,1.82,2.43c1.01,0.68,1.69,1.14,2.01,1.36c0.93,0.65,1.81,1.81,1.81,3.15c0,2.03-1.52,3.53-3.53,3.53    c-1.23,0-2.01-0.62-2.63-0.62c-0.34,0-0.5,0.34-0.58,0.62h-0.42l-0.52-4.15h0.45c0.76,2.13,1.88,3.37,3.44,3.37    c1.16,0,2.04-0.8,2.04-2.1c0-1.18-0.62-1.75-1.36-2.27c-0.82-0.58-1.85-1.3-2.46-1.72c-0.97-0.66-1.56-1.54-1.56-2.98    c0-1.72,1.13-3.14,3.08-3.14c0.84,0,1.78,0.55,2.3,0.55c0.39,0,0.55-0.26,0.58-0.55H150.27z"/>
+		<path class="fill__dark-gray" d="M157.14,14.76c0-1.12,0.57-1.62,1.62-1.62v-0.45h-5.02v0.45c1.05,0,1.62,0.5,1.62,1.62v8.33    c0,1.12-0.57,1.62-1.62,1.62v0.45h5.02v-0.45c-1.05,0-1.62-0.5-1.62-1.62V14.76z"/>
+		<path class="fill__dark-gray" d="M128.54,21.91c-0.55,1.3-1.26,2.43-3.24,2.43c-0.42,0-1.3,0-1.98,0c-0.72,0-1.04-0.25-1.04-0.85    c0-0.23,0-2.29,0-4.44c0.49,0,1.97,0,2.69,0c1.04,0,1.59,0.59,1.75,1.69h0.42v-4.31h-0.45c-0.07,1.2-0.68,1.78-1.62,1.78    c-0.8,0-2.34,0-2.79,0c0-2.06,0-3.98,0-4.18c0-0.46,0.29-0.55,0.68-0.55s1.26,0,2.4,0c1.49,0,2.01,0.61,2.34,2.01h0.42l-0.1-2.82    h-8.98v0.45c1.05,0,1.52,0.5,1.52,1.62v8.33c0,1.12-0.48,1.62-1.52,1.62v0.45h9.21l0.81-3.24H128.54z"/>
+		<path class="fill__dark-gray" d="M140.41,24.15c-0.29-0.35-3.06-4.14-3.67-4.99c2.23-0.48,3.02-1.61,3.02-3.25c0-1.95-1.46-3.24-4.12-3.24    c-0.32,0-4.99,0-4.99,0v0.45c1.05,0,1.53,0.5,1.53,1.62v8.33c0,1.12-0.48,1.62-1.53,1.62v0.45h4.83V24.7    c-1.05,0-1.53-0.5-1.53-1.62v-3.67c0.34,0,0.65-0.01,0.95-0.03l4.05,5.77h2.72v-0.39C141.22,24.76,140.74,24.54,140.41,24.15z     M133.96,18.67v-4.22c0-0.86,0.18-1.07,1.14-1.07c2.11,0,2.89,1.04,2.89,2.59c0,1.91-1.45,2.69-3.6,2.69    C134.22,18.67,134.08,18.67,133.96,18.67z"/>
+		<path class="fill__dark-gray" d="M102.09,14.74c0-1.12,0.57-1.62,1.62-1.62v-0.45h-5.03v0.45c1.05,0,1.62,0.5,1.62,1.62v8.33    c0,1.12-0.58,1.62-1.62,1.62v0.45h5.03V24.7c-1.05,0-1.62-0.5-1.62-1.62V14.74z"/>
+		<path class="fill__dark-gray" d="M110.32,13.12v-0.45h-4.57v0.45c0.55,0,1.14,0.36,1.52,1.3c0.39,0.94,4.51,10.93,4.51,10.93h0.29    c0,0,3.6-10.05,3.93-10.93c0.32-0.88,0.87-1.3,1.39-1.3v-0.45h-3.53v0.45c0.78,0,1.2,0.42,1.2,0.97c0,0.16-0.04,0.34-0.1,0.49    c-0.07,0.19-2.62,7.36-2.62,7.36s-3.02-7.24-3.11-7.46c-0.07-0.17-0.1-0.38-0.1-0.56C109.12,13.42,109.54,13.12,110.32,13.12z"/>
+		<path class="fill__dark-gray" d="M68.43,9.07c1.36,0,2.07,0.68,2.07,2.62c0,1.95,0,4.51,0,7.72c0,3.9,2.14,5.97,5.87,5.97    c3.21,0,5.67-1.95,5.67-5.71c0-3.47,0-7.13,0-8.43c0-1.3,0.39-2.17,1.95-2.17V8.61h-4.93v0.45c1.39,0,1.98,0.62,2.01,2.3    c0.03,1.69,0.13,6.1,0.13,8.72c0,2.62-1.88,4.28-4.44,4.28c-2.46,0-4.41-1.46-4.41-4.54s0-7.26,0-8.63c0-1.27,0.49-2.14,1.95-2.14    V8.61h-5.87V9.07z"/>
+		<path class="fill__dark-gray" d="M92.1,12.67v0.45c0.97,0,1.55,0.75,1.55,1.88c0,0.77,0,4.35,0,6.57l-6.48-8.9h-2.82v0.45    c0.55,0,1,0.26,1.23,0.55c0.02,0.03,0.15,0.21,0.36,0.48c0,1.36,0,7.26,0,8.37c0,1.43-0.49,2.17-1.62,2.17v0.45h3.99V24.7    c-0.97,0-1.56-0.65-1.56-1.79c0-0.92,0-5.83,0-7.67c2.36,3.19,7.46,10.1,7.46,10.1h0.26c0,0,0-8.79,0-10.05    c0-1.59,0.65-2.17,1.62-2.17v-0.45H92.1z"/>
+	</g>
+</svg>
+
+<!-- full wordmark -->
+<svg class="wordmark wordmark-full" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="wordmark-full" x="0px" y="0px" viewBox="0 0 285.87 37.96" style="enable-background:new 0 0 285.87 37.96;" xml:space="preserve">
+  <style type="text/css">
+  	.fill__maroon{fill:#7A0019;}
+  	.fill__dark-gray{fill:#231F20;stroke:#000000;stroke-width:0.1;stroke-miterlimit:10;}
+  </style>
+
+	<g class="wordmark block_m">
+		<path class="fill__maroon" d="M54.65,29.11L44.43,12.12h2.82V3.26H30.24v8.85h2.82l-3.91,6.49l-3.9-6.49h2.81V3.26H11.05v8.85h2.81    L3.65,29.11H0v8.85h17.35v-8.85h-3.12l5.32-8.85l2.06,3.43h-1.98v8.85h19.02v-8.85h-1.98l2.07-3.43l5.32,8.85h-3.11v8.85H58.3    v-8.85H54.65z"/>
+	</g>
+
+	<g class="wordmark u-of-m">
+		<path class="fill__dark-gray" d="M276.46,3.48l0.08,2.72h-0.36c-0.33-1.75-0.75-2.03-3.05-2.03v8.13c0,0.95,0.49,1.37,1.37,1.37v0.38h-4.26    v-0.38c0.89,0,1.37-0.42,1.37-1.37V4.17c-2.3,0-2.72,0.29-3.05,2.03h-0.35l0.08-2.72H276.46z"/>
+		<path class="fill__dark-gray" d="M262.33,3.28c-2.61,0-4.72,2.15-4.72,5.48s2.11,5.48,4.72,5.48s4.72-2.14,4.72-5.48S264.94,3.28,262.33,3.28z     M262.33,13.62c-1.98,0-3.11-1.9-3.11-4.86c0-2.95,1.13-4.86,3.11-4.86c1.98,0,3.11,1.9,3.11,4.86    C265.45,11.71,264.32,13.62,262.33,13.62z"/>
+		<path class="fill__dark-gray" d="M284.71,12.76c-0.19-0.49-3.74-9.42-3.74-9.42h-0.36c0,0-3.13,8.19-3.52,9.15c-0.39,0.96-0.85,1.2-1.22,1.2    v0.38h2.88v-0.38c-0.42,0-0.9-0.3-0.9-0.76c0-0.14,0.01-0.3,0.05-0.4c0.03-0.08,0.33-0.88,0.7-1.91h3.66    c0.37,1.02,0.66,1.8,0.67,1.84c0.05,0.14,0.11,0.33,0.11,0.47c0,0.41-0.33,0.76-0.95,0.76v0.38h3.71v-0.38    C285.37,13.68,284.9,13.25,284.71,12.76z M278.89,9.87c0.72-1.94,1.56-4.23,1.56-4.23s0.85,2.3,1.55,4.23H278.89z"/>
+		<path class="fill__dark-gray" d="M247.09,11.31c-0.47,1.1-1.07,2.06-2.75,2.06c-0.36,0-1.1,0-1.68,0c-0.61,0-0.88-0.21-0.88-0.72    c0-0.2,0-1.94,0-3.77c0.41,0,1.67,0,2.28,0c0.88,0,1.35,0.5,1.48,1.43h0.36V6.67h-0.38c-0.05,1.02-0.58,1.51-1.37,1.51    c-0.68,0-1.98,0-2.36,0c0-1.74,0-3.37,0-3.54c0-0.39,0.25-0.47,0.58-0.47c0.33,0,1.07,0,2.03,0c1.26,0,1.7,0.52,1.98,1.7h0.36    l-0.08-2.39h-7.61v0.39c0.89,0,1.29,0.42,1.29,1.37v7.06c0,0.95-0.41,1.37-1.29,1.37v0.38h7.8l0.68-2.75H247.09z"/>
+		<path class="fill__dark-gray" d="M255.14,3.27l0.3,3.49h-0.39c-0.52-1.72-1.4-2.78-2.66-2.78c-0.91,0-1.43,0.61-1.43,1.43    c0,0.93,0.69,1.48,1.54,2.06c0.85,0.58,1.43,0.96,1.7,1.15c0.79,0.55,1.54,1.54,1.54,2.67c0,1.72-1.29,2.99-2.99,2.99    c-1.04,0-1.7-0.52-2.23-0.52c-0.29,0-0.43,0.29-0.49,0.52h-0.36l-0.44-3.52h0.39c0.64,1.8,1.59,2.86,2.91,2.86    c0.99,0,1.73-0.68,1.73-1.78c0-1-0.53-1.48-1.15-1.92c-0.7-0.49-1.56-1.1-2.09-1.46c-0.82-0.56-1.32-1.31-1.32-2.53    c0-1.46,0.96-2.66,2.61-2.66c0.71,0,1.51,0.47,1.95,0.47c0.33,0,0.47-0.22,0.49-0.47H255.14z"/>
+		<path class="fill__dark-gray" d="M234.12,3.48v0.39c0.82,0,1.32,0.63,1.32,1.59c0,0.65,0,3.68,0,5.56l-5.49-7.54h-2.39v0.39    c0.47,0,0.85,0.22,1.04,0.47c0.02,0.03,0.13,0.18,0.3,0.41c0,1.15,0,6.15,0,7.1c0,1.21-0.41,1.84-1.37,1.84v0.38h3.38v-0.38    c-0.83,0-1.32-0.55-1.32-1.51c0-0.78,0-4.94,0-6.49c2,2.7,6.32,8.56,6.32,8.56h0.22c0,0,0-7.45,0-8.52c0-1.35,0.55-1.84,1.37-1.84    V3.48H234.12z"/>
+		<path class="fill__dark-gray" d="M222.39,3.48v0.39c0.83,0,1.32,0.63,1.32,1.59c0,0.65,0,3.68,0,5.56l-5.49-7.54h-2.39v0.39    c0.47,0,0.85,0.22,1.04,0.47c0.02,0.03,0.13,0.18,0.3,0.41c0,1.15,0,6.15,0,7.1c0,1.21-0.41,1.84-1.37,1.84v0.38h3.38v-0.38    c-0.83,0-1.32-0.55-1.32-1.51c0-0.78,0-4.94,0-6.49c2,2.7,6.32,8.56,6.32,8.56h0.22c0,0,0-7.45,0-8.52c0-1.35,0.55-1.84,1.37-1.84    V3.48H222.39z"/>
+		<path class="fill__dark-gray" d="M208.21,0.44V0.05h-3.27l-4.26,11.43L196.4,0.05h-3.33v0.39c1.4,0,1.79,0.77,1.79,2.14s0,8.32,0,8.6    c0,1.99-0.56,2.5-1.81,2.5v0.38h4.31v-0.38c-1.21,0-1.79-0.52-1.79-2.5c0-1.98,0-8.98,0-8.98l4.45,11.9h0.41l4.54-12.11    c0,0,0,8.85,0,9.2c0,1.99-0.45,2.5-1.71,2.5v0.38h4.94v-0.38c-1.21,0-1.67-0.52-1.67-2.5c0-0.77,0-7.64,0-8.79    C206.54,0.79,207.39,0.44,208.21,0.44z"/>
+		<path class="fill__dark-gray" d="M212.25,5.24c0-0.95,0.49-1.37,1.37-1.37V3.48h-4.26v0.39c0.89,0,1.37,0.42,1.37,1.37v7.06    c0,0.95-0.49,1.37-1.37,1.37v0.38h4.26v-0.38c-0.89,0-1.37-0.42-1.37-1.37V5.24z"/>
+		<path class="fill__dark-gray" d="M173.25,3.29c-2.61,0-4.72,2.15-4.72,5.48c0,3.33,2.12,5.48,4.72,5.48c2.61,0,4.72-2.14,4.72-5.48    C177.98,5.44,175.86,3.29,173.25,3.29z M173.25,13.63c-1.98,0-3.11-1.9-3.11-4.86c0-2.96,1.13-4.86,3.11-4.86    c1.98,0,3.11,1.9,3.11,4.86C176.37,11.73,175.23,13.63,173.25,13.63z"/>
+		<path class="fill__dark-gray" d="M187.14,3.48h-7.69v0.39c0.89,0,1.29,0.42,1.29,1.37v7.06c0,0.95-0.4,1.37-1.29,1.37v0.38h4.09v-0.38    c-0.85,0-1.35-0.41-1.35-1.37c0-0.19,0-1.75,0-3.41c0.4,0,1.59,0,2.2,0c0.88,0,1.35,0.5,1.49,1.43h0.36V6.67h-0.38    c-0.05,1.02-0.58,1.51-1.37,1.51c-0.67,0-1.91,0-2.28,0c0-1.72,0-3.36,0-3.54c0-0.39,0.25-0.47,0.58-0.47c0.33,0,1.15,0,2.12,0    c1.26,0,1.7,0.52,1.98,1.7h0.36L187.14,3.48z"/>
+		<path class="fill__dark-gray" d="M151.82,3.5l0.08,2.72h-0.36c-0.33-1.74-0.76-2.03-3.05-2.03v8.13c0,0.95,0.49,1.37,1.37,1.37v0.38h-4.26    v-0.38c0.89,0,1.37-0.42,1.37-1.37V4.19c-2.29,0-2.72,0.29-3.05,2.03h-0.36l0.08-2.72H151.82z"/>
+		<path class="fill__dark-gray" d="M159.98,3.88V3.5h3.24v0.38c-0.47,0-1.2,0.51-1.51,1.02c-0.34,0.56-2.61,4.34-2.61,4.34v3.08    c0,1.03,0.38,1.37,1.48,1.37v0.38h-4.48v-0.38c1.11,0,1.48-0.35,1.48-1.37V9.41c0,0-2.5-3.99-2.8-4.48    c-0.3-0.49-0.91-1.04-1.48-1.04V3.5h4.18v0.38c-0.58,0-0.99,0.26-0.99,0.56c0,0.2,0.1,0.43,0.17,0.55    c0.07,0.12,2.12,3.49,2.12,3.49s2.03-3.53,2.09-3.62c0.06-0.1,0.08-0.22,0.08-0.34C160.94,4.23,160.78,3.88,159.98,3.88z"/>
+		<path class="fill__dark-gray" d="M134.95,3.27l0.3,3.49h-0.38c-0.52-1.72-1.4-2.78-2.66-2.78c-0.91,0-1.43,0.61-1.43,1.43    c0,0.93,0.69,1.48,1.54,2.06c0.85,0.58,1.43,0.96,1.7,1.15c0.79,0.55,1.54,1.54,1.54,2.67c0,1.72-1.29,2.99-2.99,2.99    c-1.05,0-1.7-0.52-2.23-0.52c-0.29,0-0.42,0.29-0.49,0.52h-0.36l-0.44-3.52h0.39c0.64,1.8,1.59,2.86,2.91,2.86    c0.99,0,1.73-0.68,1.73-1.78c0-1-0.53-1.48-1.15-1.92c-0.7-0.49-1.56-1.1-2.09-1.46c-0.82-0.56-1.32-1.31-1.32-2.53    c0-1.46,0.96-2.66,2.61-2.66c0.71,0,1.51,0.47,1.95,0.47c0.33,0,0.47-0.22,0.49-0.47H134.95z"/>
+		<path class="fill__dark-gray" d="M140.78,5.26c0-0.95,0.49-1.37,1.37-1.37V3.5h-4.26v0.38c0.89,0,1.37,0.42,1.37,1.37v7.06    c0,0.95-0.49,1.37-1.37,1.37v0.38h4.26v-0.38c-0.89,0-1.37-0.42-1.37-1.37V5.26z"/>
+		<path class="fill__dark-gray" d="M116.55,11.31c-0.47,1.1-1.07,2.06-2.75,2.06c-0.36,0-1.1,0-1.68,0c-0.61,0-0.88-0.21-0.88-0.72    c0-0.2,0-1.94,0-3.77c0.41,0,1.67,0,2.28,0c0.88,0,1.35,0.5,1.48,1.43h0.36V6.67h-0.38c-0.06,1.02-0.58,1.51-1.37,1.51    c-0.68,0-1.98,0-2.36,0c0-1.74,0-3.37,0-3.54c0-0.39,0.25-0.47,0.58-0.47c0.33,0,1.07,0,2.03,0c1.26,0,1.7,0.52,1.98,1.7h0.36    l-0.08-2.39h-7.61v0.39c0.89,0,1.29,0.42,1.29,1.37v7.06c0,0.95-0.4,1.37-1.29,1.37v0.38h7.8l0.69-2.75H116.55z"/>
+		<path class="fill__dark-gray" d="M126.6,13.21c-0.25-0.29-2.59-3.51-3.11-4.23c1.89-0.4,2.56-1.37,2.56-2.75c0-1.65-1.24-2.75-3.49-2.75    c-0.27,0-4.23,0-4.23,0v0.39c0.89,0,1.29,0.42,1.29,1.37v7.06c0,0.95-0.41,1.37-1.29,1.37v0.38h4.09v-0.38    c-0.89,0-1.29-0.42-1.29-1.37V9.2c0.28,0,0.55-0.01,0.8-0.02l3.43,4.89h2.31v-0.33C127.29,13.73,126.88,13.54,126.6,13.21z     M121.13,8.57V4.99c0-0.73,0.15-0.91,0.96-0.91c1.79,0,2.44,0.88,2.44,2.2c0,1.62-1.23,2.28-3.05,2.28    C121.35,8.57,121.24,8.57,121.13,8.57z"/>
+		<path class="fill__dark-gray" d="M94.13,5.24c0-0.95,0.48-1.37,1.37-1.37V3.48h-4.26v0.39c0.89,0,1.37,0.42,1.37,1.37v7.06    c0,0.95-0.49,1.37-1.37,1.37v0.38h4.26v-0.38c-0.89,0-1.37-0.42-1.37-1.37V5.24z"/>
+		<path class="fill__dark-gray" d="M101.11,3.87V3.48h-3.87v0.39c0.47,0,0.96,0.3,1.29,1.1c0.33,0.79,3.82,9.26,3.82,9.26h0.25    c0,0,3.05-8.52,3.33-9.26c0.27-0.74,0.74-1.1,1.18-1.1V3.48h-2.99v0.39c0.66,0,1.02,0.36,1.02,0.82c0,0.14-0.04,0.29-0.08,0.41    c-0.06,0.16-2.22,6.24-2.22,6.24s-2.56-6.14-2.63-6.32c-0.06-0.14-0.09-0.32-0.09-0.48C100.09,4.12,100.44,3.87,101.11,3.87z"/>
+		<path class="fill__dark-gray" d="M65.61,0.44c1.15,0,1.76,0.58,1.76,2.22c0,1.65,0,3.82,0,6.54c0,3.3,1.81,5.06,4.97,5.06    c2.72,0,4.81-1.65,4.81-4.84c0-2.94,0-6.04,0-7.14c0-1.1,0.33-1.84,1.65-1.84V0.05h-4.18v0.39c1.18,0,1.67,0.52,1.7,1.95    c0.03,1.43,0.11,5.17,0.11,7.39c0,2.22-1.59,3.62-3.76,3.62c-2.09,0-3.74-1.24-3.74-3.85s0-6.16,0-7.31    c0-1.08,0.41-1.81,1.65-1.81V0.05h-4.97V0.44z"/>
+		<path class="fill__dark-gray" d="M85.67,3.48v0.39c0.82,0,1.32,0.63,1.32,1.59c0,0.65,0,3.68,0,5.56l-5.49-7.54H79.1v0.39    c0.47,0,0.85,0.22,1.05,0.47c0.02,0.03,0.13,0.18,0.3,0.41c0,1.15,0,6.15,0,7.1c0,1.21-0.41,1.84-1.37,1.84v0.38h3.38v-0.38    c-0.82,0-1.32-0.55-1.32-1.51c0-0.78,0-4.94,0-6.49c2,2.7,6.32,8.56,6.32,8.56h0.22c0,0,0-7.45,0-8.52c0-1.35,0.55-1.84,1.37-1.84    V3.48H85.67z"/>
+	</g>
+	<g class="wordmark d-2-d">
+		<path class="fill__maroon" d="M93.98,24.97h3.93c3.93,0,6.73,2.61,6.73,6.39c0,3.78-2.78,6.39-6.73,6.39h-3.93V24.97z M97.78,35.44      c2.84,0,4.13-1.69,4.13-4.08c0-2.38-1.3-4.08-4.13-4.08h-1.16v8.15H97.78z"/>
+		<path class="fill__maroon" d="M107.01,29.75h2.54l-0.04,1.45c0.58-1.32,1.52-1.62,2.35-1.62c0.53,0,0.92,0.15,1.24,0.32l-0.81,2.31      c-0.32-0.15-0.62-0.24-0.98-0.24c-1.15,0-1.77,0.53-1.77,2.24v3.55h-2.54V29.75z"/>
+		<path class="fill__maroon" d="M115.07,26.82c0-0.92,0.75-1.58,1.62-1.58c0.86,0,1.6,0.66,1.6,1.58c0,0.94-0.73,1.6-1.6,1.6      C115.82,28.41,115.07,27.75,115.07,26.82z M115.41,29.75h2.54v8h-2.54V29.75z"/>
+		<path class="fill__maroon" d="M120.14,29.75h2.8l1.13,2.39c0.38,0.81,0.66,2.12,0.66,2.12s0.26-1.31,0.62-2.12l1.09-2.39h2.57l-4.28,8.17      h-0.24L120.14,29.75z"/>
+		<path class="fill__maroon" d="M135.03,35.82c0.92,0,1.62-0.36,2.01-0.64l1.45,1.56c-0.77,0.68-1.75,1.18-3.42,1.18      c-2.86,0-4.7-1.73-4.7-4.19c0-2.42,1.94-4.15,4.42-4.15c2.87,0,4.44,2.14,4.25,4.94h-6.07      C133.21,35.35,133.88,35.82,135.03,35.82z M136.48,33.05c-0.11-0.88-0.68-1.41-1.67-1.41c-1,0-1.67,0.45-1.88,1.41H136.48z"/>
+		<path class="fill__maroon" d="M141.7,29.75h2.54l-0.06,1.31c0.49-0.96,1.43-1.48,2.54-1.48c1.75,0,3.01,1.28,3.01,3.55v4.62h-2.54V33.3      c0-0.9-0.43-1.41-1.33-1.41c-1.01,0-1.62,0.56-1.62,1.58v4.29h-2.54V29.75z"/>
+		<path class="fill__maroon" d="M158.46,34.75v-2.9h-1.18v-2.1h1.18v-4.17h2.52v4.17h2.05v2.1h-2.05v2.97c0,0.81,0.26,0.97,0.66,0.97      c0.41,0,0.71-0.22,0.88-0.34l0.96,1.77c-0.4,0.32-1.07,0.73-2.24,0.73C159.62,37.96,158.46,37.15,158.46,34.75z"/>
+		<path class="fill__maroon" d="M165.34,33.77c0-2.44,1.94-4.19,4.42-4.19c2.48,0,4.4,1.75,4.4,4.19c0,2.43-1.92,4.15-4.4,4.15      C167.27,37.92,165.34,36.19,165.34,33.77z M171.56,33.77c0-1.2-0.67-2.01-1.8-2.01c-1.13,0-1.82,0.81-1.82,2.01      c0,1.18,0.69,2.01,1.82,2.01C170.88,35.78,171.56,34.95,171.56,33.77z"/>
+		<path class="fill__maroon" d="M182.23,24.97h3.93c3.93,0,6.73,2.61,6.73,6.39c0,3.78-2.78,6.39-6.73,6.39h-3.93V24.97z M186.03,35.44      c2.84,0,4.13-1.69,4.13-4.08c0-2.38-1.3-4.08-4.13-4.08h-1.16v8.15H186.03z"/>
+		<path class="fill__maroon" d="M195.46,26.82c0-0.92,0.75-1.58,1.61-1.58c0.86,0,1.59,0.66,1.59,1.58c0,0.94-0.73,1.6-1.59,1.6      C196.21,28.41,195.46,27.75,195.46,26.82z M195.8,29.75h2.54v8h-2.54V29.75z"/>
+		<path class="fill__maroon" d="M200.78,36.4l1.48-1.31c0.55,0.53,1.24,0.84,1.99,0.84c0.83,0,1.09-0.15,1.09-0.49      c0-0.43-0.51-0.43-1.81-0.77c-1.09-0.28-2.31-0.88-2.31-2.55c0-1.8,1.39-2.54,3.1-2.54c1.31,0,2.26,0.43,2.91,1.11l-1.35,1.45      c-0.38-0.32-0.94-0.6-1.54-0.6c-0.58,0-0.86,0.15-0.86,0.47c0,0.45,0.51,0.51,1.6,0.75c1.16,0.27,2.63,0.81,2.63,2.5      c0,1.47-0.77,2.67-3.29,2.67C202.56,37.92,201.47,37.22,200.78,36.4z"/>
+		<path class="fill__maroon" d="M209.93,33.73c0-2.42,1.88-4.15,4.38-4.15c1.6,0,2.55,0.58,3.36,1.6l-1.8,1.47      c-0.3-0.49-0.92-0.85-1.56-0.85c-1.14,0-1.79,0.81-1.79,1.94c0,1.16,0.64,1.99,1.79,1.99c0.81,0,1.24-0.37,1.62-0.75l1.71,1.5      c-0.79,0.88-1.73,1.45-3.33,1.45C211.81,37.92,209.93,36.19,209.93,33.73z"/>
+		<path class="fill__maroon" d="M219.64,33.77c0-2.44,1.94-4.19,4.42-4.19c2.48,0,4.4,1.75,4.4,4.19c0,2.43-1.92,4.15-4.4,4.15      C221.58,37.92,219.64,36.19,219.64,33.77z M225.87,33.77c0-1.2-0.68-2.01-1.8-2.01c-1.13,0-1.82,0.81-1.82,2.01      c0,1.18,0.7,2.01,1.82,2.01C225.19,35.78,225.87,34.95,225.87,33.77z"/>
+		<path class="fill__maroon" d="M229.81,29.75h2.8l1.13,2.39c0.38,0.81,0.66,2.12,0.66,2.12s0.26-1.31,0.62-2.12l1.09-2.39h2.57l-4.29,8.17      h-0.24L229.81,29.75z"/>
+		<path class="fill__maroon" d="M244.7,35.82c0.92,0,1.62-0.36,2.01-0.64l1.45,1.56c-0.77,0.68-1.75,1.18-3.42,1.18      c-2.86,0-4.7-1.73-4.7-4.19c0-2.42,1.94-4.15,4.42-4.15c2.88,0,4.44,2.14,4.25,4.94h-6.07      C242.87,35.35,243.55,35.82,244.7,35.82z M246.14,33.05c-0.11-0.88-0.68-1.41-1.67-1.41c-1,0-1.67,0.45-1.88,1.41H246.14z"/>
+		<path class="fill__maroon" d="M251.37,29.75h2.54l-0.04,1.45c0.58-1.32,1.52-1.62,2.35-1.62c0.53,0,0.92,0.15,1.24,0.32l-0.81,2.31      c-0.32-0.15-0.62-0.24-0.97-0.24c-1.15,0-1.77,0.53-1.77,2.24v3.55h-2.54V29.75z"/>
+
+		<path class="fill__maroon" d="M262.5,28.41c0.28,0.11,0.52,0.27,0.72,0.47c0.2,0.2,0.36,0.42,0.48,0.66c0.15,0.31,0.23,0.65,0.23,1.01     c0,0.4-0.1,0.79-0.3,1.15c-0.2,0.37-0.49,0.65-0.85,0.85c-0.36,0.2-0.74,0.3-1.14,0.3c-0.39,0-0.77-0.1-1.13-0.3     c-0.36-0.2-0.64-0.49-0.85-0.85c-0.2-0.36-0.3-0.75-0.3-1.15c0-0.34,0.07-0.66,0.2-0.94c0.13-0.28,0.3-0.52,0.49-0.71     c0.2-0.19,0.41-0.34,0.65-0.45c0.31-0.14,0.62-0.21,0.94-0.21C261.94,28.25,262.22,28.3,262.5,28.41z M264.12,29.43     c-0.12-0.28-0.3-0.53-0.53-0.77c-0.23-0.24-0.51-0.43-0.84-0.58c-0.33-0.16-0.7-0.23-1.1-0.23c-0.41,0-0.81,0.09-1.18,0.27     c-0.27,0.13-0.52,0.31-0.75,0.53c-0.23,0.23-0.41,0.5-0.56,0.84c-0.15,0.33-0.22,0.69-0.22,1.07c0,0.47,0.12,0.92,0.36,1.35     c0.24,0.43,0.57,0.76,1,1c0.43,0.24,0.88,0.36,1.35,0.36c0.42,0,0.81-0.09,1.18-0.27c0.29-0.14,0.55-0.33,0.78-0.57     c0.24-0.24,0.42-0.53,0.55-0.86c0.13-0.33,0.19-0.67,0.19-1.01C264.36,30.17,264.28,29.79,264.12,29.43z M261.56,30.94     c0.17,0,0.3,0.02,0.39,0.07c0.09,0.05,0.15,0.11,0.19,0.19c0.04,0.08,0.06,0.21,0.08,0.39c0.01,0.25,0.03,0.4,0.05,0.45h0.64     c-0.03-0.08-0.04-0.21-0.05-0.4c0-0.18-0.01-0.31-0.03-0.38c-0.03-0.12-0.07-0.22-0.12-0.3c-0.06-0.08-0.12-0.14-0.21-0.19     c-0.08-0.05-0.19-0.08-0.33-0.11c0.16-0.02,0.27-0.04,0.33-0.08c0.12-0.06,0.22-0.15,0.29-0.26c0.07-0.12,0.11-0.25,0.11-0.4     c0-0.15-0.03-0.29-0.1-0.41c-0.07-0.12-0.16-0.21-0.26-0.28c-0.11-0.07-0.25-0.12-0.42-0.15c-0.12-0.02-0.3-0.03-0.53-0.03h-1.07     v2.99h0.67v-1.1H261.56z M261.91,29.56c0.1,0.03,0.18,0.08,0.24,0.15c0.06,0.07,0.09,0.16,0.09,0.26c0,0.1-0.02,0.18-0.08,0.26     c-0.05,0.08-0.12,0.14-0.22,0.17c-0.1,0.04-0.21,0.06-0.32,0.06h-0.44v-0.95h0.44C261.71,29.51,261.81,29.53,261.91,29.56z"/>
+	</g>
+
+</svg>
+    </a>
+
+    <ul class="campus-menu left-aligned">
+      <li class="campus-menu__item"><a href="https://www.crk.umn.edu/" class="campus-menu__link campus-crookston">Crookston</a></li>
+      <li class="campus-menu__item"><a href="https://www.d.umn.edu/" class="campus-menu__link campus-duluth">Duluth</a></li>
+      <li class="campus-menu__item"><a href="https://morris.umn.edu/" class="campus-menu__link campus-morris">Morris</a></li>
+      <li class="campus-menu__item"><a href="https://r.umn.edu/" class="campus-menu__link campus-rochester">Rochester</a></li>
+      <li class="campus-menu__item"><a href="https://twin-cities.umn.edu/" class="campus-menu__link campus-tc campus-highlight">Twin Cities</a></li>
+    </ul>
+
+  </div>
+
+</div>
+        
+  </div>
+<nav role="navigation" aria-labelledby="block-utilitymenu-menu" id="block-utilitymenu" class="utility-menu" data-block-plugin-id="system_menu_block:utility-menu">
+            
+  <h2 class="visually-hidden" id="block-utilitymenu-menu">Utility Menu</h2>
+  
+
+        
+                       <ul  class="menu utility-menu-menu">                                       <li  class="utility-menu-menu__item">                <a href="https://safe-campus.umn.edu/return-campus/university-planning-response" class="utility-menu-menu__link">COVID-19: Fall 2020</a>
+              </li>
+                                  <li  class="utility-menu-menu__item">                <a href="https://myu.umn.edu" title="MyU" class="utility-menu-menu__link">MyU</a>
+              </li>
+                                  <li  class="utility-menu-menu__item">                <a href="https://onestop.umn.edu" class="utility-menu-menu__link">One Stop</a>
+              </li>
+                                  <li  class="utility-menu-menu__item">                <a href="http://humanresources.umn.edu/jobs" class="utility-menu-menu__link">Jobs</a>
+              </li>
+        </ul>
+   
+
+  </nav>
+<div id="block-headertoggles" class="header-toggle-buttons header-region" data-block-plugin-id="block_content:916a023b-e407-4899-8fc6-454da5457ed1">
+  
+    
+      
+          <ul class="menu header-toggles">
+  <li class="header-toggles__item search-item">
+    <button type="button" title="open and close the search region" class="header-toggles__button header-toggles__button--search header-toggles__button--closed" aria-expanded="false" aria-haspopup="true">
+      <svg class="header-toggles__icon svg__search" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+      <svg class="header-toggles__icon svg__close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"/></svg>
+<span class="header-toggles__text">Search</span>
+    </button>
+  </li>
+  <li class="header-toggles__item menu-item">
+    <button type="button" title="open and close the mobile menu"class="header-toggles__button  header-toggles__button--mobile-menu header-toggles__button--closed" aria-expanded="false"aria-haspopup="true">
+      <svg class="header-toggles__icon svg__menu" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z"/></svg>
+      <svg class="header-toggles__icon svg__close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"/></svg>
+<span class="header-toggles__text">Menu</span>
+    </button>
+  </li>
+</ul>
+        
+  </div>
+
+  </div>
+
+      <div class="region region-mobile-toggles">
+    <div id="block-headertoggles-4" class="exp-header__toggles" data-block-plugin-id="block_content:916a023b-e407-4899-8fc6-454da5457ed1">
+  
+    
+      
+          <ul class="menu header-toggles">
+  <li class="header-toggles__item search-item">
+    <button type="button" title="open and close the search region" class="header-toggles__button header-toggles__button--search header-toggles__button--closed" aria-expanded="false" aria-haspopup="true">
+      <svg class="header-toggles__icon svg__search" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+      <svg class="header-toggles__icon svg__close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"/></svg>
+<span class="header-toggles__text">Search</span>
+    </button>
+  </li>
+  <li class="header-toggles__item menu-item">
+    <button type="button" title="open and close the mobile menu"class="header-toggles__button  header-toggles__button--mobile-menu header-toggles__button--closed" aria-expanded="false"aria-haspopup="true">
+      <svg class="header-toggles__icon svg__menu" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z"/></svg>
+      <svg class="header-toggles__icon svg__close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"/></svg>
+<span class="header-toggles__text">Menu</span>
+    </button>
+  </li>
+</ul>
+        
+  </div>
+
+  </div>
+
+  </header>
+
+    <div  class="region region--collapsed region-search">
+    <div id="block-closesearcharea" class="search-area-close__block" data-block-plugin-id="block_content:7d37ca67-e17e-4cdf-b1ec-74da9f6628a2">
+  
+    
+      
+          <div class="search-area__close">
+
+<button class="search-close__button">
+<span class="visually-hidden">Close search area</span>
+<svg class="header-toggles__icon svg__close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"/></svg>
+</button>
+
+</div>
+        
+  </div>
+<div id="block-htmlcseform-2" class="cse-form-block" data-block-plugin-id="block_content:3d92f8f9-5570-4905-a5e2-a0f99ed47e88">
+  
+    
+      
+          <form class="search-form__form" id="search-form" name="gs" role="search" action="https://usearch.umn.edu/">
+  <!--
+    may not need this label
+    WAVE is flagging it as an orphaned label
+  <label class="search-form__label" for="search-form" >Search the University of Minnesota Twin Cities Campus</label> -->
+
+  <label class="search-form__label" for="search-form__input">Search input text area</label>
+  <input type="text" id="search-form__input" class="search-form__input" name="query" maxlength="256" value="" placeholder="Search UMN Twin Cities" role="combobox" aria-autocomplete="list">
+
+
+  <button class="button search-form__button" type="submit" name="submit" label="Site search" value="search">
+    <span class="search-form__label">Search</span>
+    <svg class="search-form__button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+      <path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/>
+    </svg>
+  </button>
+
+</form>
+        
+  </div>
+<nav role="navigation" aria-labelledby="block-commonsearchterms-menu" id="block-commonsearchterms" class="common-search-terms-block" data-block-plugin-id="system_menu_block:common-search-terms">
+      
+  <h2 id="block-commonsearchterms-menu">Common Search Terms</h2>
+  
+
+        
+                       <ul  class="menu common-search-terms-menu">                                       <li  class="common-search-terms-menu__item">                <a href="https://housing.umn.edu/" class="common-search-terms-menu__link">Housing</a>
+              </li>
+                                  <li  class="common-search-terms-menu__item">                <a href="https://lib.umn.edu/" class="common-search-terms-menu__link">Libraries</a>
+              </li>
+                                  <li  class="common-search-terms-menu__item">                <a href="https://bookstores.umn.edu/" class="common-search-terms-menu__link">Bookstore</a>
+              </li>
+                                  <li  class="common-search-terms-menu__item">                <a href="https://admissions.tc.umn.edu/costsaid/index.html" class="common-search-terms-menu__link">Tuition Cost</a>
+              </li>
+                                  <li  class="common-search-terms-menu__item">                <a href="https://onestop.umn.edu/dates-and-deadlines" class="common-search-terms-menu__link">Academic Calendar</a>
+              </li>
+        </ul>
+   
+
+  </nav>
+
+  </div>
+
+
+    <div  class="region region--collapsed region-mobile-nav">
+    <nav role="navigation" aria-labelledby="block-mainnavigation-2-menu" id="block-mainnavigation-2" class="primary-menu-mobile-block" data-block-plugin-id="system_menu_block:main">
+            
+  <h2 class="visually-hidden" id="block-mainnavigation-2-menu">Main navigation</h2>
+  
+
+        
+                       <ul  class="menu main-menu">                                       <li  class="main-menu__item main-menu__item--collapsed">                <a href="/academics-admissions" class="main-menu__link" data-drupal-link-system-path="node/1351">Academics &amp; Admissions</a>
+              </li>
+                                  <li  class="main-menu__item">                <a href="https://twin-cities.umn.edu//student-life" class="main-menu__link" data-drupal-link-system-path="node/1581">Student Life</a>
+              </li>
+                                  <li  class="main-menu__item">                <a href="https://twin-cities.umn.edu//research" class="main-menu__link" data-drupal-link-system-path="node/1511">Research</a>
+              </li>
+                                  <li  class="main-menu__item">                <a href="https://twin-cities.umn.edu//health-sciences" class="main-menu__link" data-drupal-link-system-path="node/1361">Health Sciences</a>
+              </li>
+                                  <li  class="main-menu__item main-menu__item--collapsed">                <a href="/gopher-athletics" class="main-menu__link" data-drupal-link-system-path="node/1616">Gopher Athletics</a>
+              </li>
+                                  <li  class="main-menu__item">                <a href="https://twin-cities.umn.edu//news-events" class="main-menu__link" data-drupal-link-system-path="node/3806">News &amp; Events</a>
+              </li>
+                                  <li  class="main-menu__item main-menu__item--collapsed">                <a href="https://twin-cities.umn.edu//about-us" class="main-menu__link" data-drupal-link-system-path="node/3731">About Us</a>
+              </li>
+        </ul>
+   
+
+  </nav>
+<nav role="navigation" aria-labelledby="block-tasklist-2-menu" id="block-tasklist-2" class="block-task-menu" data-block-plugin-id="system_menu_block:task-list">
+            
+  <h2 class="visually-hidden" id="block-tasklist-2-menu">Task List</h2>
+  
+
+        
+                       <ul  class="menu task-list-menu">                                       <li  class="task-list-menu__item">                <a href="https://myu.umn.edu" class="task-list-menu__link">MyU</a>
+              </li>
+                                  <li  class="task-list-menu__item">                <a href="https://onestop.umn.edu/" class="task-list-menu__link">One Stop</a>
+              </li>
+                                  <li  class="task-list-menu__item">                <a href="/careers" class="task-list-menu__link">Jobs</a>
+              </li>
+                                  <li  class="task-list-menu__item">                <a href="https://safe-campus.umn.edu/return-campus/university-planning-response" class="task-list-menu__link">COVID-19: Fall 2020</a>
+              </li>
+        </ul>
+   
+
+  </nav>
+
+  </div>
+
+
+    <div class="region region-primary-nav">
+    <nav role="navigation" aria-labelledby="block-mainnavigation-menu" id="block-mainnavigation" class="primary-menu-block" data-block-plugin-id="system_menu_block:main">
+            
+  <h2 class="visually-hidden" id="block-mainnavigation-menu">Main navigation</h2>
+  
+
+        
+                       <ul  class="menu main-menu">                                       <li  class="main-menu__item main-menu__item--collapsed">                <a href="https://twin-cities.umn.edu/academics-admissions" class="main-menu__link" data-drupal-link-system-path="node/1351">Academics &amp; Admissions</a>
+              </li>
+                                  <li  class="main-menu__item">                <a href="https://twin-cities.umn.edu//student-life" class="main-menu__link" data-drupal-link-system-path="node/1581">Student Life</a>
+              </li>
+                                  <li  class="main-menu__item">                <a href="https://twin-cities.umn.edu/research" class="main-menu__link" data-drupal-link-system-path="node/1511">Research</a>
+              </li>
+                                  <li  class="main-menu__item">                <a href="https://twin-cities.umn.edu/health-sciences" class="main-menu__link" data-drupal-link-system-path="node/1361">Health Sciences</a>
+              </li>
+                                  <li  class="main-menu__item main-menu__item--collapsed">                <a href="https://twin-cities.umn.edu/gopher-athletics" class="main-menu__link" data-drupal-link-system-path="node/1616">Gopher Athletics</a>
+              </li>
+                                  <li  class="main-menu__item">                <a href="https://twin-cities.umn.edu/news-events" class="main-menu__link" data-drupal-link-system-path="node/3806">News &amp; Events</a>
+              </li>
+                                  <li  class="main-menu__item main-menu__item--collapsed">                <a href="https://twin-cities.umn.edu/about-us" class="main-menu__link" data-drupal-link-system-path="node/3731">About Us</a>
+              </li>
+        </ul>
+   
+
+  </nav>
+
+  </div>
+
+
+    <div class="region region-system-messages">
+    <div data-drupal-messages-fallback class="hidden"></div>
+
+  </div>
+
+
+  <main role="main">
+    <a id="main-content" tabindex="-1"></a>
+    
+        <div class="region region-content">
+    <div id="block-homesite-content" data-block-plugin-id="system_main_block">
+  
+    
+      
+
+
+
+<article role="article" about="/home" class="node node--type-homepage node--promoted node--view-mode-full">
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div style="text-align:center">
+   <p class="aligncenter">
+      <h2 id="midb_header" class="tipToTheLeft" style="color:DarkBlue;width:100%;text-align:center"><span>Network_Probability_0905.war</span> MIDB PROBABILISTIC BRAIN ATLAS </h2> 
+    </div> 
+  <p class="aligncenter">
+    <img class="centerImage" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="150" width="150">
+</p>
+
+<div id="div_selectNeuralNetworkName" style="display:none">
+<form>
+<p style="text-align:center">
+<label><strong>Choose network: </strong></label>
+<select id="select_neuralNetworkName" onchange="preProcessGetThresholdImages()"></select>
+</p>
+</form>
+</div>
+
+<div id="div_getThresholdImagesButton" style="display:none">
+<p style="text-align:center">
+<button id="getThresholdImagesButton"  class="downloader"  onclick="preProcessGetThresholdImages()"><img alt="" src="/NetworkProbabilityDownloader/images/button_submit.png"></img></button></p>
+</div>
+
+<div id="div_thresholdImage" style="display:none;">
+   <p style="text-align:center">
+   <hr style="width:70%;text-align:center;margin:auto;height:2px;border-width:0;color:gray;background-color:gray">
+   <br>
+   <p style="text-align:center">
+   <img id="img_threshold" class="centerImage" src="" height="900" width="358" style="border:2px solid #555";>
+</div>
+
+<div id="div_thresholdSlider" style="display:none;">
+   <p style="text-align:center">
+   <label style="font-weight: bold;">Select Threshold</label>
+   <br>
+   <span style="text-align:center">(use cursor keys: &lt;&nbsp;&gt; or mouse)</span><br><br>
+   <span id="span_leftRangeLabel">0%&nbsp;</span><input type="range" min="0" max="10" value="0" class="slider" id="range_threshold" step="1" list="datalist_rangeSliderTicks" oninput="trackThresholdValue(this)"><span id="span_rightRangeLabel">&nbsp;10%</span>
+    <p style="text-align:center">Selected Threshold Value: <span id="span_thresholdValue"></span></p>
+    
+    <p style="text-align:center"><button id="button_downloadFile"  class="downloader"  onclick="downloadFile()"><img alt="" src="/NetworkProbabilityDownloader/images/button_download.png"></img></button></p>
+    
+   
+<!--
+<datalist id="datalist_rangeSliderTicks">
+  <option value="0" label="0%"></option>
+  <option value="10"></option>
+  <option value="20"></option>
+  <option value="30"></option>
+  <option value="40"></option>
+  <option value="50" label="50%"></option>
+  <option value="60"></option>
+  <option value="70"></option>
+  <option value="80"></option>
+  <option value="90"></option>
+  <option value="100" label="100%"></option>
+</datalist>
+  -->
+</div>
+
+<div id="div_downloadFile" style="display:none;">
+<a id="anchor_downloadFile" href="" style="display: none" download></a>
+</div>
+
+<div id="errorBox"  style="display:none;">
+    <div class="message" id="errorBoxMessage1"></div>
+    <div class="message" id="errorBoxMessage2"></div>
+    <button class="ok" id="button_errorOK">Show Details</button>
+</div>
+
+ 
+<div id="div_errorStackTrace" class="aligncenter" style="display:none;">
+<textarea id="errorStackTraceTextArea" name="name_errorStackTraceTextArea" rows="10" cols="150"></textarea>
+</div>
+
+<div id="div_popUpErrorButton" style="display:none;text-align:center">
+<br>
+<button id="button_copyStackTrace" class="copy" onclick="copyStackTrace()"><img alt="copy details" src="/BIDS/images/button_copy-details.png"></img></button></div>
+
+
+
+ <div id= "div_spacer" class="aligncenter" style="height:100;width:400;visibility:hidden;">
+ 
+Some text that doesn't show
+<br><br><br><br><br><br><br>
+Some more text
+</div>
+
+</body>
+</html>
+

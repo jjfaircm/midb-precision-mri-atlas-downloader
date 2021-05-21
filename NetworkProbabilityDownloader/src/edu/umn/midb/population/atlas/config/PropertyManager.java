@@ -2,6 +2,8 @@ package edu.umn.midb.population.atlas.config;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import logs.LogConfigurator;
 
 
@@ -28,20 +30,27 @@ public final class PropertyManager {
 	      String loggerId = null;
 	      //String loggerId = ThreadLocalLogTracker.get();
 	      LOGGER = LogManager.getLogger(PropertyManager.class);
-	      LOGGER.info(loggerId + "Class PropertyManager just loaded. Build date = ");
+	      LOGGER.info(loggerId + "Class PropertyManager just loaded. Build date = " + NetworkProbabilityDownloader.BUILD_DATE);
 	}
 	
 	
-	//private constructor
+	/**
+	 * Private constructor which is never utilized.
+	 */
 	private PropertyManager() {
 		
 	}
 	
-	  public static synchronized PropertyManager getInstance() {
-		    if (instance == null) {
-		        instance = new PropertyManager();
-		    }
-		    return instance;
+  /**
+   * Returns the Singleton instance for the class.
+   * 	  
+   * @return PropertyManager
+   */
+  public static synchronized PropertyManager getInstance() {
+	    if (instance == null) {
+	        instance = new PropertyManager();
+	    }
+	    return instance;
     }
 	  
 	  /**

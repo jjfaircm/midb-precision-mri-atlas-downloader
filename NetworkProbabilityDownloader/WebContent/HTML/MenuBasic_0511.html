@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+  <meta charset="utf-8" />
+
+<link rel="stylesheet" href="menu2.css">
+<!--
+<link rel="stylesheet" href="np_downloader.css">
+-->
+
+<link rel="stylesheet" href="css_i1GhGR95VslXOaFDBaRbnS0Wk1VhYpBeDpIWNc_qjlU.css">
+<link rel="stylesheet" href="css_JF6gLPJ4MQDiYAqFXcLTlKBApkP02yfNOJXomnHeDfM.css">
+
+<link rel="stylesheet" media="all" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i" />
+<link rel="stylesheet" media="all" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" />
+<link rel="stylesheet" media="all" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,600,600i,700,700i,800,800i&amp;display=swap" />
+<link href='https://fonts.googleapis.com/css?family=Amaranth:ital@1&display=swap' rel='stylesheet'>
+
+
+<head>
+
+<script type="text/javascript">
+   
+   var selectedSubmenu = null;
+   var selectedSubmenuAnchor = null;
+   var menuHasBeenClicked = false;
+   var abcdMenu = null;
+   var humanMenu = null;
+   var lastSelectedMenu = null;
+
+   function startUp() {
+       abcdMenu = document.getElementById("li_ABCD");
+       humanMenu = document.getElementById("li_Human");
+   }
+
+   function handleTabSelected() {
+     
+      //alert("tab selected");
+ 
+   }
+
+   function menuClicked(element) {
+      console.log("menuClicked()...invoked, id=" + element.id);
+     
+      menuHasBeenClicked = true;
+      lastSelectedMenu = element;
+      selectedSubmenu = element;
+      selectedSubmenuAnchor = element;
+      console.log("selectedSubmenu.id=" + selectedSubmenu.id);
+      var parent = element.parentElement;
+      var grandParent = parent.parentElement;
+      var greatGrandParent = grandParent.parentElement;
+      var greatGreatGrandParent = greatGrandParent.parentElement;
+      console.log("greatGrandParent.id=" + greatGrandParent.id);
+      console.log("grandparent.id=" + grandParent.id);
+      console.log("parent.id=" + parent.id);
+
+      //alert("clicked:id=" + parent.id);
+      hideSubmenu_All(); 
+      greatGreatGrandParent.style.display = "block";
+      greatGrandParent.style.display = "block";
+      grandParent.style.display = "block";  
+      selectedSubmenu = parent;   
+      parent.style.display = "block";
+
+      selectedSubmenuAnchor.style.background = "#3d85c6";
+      selectedSubmenuAnchor.style.color = "white";
+
+
+      if(greatGrandParent.id.includes("ABCD")) {
+        console.log("Hiding humanMenu");
+        humanMenu.style.display = "none";
+        var abcdAnchor = document.getElementById("a_ABCD");
+        abcdAnchor.style.background = "#3d85c6";
+        abcdAnchor.style.color = "white";
+
+        //resetHumanMenu();
+      }
+      else {
+        console.log("Hiding abcdMenu");
+        abcdMenu.style.display = "none";
+      }
+      
+   }
+
+   function resetMenu() {
+       humanMenu.style.display = "";
+
+   }
+
+   function hideSubmenu() {
+      var submenuCombined = document.getElementById("li_Combined");
+      var submenuOverlapping = document.getElementById("li_Overlapping");
+      var submenuSingle = document.getElementById("li_Single");
+
+      submenuCombined.style.display = "none";      
+      submenuOverlapping.style.display = "none";      
+      submenuSingle.style.display = "none";  
+
+      if(selectedSubmenu) {
+         selectedSubmenu.style.display = "inline";
+      }    
+   } 
+
+   function showSubmenuLevel_1() {
+        console.log("showSubmenuLevel_1()...invoked.");
+
+        hideSubmenu_All();
+
+        console.log("resetting colors");
+        var li_ABCD = document.getElementById("li_ABCD");
+        li_ABCD.style.background = "white";
+        li_ABCD.style.color = "black";
+
+        var li_Human = document.getElementById("li_Human");
+        li_Human.style.background = "white";
+        li_Human.style.color = "black";
+
+
+        li_ABCD.style.display = "block";
+        li_Human.style.display = "block";
+
+        console.log("showSubmenuLevel_1()...exit.");
+        
+   }
+
+   function showSubmenu_ABCD() {
+      //alert("onmouseover");
+      console.log("showSubmenu_ABCD()...invoked.");
+      hideSubmenu_Human();
+      showSubmenuLevel_1();
+      var submenuCombined = document.getElementById("li_Combined");
+      var submenuOverlapping = document.getElementById("li_Overlapping");
+      var submenuSingle = document.getElementById("li_Single");
+      var ul_ABCD = document.getElementById("ul_ABCD");
+
+
+      submenuCombined.style.display = "inline";      
+      submenuOverlapping.style.display = "inline";      
+      submenuSingle.style.display = "inline";   
+      ul_ABCD.style.display = "block";  
+   }
+
+   function showSubmenu_Human() {
+      //alert("onmouseover");
+      console.log("showSubmenu_Human()...invoked.");
+      hideSubmenu_ABCD();
+      var submenuHuman_1 = document.getElementById("li_Human_1");
+      var submenuHuman_2 = document.getElementById("li_Human_2");
+      var submenuHuman_3 = document.getElementById("li_Human_3");
+      var ul_Human = document.getElementById("ul_Human");
+      showSubmenuLevel_1();
+
+
+      submenuHuman_1.style.display = "inline";      
+      submenuHuman_2.style.display = "inline";      
+      submenuHuman_3.style.display = "inline";
+      ul_Human.style.display = "block";
+   }
+
+
+   function mouseOver(element) {
+      console.log("mouseover()...invoked, id=" + element.id);
+      var id=element.id;
+
+
+      if(id.includes("a_Combined") || id.includes("a_Overlapping") || id.includes("a_Single")) {
+         console.log("mouseover()...inside if for abcd choices...");
+         var targetE = document.getElementById("a_ABCD");
+         targetE.style.background = "#3d85c6";
+         targetE.style.color = "white";
+         showSubmenu_ABCD();
+         hideSubmenu_Human();
+      }
+      if(id.includes("a_Human_1") || id.includes("a_Human_2") || id.includes("a_Human_3")) {
+         console.log("mouseover()...inside if for human choices...");
+         var targetE = document.getElementById("a_ABCD");
+         targetE.style.background = "#3d85c6";
+         targetE.style.color = "white";
+         showSubmenu_Human();
+         hideSubmenu_ABCD();
+      }
+
+      console.log("mouseover()...exit");
+
+   }
+
+   function mouseOut(element, showSelection) {
+      console.log("mouseOut()...invoked, element.id=" + element.id);
+      console.log("mouseOut()...invoked, showSelection=" + showSelection);
+      console.log("mouseOut()...invoked, menuHasBeenClicked=" + menuHasBeenClicked);
+
+      var id = element.id;
+      if(id.includes("menuContainer")) {
+         alert("exited menuContainer");
+      }
+
+      var id=element.id;
+      var selectedId = null;
+      var localShowSelection = false;
+
+      if(menuHasBeenClicked && showSelection) {
+         localShowSelection = true;
+      }  
+       
+      if(menuHasBeenClicked && !localShowSelection) {
+        console.log("menu has been clicked, exiting.");
+        return;
+      }
+      var id=element.id;
+
+      if(id.includes("a_Combined") || id.includes("a_Overlapping") || id.includes("a_Single")) {
+         console.log("mouseover()...inside if statement...");
+         var targetE = document.getElementById("a_ABCD");
+         targetE.style.background = "white";
+         targetE.style.color = "black";
+      }
+
+      if(id.includes("li_ABCD") || id.includes("li_Human")) {
+        hideSubmenu_All();
+      }
+
+      if(localShowSelection) {
+         console.log("calling menuClicked(), id=" + selectedSubmenu.id);
+         menuClicked(selectedSubmenuAnchor);
+      }
+
+      
+      console.log("mouseOut()...exit, id=" + element.id);
+   }
+
+   function hideMenu_Human() {
+      console.log("hideMenu_Human()...invoked.");
+      var li_Human = document.getElementById("li_Human");
+      li_Human.style.display = "none";
+
+      console.log("hideMenu_Human()...exit.");
+   }
+
+   function hideMenu_ABCD() {
+      console.log("hideMenu_Human()...invoked.");
+      var li_ABCD = document.getElementById("li_ABCD");
+      li_ABCD.style.display = "none";
+
+      console.log("hideMenu_Human()...exit.");
+   }
+
+   function hideSubmenu_All() {
+       console.log("hideSubmenu_All()...invoked");
+       hideSubmenu_ABCD();
+       hideSubmenu_Human();
+       console.log("hideSubmenu_All()...exit");
+   }
+
+   function hideSubmenu_ABCD() {
+      console.log("hideSubmenu_ABCD()...invoked");
+      var ul_ABCD = document.getElementById("ul_ABCD");
+      var li_Combined = document.getElementById("li_Combined");
+      var li_Overlapping = document.getElementById("li_Overlapping");
+      var li_Single = document.getElementById("li_Single");
+
+      li_Combined.style.display = "none";
+      li_Overlapping.style.display = "none";
+      li_Single.style.display = "none";
+      ul_ABCD.style.display = "none";
+      console.log("hideSubmenu_ABCD()...exit");
+   }
+
+   function hideSubmenu_Human() {
+      console.log("hideSubmenu_Human()...invoked");
+      var ul_Human = document.getElementById("ul_Human");
+
+      var li_Human_1 = document.getElementById("li_Human_1");
+      var li_Human_2 = document.getElementById("li_Human_2");
+      var li_Human_3 = document.getElementById("li_Human_3");
+
+      li_Human_1.style.display = "none";
+      li_Human_2.style.display = "none";
+      li_Human_3.style.display = "none";
+      ul_Human.style.display = "none";
+      console.log("hideSubmenu_Human()...exit");
+   }
+
+</script>
+
+  <title>MENU_2</title>
+</head>
+<body onload="startUp()">
+
+<div id="download">
+<div style="text-align: center;" id="menuContainer" onmouseoutX="mouseOut(this)">
+<br>
+<ul class="ul_menu"> 
+
+  <li class="menu" style="width: 200px"><a class="menu" href="#"  onmouseout="mouseOut(this, true)" onmouseover="showSubmenuLevel_1()">Select Study/Atlas</a> 
+
+      <ul class="submenu" id="ul_submenu"> 
+         <li class="submenu" id="li_ABCD"><a class="submenu submenu_ABCD" id="a_ABCD" href="#" onmouseout="mouseOut(this, true)" onmouseover="showSubmenu_ABCD()">ABCD</a>
+             <ul class="subSubMenu_ABCD" id="ul_ABCD">
+                 <li class="subSubMenu subSubMenu_ABCD" id="li_Combined"><a class="subSubMenu subSubMenu_ABCD" id="a_Combined" href="#"  onmouseover="mouseOver(this)" 
+                                                                            onmouseout="mouseOut(this, true)" onclick="menuClicked(this)">Combined</a></li> 
+                 <li class="subSubMenu subSubMenu_ABCD" id="li_Overlapping"><a class="subSubMenu subSubMenu_ABCD" id="a_Overlapping" href="#" onmouseover="mouseOver(this)"
+                                                                              onmouseout="mouseOut(this, true)"  onclick="menuClicked(this)">Overlapping</a></li> 
+                 <li class="subSubMenu subSubMenu_ABCD" id="li_Single"><a class="subSubMenu subSubMenu_ABCD" id="a_Single" href="#" onmouseover="mouseOver(this)"
+                                                                              onmouseout="mouseOut(this, true)" onclick="menuClicked(this)">Single</a></li> 
+             </ul>
+         </li> 
+        
+         <li class="submenu" id="li_Human"><a class="submenu" onmouseout="mouseOut(this, true)" onmouseover="showSubmenu_Human()" href="#">Human</a>
+             <ul class="subSubMenu_Human" id="ul_Human">
+                 <li class="subSubMenu subSubMenu_Human" id="li_Human_1"><a class="subSubMenu subSubMenu_Human" id="a_Human_1" href="#" onmouseover="mouseOver(this)" 
+                                                                               onmouseout="mouseOut(this, true)" onclick="menuClicked(this)">Human Sub_1</a></li> 
+                 <li class="subSubMenu subSubMenu_Human" id="li_Human_2"><a class="subSubMenu subSubMenu_Human" id="a_Human_2" href="#" onmouseover="mouseOver(this)" 
+                                                                               onmouseout="mouseOut(this, true)" onclick="menuClicked(this)">Human Sub_2</a></li> 
+                 <li class="subSubMenu subSubMenu_Human" id="li_Human_3"><a class="subSubMenu subSubMenu_Human" id="a_Human_3" href="#" onmouseover="mouseOver(this)" 
+                                                                               onmouseout="mouseOut(this, true)" onclick="menuClicked(this)">Human Sub_3</a></li> 
+             </ul>
+         </li> 
+      </ul> 
+    </li> 
+</ul>
+</div>  
+</div>
+
+
+<!--
+      <ul class="ul_submenu" id="ul_submenu"> 
+      
+      <li class="submenu" id="li_Combined"><a class="atlas" href="#" onclick="menuClicked(this)">Combined</a></li> 
+      <li class="submenu" id="li_Overlapping"><a class="atlas"  href="#" onclick="menuClicked(this)">Overlapping</a></li> 
+      <li class="submenu" id="li_Single"><a class="atlas" href="#" onclick="menuClicked(this)">Single</a></li> 
+      </ul> 
+-->
+
+</body>
+</html>

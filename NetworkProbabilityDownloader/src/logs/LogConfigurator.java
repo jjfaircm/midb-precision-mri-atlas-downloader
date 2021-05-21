@@ -27,6 +27,10 @@ public class LogConfigurator {
 		configureLOG4J2();
 	}
 	
+	/**
+	 * Dynamically configures the log4j2 environment for logging.
+	 *
+	 */
 	public static void configureLOG4J2() {
 				  
 		  ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
