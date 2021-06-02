@@ -1,4 +1,4 @@
-LEVEL=INFO
+LEVEL=TRACE
 
 Valid values going from most verbose to least:
 

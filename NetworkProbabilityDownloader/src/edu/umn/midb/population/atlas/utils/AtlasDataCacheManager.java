@@ -104,7 +104,7 @@ public class AtlasDataCacheManager {
 		this.neuralNetworkNames.add("Dorsal Sensorimotor Network");
 		this.neuralNetworkNamesMap.put("Lateral Sensorimotor Network", "SMl");
 		this.neuralNetworkNames.add("Lateral Sensorimotor Network");
-		this.neuralNetworkNamesMap.put("Temporal Pole Network", "TP");
+		this.neuralNetworkNamesMap.put("Temporal Pole Network", "Tpole");
 		this.neuralNetworkNames.add("Temporal Pole Network");
 		this.neuralNetworkNamesMap.put("Ventral Attention Network", "VAN");
 		this.neuralNetworkNames.add("Ventral Attention Network");

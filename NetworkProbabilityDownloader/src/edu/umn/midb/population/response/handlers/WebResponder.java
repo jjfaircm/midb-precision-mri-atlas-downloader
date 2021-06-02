@@ -134,7 +134,6 @@ public class WebResponder {
 			responseString = jsonArray + DELIMITER_NEURAL_NAMES + networkMapImagePNG + 
 					         DELIMITER_NETWORK_MAP_ITEMS +  networkMapImageNIIPath + DELIMITER_NETWORK_MAP_DATA +
 					         base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
-			System.out.println(filePaths.get(0));
 		}
 						
 		try {

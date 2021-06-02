@@ -1,0 +1,648 @@
+/* https://medium.com/allenhwkim/how-to-build-tabs-only-with-css-844718d7de2f */
+/*
+.range {
+	background: #fff;
+	height: 2rem;
+	width: 55%;
+	border-radius: 5rem;
+	box-shadow: 1px 5px 5px rgba(black, 0.3);
+	
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+input[type="range"]::-moz-range-track {
+  padding: 0 10px;
+  background: repeating-linear-gradient(to right, 
+    #ccc, 
+    #ccc 10%, 
+    #000 10%, 
+    #000 11%, 
+    #ccc 11%, 
+    #ccc 20%);
+}
+*/
+
+
+/*  miscellaneous notes
+
+    background color for clicked items:  #FFC300
+    
+*/
+
+.aligncenter {
+    text-align: center;
+}
+
+.centerImage, .centerROI_imageHeading {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  height: 250;
+}
+
+button:hover {
+	cursor: pointer;
+}
+
+button.downloader, button.downloaderThreshold, button.copy, button.downloader_dscalar {
+   border:none;
+   background-color:Transparent;
+   outline:none;
+}
+
+button.downloader:active, button.downloader:active, button.copy:active {
+  background: #3282d3;
+  border: 1px solid #154c8c;
+  border-bottom: 1px solid #0e408e;
+  -moz-box-shadow: inset 0 0 6px 3px #1657b5, 0 1px 0 0 #fff;
+  -webkit-box-shadow: inset 0 0 6px 3px #1657b5, 0 1px 0 0 #fff;
+  text-shadow: 0 -1px 1px #2361a4;
+}
+
+.help-tip{
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    text-align: center;
+    background-color: #BCDBEA;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    line-height: 26px;
+    cursor: default;
+}
+/*
+.div_right::before{
+    content:'?';
+    font-weight: bold;
+    color:#fff;
+}
+*/
+
+h2.tipToTheLeft:hover {
+	cursor: help;
+    position: relative;
+}
+
+h2.tipToTheLeft span, button.downloader span, button.downloaderThreshold span, label.tip_selectThreshold span {
+    display: none;
+    font-size: 10pt;
+    text-align: left;
+    padding: 3px;
+}
+
+button.downloader_dscalar span, div.div_download span {
+	display: none;
+    font-size: 10pt;
+    text-align: left;
+    padding: 3px;
+}
+
+td.tipToTheLeft:hover span, th.tipToTheLeft:hover span, h2.tipToTheLeft:hover span, button.downloader:hover span, label.tip_selectThreshold:hover span {
+    border: #c0c0c0 1px dotted;
+    padding: 5px 20px 5px 5px;
+    display: block;
+    Background: linear-gradient(#b6d7a8, #9fc5e8);
+    z-index: 100;
+    cursor: help;
+   <!--  background: url(../images/status-info.png) #f0f0f0 no-repeat 100% 5%;  -->
+    left: 0px;
+    margin: 10px;
+    width: 225px;
+    position: absolute;
+  <!-- jjf  top: 10px; -->
+    text-decoration: none
+    /* next 2 lines added by jjf */
+     top: -5px;
+    /* left: 80%; */
+     right: 23%;
+}
+
+button.downloaderThreshold:hover span, label.tip_selectThreshold:hover span {
+    border: #c0c0c0 1px dotted;
+    padding: 5px 20px 5px 5px;
+    display: block;
+    Background: linear-gradient(#b6d7a8, #9fc5e8);
+    z-index: 100;
+    cursor: help;
+   <!--  background: url(../images/status-info.png) #f0f0f0 no-repeat 100% 5%;  -->
+    left: 0px;
+    margin: 10px;
+    width: 200px;
+    position: absolute;
+  <!-- jjf  top: 10px; -->
+    text-decoration: none
+    /* next 2 lines added by jjf */
+     top: -5px;
+    /* left: 80%; */
+     right: 23%;
+}
+
+button.downloader_dscalar:hover span, img.img_help:hover span {
+	border: #c0c0c0 1px dotted;
+    padding: 5px 20px 5px 5px;
+    display: block;
+    Background: linear-gradient(#b6d7a8, #9fc5e8);
+    z-index: 100;
+    cursor: help;
+   <!--  background: url(../images/status-info.png) #f0f0f0 no-repeat 100% 5%;  -->
+    left: 0px;
+    margin: 10px;
+    width: 180px;
+    position: absolute;
+  <!-- jjf  top: 10px; -->
+    text-decoration: none
+    /* next 2 lines added by jjf */
+     top: -5px;
+    /* left: 80%; */
+     right: 23%;
+}
+
+span.span_instructions {
+    display: none;
+    font-size: 10pt;
+    text-align: left;
+    padding: 3px;
+}
+ 
+
+ span.span_instructions {
+    display: none;
+	
+    border: #c0c0c0 1px dotted;
+    padding: 5px 20px 5px 5px;
+    display: block;
+    Background: linear-gradient(#b6d7a8, #9fc5e8);
+    z-index: 100;
+    cursor: help;
+   <!--  background: url(../images/status-info.png) #f0f0f0 no-repeat 100% 5%;  -->
+    /* left: 0px; */
+    margin: 10px;
+    width: 215px;
+    position: absolute;
+  <!-- jjf  top: 10px; -->
+    text-decoration: none
+    /* next 2 lines added by jjf */
+     top: -5px;
+    left: 37%;
+     /* right: 90%; */
+}	
+	
+
+
+
+ input[type=range]::-moz-range-track {
+  border-radius: 8px !important;
+  height: 7px !important;
+  border: 1px solid #bdc3c7 !important;
+  background-color: lightgrey !important;
+}
+ input[type=range]::-moz-range-thumb {
+ /*
+  background: #BBDDFF;
+ */
+  background: #1589FF;
+  border: 1px solid #bdc3c7;
+  width: 15px;
+  height: 15px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/*
+input[type=range]:focus {
+  outline: none;
+}
+*/
+
+#div_errorStackTrace {
+	display: none;
+	white-space: -moz-pre-wrap;
+}
+
+#errorBox
+{
+    display: none;
+    background-color: lightgrey;
+    border-radius: 5px;
+    border: 1px solid #aaa;
+    position: relative;
+    width: 400px;
+    left: 50%;
+    margin-left: -200px;
+    padding: 6px 8px 8px;
+    box-sizing: border-box;
+    text-align: center;
+    /* overflow-y: scroll; */
+}
+#errorBox button {
+    background-color: black;
+    color: white;
+    display: inline-block;
+    border-radius: 3px;
+    border: 1px solid #aaa;
+    padding: 2px;
+    text-align: center;
+    width: 120px;
+    cursor: pointer;
+}
+#errorBox .message
+{
+    text-align: center;
+    color: red;
+    margin-bottom: 8px;
+}
+
+textarea { font-size: 10px;
+           resize: none;
+ }
+ 
+ #midb_header {
+
+    font-family: 'Amaranth';font-size: 22px;
+}
+
+#roi_image_header, #dcanFillerHeader {
+	font-family: 'Amaranth';font-size: 18px;
+	text-align: center;
+	color: DarkBlue;
+}
+
+.tabLabel {
+	cursor: pointer;
+}
+
+
+#select_neuralNetworkName {
+	display:inline;
+	font-size: 14px !important;
+}
+
+select option.networkOption {
+  font-size: 14px !important;
+  color: blue;
+}
+
+#div_thresholdSlider {
+	margin-top: 20px;
+}
+
+#snackbar {
+  visibility: hidden; /* Hidden by default. Visible on click */
+  min-width: 250px; /* Set a default minimum width */
+  margin-left: -280px; /* Divide value of min-width by 2 */
+  background-color: #dbb404; /* Black background color */
+  color: black; /* White text color */
+  text-align: center; /* Centered text */
+  border-radius: 2px; /* Rounded borders */
+  padding: 16px; /* Padding */
+  position: fixed; /* Sit on top of the screen */
+  z-index: 1; /* Add a z-index if needed */
+  left: 50%; /* Center the snackbar */
+  bottom: 30px; /* 30px from the bottom */
+}
+
+/* Show the snackbar when clicking on a button (class added with JavaScript) */
+
+#snackbar.show_3 {
+  visibility: visible; /* Show the snackbar */
+  /* Add animation: Take 0.5 seconds to fade in and out the snackbar.
+  However, delay the fade out process for 2.5 seconds
+  */ 
+  -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  
+}
+
+#snackbar.show_4 {
+  visibility: visible; /* Show the snackbar */
+  /* Add animation: Take 0.5 seconds to fade in and out the snackbar.
+  However, delay the fade out process for 2.5 seconds
+  */ 
+  -webkit-animation: fadein 0.5s, fadeout 0.5s 3.5s;
+  animation: fadein 0.5s, fadeout 0.5s 3.5s;
+  
+}
+
+.div_right {
+  float: right;
+  /* width: 400px; */
+  width: 475px;
+  padding-right: 25px;
+}
+.div_left {
+  float: left;
+  width: calc(100% - 475px);
+}
+
+#number_thresholdValue {
+	display:inline-block;
+	width: 4em !important;
+	text-align: center !important;
+}
+
+/*
+
+input[type=number] {
+  line-height: 30px;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  width: 30px;
+  height: 30px;
+}
+
+*/
+
+@-webkit-keyframes fadein {
+  from {bottom: 0; opacity: 0;}
+  to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadein {
+  from {bottom: 0; opacity: 0;}
+  to {bottom: 30px; opacity: 1;}
+}
+
+@-webkit-keyframes fadeout {
+  from {bottom: 30px; opacity: 1;}
+  to {bottom: 0; opacity: 0;}
+}
+
+@keyframes fadeout {
+  from {bottom: 30px; opacity: 1;}
+  to {bottom: 0; opacity: 0;}
+}
+
+/*
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button
+{
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number]
+{
+  -moz-appearance: textfield;
+}
+
+.quantity input {
+  width: 45px;
+  height: 62px;
+  line-height: 1.65;
+  float: left;
+  display: block;
+  padding: 0;
+  margin: 0;
+  padding-left: 20px;
+  border: 1px solid #eee;
+}
+
+.quantity input:focus {
+  outline: 0;
+}
+
+.quantity-nav {
+  float: left;
+  position: relative;
+  height: 42px;
+}
+
+.quantity-button {
+  position: relative;
+  cursor: pointer;
+  border-left: 1px solid #eee;
+  width: 20px;
+  text-align: center;
+  color: #333;
+  font-size: 28px;
+  font-family: "Trebuchet MS", Helvetica, sans-serif !important;
+  line-height: 1.7;
+  -webkit-transform: translateX(-100%);
+  transform: translateX(-100%);
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+.quantity-button.quantity-up {
+  position: absolute;
+  height: 50%;
+  top: 0;
+  border-bottom: 1px solid #eee;
+}
+
+.quantity-button.quantity-down {
+  position: absolute;
+  bottom: -1px;
+  height: 50%;
+}
+
+*/
+
+.number-wrapper {
+  position: relative;
+  cursor: pointer;
+}
+
+.number-wrapper:after,
+.number-wrapper:before {
+  position: absolute;
+  right: 5px;
+  width: 1.6em;
+  height: .9em;
+  font-size: 10px;
+  pointer-events: none; 
+  background: #fff;
+}
+
+.number-wrapper:after {
+  color: blue;
+  content: "\25B2";
+  margin-top: 1px;
+  cursor: pointer;
+}
+
+.number-wrapper:before {
+  color: red;
+  content: "\25BC";
+  margin-bottom: 8px;
+  bottom: -.4em;
+  cursor: pointer;
+}
+
+/*
+
+input[type=number] { 
+  -moz-appearance: textfield;
+  appearance: textfield;
+  margin: 0; 
+}
+
+*/
+
+
+input.tabs_input { display: none; }
+input.tabs_input + label { display: inline-block }
+
+input.tabs_input + label {
+  border: 1px solid #999;
+  background:    #f1f1f1;
+  /* padding: 4px 12px; */
+  padding: 4px 50px;
+  border-radius: 6px 6px 0 0;
+  position: relative;
+  z-index:999;
+  top: 10px;  /* was 7 px */
+}
+input.tabs_input:checked + label {
+  background:  #FFC300;
+  border-bottom: 1px solid transparent;
+}
+input.tabs_input ~ .tab {
+  border-top: 1px solid #999;
+  padding: 12px;  /* was 12px */
+  margin-top: 9px;
+}
+
+a:visited {
+	color:LightBlue;
+}
+
+#img_instructions:hover {
+	cursor: pointer;
+}
+
+ul li {
+ position: relative;
+}
+
+li ul.ul_submenu {
+ position: absolute;
+ left: 156px;
+ top: 0;
+ display: none;
+}
+ 
+
+
+li.submenu {
+   display: none;
+}
+
+
+/*
+ul.atlas li.atlas a.atlas {
+ display: block;
+ text-decoration: none;
+ color: #777;
+ background: #fff;
+ padding: 5px;
+ border: 1px solid #ccc;
+ border-bottom: 0;
+ }
+*/
+
+a.atlas {
+ display: block;
+ text-decoration: none;
+ color: #777;
+ background: #fff;
+ padding: 5px;
+ border: 1px solid #ccc;
+ border-bottom: 0;
+}
+ 
+
+
+ul.menu_atlas {
+ display: table;
+ margin: 0 auto;
+ padding: 0;
+ list-style: none;
+ width: 160px;
+ border-bottom: 1px solid #ccc;
+}
+
+ul.ul_submenu {
+ display: table;
+ margin: 0 auto;
+ padding: 0;
+ list-style: none;
+ width: 350px;
+ border-bottom: 1px solid #ccc;
+}
+
+
+a.atlas:hover {
+	background: #3d85c6 !important;
+	color: white !important;
+}
+/*
+li.submenu:hover {
+	background:#3d85c6 !important;
+}
+*/
+
+#anchor_single, #anchor_combined, #anchor_overlapping {
+	border-bottom: 1px solid #ccc;
+	text-align: left;
+}
+
+#anchor_atlasType {
+		text-align: center;
+}
+
+ li:hover ul { display: block; } 
+
+li:hover li.submenu { display: block; }
+
+li.subinstructions {
+	list-style-type: square;
+	font-size: 14px;
+	font-style: italic;
+}
+
+#div_overlayImage {
+  position: absolute;
+  top: 0;
+  right: -10;
+
+  /*
+  *  Styling only, the below can be changed or removed
+  *  depending on your use case
+  */
+  height: 20px;
+  padding: 25px 5px;
+}
+
+ul.ul_atlasSummary {
+  display: table;
+  margin-left: 106px;
+}
+
+ul.atlas_summary:before{
+    content:attr(aria-label);
+    font-size:120%;
+    font-weight:bold;
+    margin-left:-15px;
+}
+
+/*  button creation link */
+
+/*
+
+https://www.imagefu.com/create/button#%7B%22content%22:%22%3Cdiv+style=%5C%22color:+rgb(255,+255,+255);+font-size:+14px;%5C%22%3E%3Cspan+style=%5C%22font-family:+&quot;Open+Sans&quot;,+sans-serif;+font-weight:+bold;+text-shadow:+rgb(51,+51,+51)+1px+1px+0px;%5C%22%3Edownload+all%C2%A0dlabels%3Cbr+/%3E%3C/span%3E%3C/div%3E%3Cdiv%3E%3Cspan+style=%5C%22font-family:+&quot;Open+Sans&quot;,+sans-serif;+color:+rgb(255,+255,+255);+font-weight:+bold;+text-shadow:+rgb(51,+51,+51)+1px+1px+0px;+font-size:+14px;%5C%22%3Efor+network%3C/span%3E%3Cspan+style=%5C%22font-family:+&quot;Open+Sans&quot;,+sans-serif;+color:+rgb(255,+255,+0);+font-weight:+bold;+text-shadow:+rgb(51,+51,+51)+1px+1px+0px;%5C%22%3E%3Cbr+/%3E%3C/span%3E%3C/div%3E%22,%22background%22:%7B%22orientation%22:0,%22stops%22:%5B%7B%22color%22:%22#0073ceff%22,%22offset%22:0%7D,%7B%22color%22:%22#474747ff%22,%22offset%22:100%7D%5D%7D,%22borders%22:%7B%22top%22:%7B%22color%22:%22#000000ff%22,%22width%22:0%7D,%22right%22:%7B%22color%22:%22#000000ff%22,%22width%22:0%7D,%22bottom%22:%7B%22color%22:%22#000000ff%22,%22width%22:0%7D,%22left%22:%7B%22color%22:%22#000000ff%22,%22width%22:0%7D%7D,%22corners%22:%7B%22topLeft%22:%7B%22horizontalRadius%22:1,%22verticalRadius%22:1%7D,%22topRight%22:%7B%22horizontalRadius%22:1,%22verticalRadius%22:1%7D,%22bottomRight%22:%7B%22horizontalRadius%22:1,%22verticalRadius%22:1%7D,%22bottomLeft%22:%7B%22horizontalRadius%22:1,%22verticalRadius%22:1%7D%7D,%22sizeOrPadding%22:%7B%22top%22:3,%22right%22:22,%22left%22:22,%22bottom%22:3%7D,%22shadows%22:%5B%7B%22type%22:0,%22horizontalOffset%22:-3,%22verticalOffset%22:-3,%22blur%22:0,%22color%22:%22#444444dd%22%7D%5D%7D
+
+*/
+
+

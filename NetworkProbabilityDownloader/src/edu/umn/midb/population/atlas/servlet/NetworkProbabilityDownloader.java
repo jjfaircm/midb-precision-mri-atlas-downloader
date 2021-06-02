@@ -1,6 +1,11 @@
 package edu.umn.midb.population.atlas.servlet;
 
 import java.io.IOException;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -14,15 +19,14 @@ import org.apache.logging.log4j.Logger;
 import edu.umn.midb.population.atlas.base.ApplicationContext;
 import edu.umn.midb.population.atlas.config.PropertyManager;
 import edu.umn.midb.population.atlas.data.access.DirectoryAccessor;
+import edu.umn.midb.population.atlas.tasks.DownloadTracker;
+import edu.umn.midb.population.atlas.tasks.HitTracker;
 import edu.umn.midb.population.atlas.utils.AtlasDataCacheManager;
 import edu.umn.midb.population.atlas.utils.NetworkMapData;
 import edu.umn.midb.population.response.handlers.WebResponder;
 import logs.ThreadLocalLogTracker;
 
 /**
- * https://github.com/jjfaircm/midb-precision-mri-atlas-downloader 
- * 
- * https://github.com/jjfaircm/midb-precision-mri-atlas-downloader.git
  * 
  * https://gitlab.com/Fair_lab/midb-precision-functional-atas
  * 
@@ -35,37 +39,6 @@ import logs.ThreadLocalLogTracker;
  * 
  * @author jjfair   
  *  
- * Move button (side by side) 
- * 
- * Integration Zone Atlas instead of Number of Networks
- * 
- * Probabilistic Atlas: Combined Networks
- * 
- * Probabilistic Atlas: Single Networks
- * 
- * 2 submenus:  Study (choice)-->Atlas (choice)
- * 
- * 
- * Instead of Instructions, Probabilistic Atlas Summary
- * 
- * Data Source:  ABCD Study 
- * Methodology:  Template Matching
- * Version:      1.0
- * Number of Subjects:  5000
- * Age of Subjects:     9-10y
- * Funding:  R01MH096906, R01MH096906
- * Citation:     Hermosillo et al
- * Acknowledgements: 
- * 
- * Created and maintained by
- * 
- * 
- * Stuff for Robert:  
- * 
- * Google groups
- * GitHub
- * combined: .8 vs .81
- * 
  * multi-level menu with bootstrap video
  * https://www.youtube.com/watch?v=jEAeDID1pks
  * 
@@ -88,10 +61,23 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	 * https://css-tricks.com/ie-10-specific-styles/
 	 * 
 	 */
+	/*
+	https://innovation.umn.edu/developmental-cognition-and-neuroimaging-lab/
+	*/
+	/*
+	     how to change cached password for git in eclipse:
+         https://www.programmersought.com/article/70134449534/
+         NOTE:  take the contents tab then git then the github url
+         https://github.com/jjfaircm/midb-precision-mri-atlas-downloader 
+         https://github.com/jjfaircm/midb-precision-mri-atlas-downloader.git
+         old repo in gitlab:
+         https://gitlab.com/Fair_lab/midb-precision-functional-atas
+
+   */
 	
 	private static final long serialVersionUID = 1L;
 	private static final long VERSION_NUMBER = 0;
-	public static final String BUILD_DATE = "Version beta_0.1  0521__2021:18:52__war=NPDownloader_0521.war"; 
+	public static final String BUILD_DATE = "Version beta_0.2  0602__2021:02:19__war=NPDownloader_0602.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String ROOT_PATH = "/midb/networks_small_package-compressed/"; 
@@ -99,9 +85,34 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	public static final String DEFAULT_NEURAL_NETWORK = "combined_clusters";
 	//public static final String DEFAULT_NEURAL_NETWORK = "Aud";
 	public static Logger LOGGER = null;
-	
+	public static final String DOWNLOAD_ENTRY_TEMPLATE = "ID,IP_ADDRESS,DOWNLOAD_REQUESTED_FILE,TIMESTAMP";
+	public static final String HIT_ENTRY_TEMPLATE = "ID,IP_ADDRESS,TIMESTAMP";
+    //private static final SimpleDateFormat SDF1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter DT_FORMATTER_1 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter DT_FORMATTER_FOR_ID = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
+
 	public static final String ECLIPSE_RESOURCES_PATH = "/Users/jjfair/git/network_probability_downloader/NetworkProbabilityDownloader/build/classes/edu/umn/midb/population/atlas/config/files/";
 
+	/**
+	 * Checks for intermittent problem where NGINX generates a duplicate request which originates
+	 * from the local loopback interface of 127.0.0.1
+	 * 
+	 * @param request
+	 * @return
+	 */
+	protected boolean checkDuplicateRequest(HttpServletRequest request) {
+		boolean isDuplicate = false;
+		String originalIP = request.getHeader("X-Forwarded-For");
+		
+		if(originalIP != null) {
+			if(originalIP.contains("127.0.0.1")) {
+				isDuplicate = true;
+				String action = request.getParameter("action");
+				LOGGER.warn("Duplicate request received: action=" + action);
+			}
+		}
+		return isDuplicate;
+	}
 	
 	/**
 	 * Entry point into the servlet. The 'action' parameter is read from the query
@@ -117,16 +128,22 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		String action = null;
+		
+		if(checkDuplicateRequest(request)) {
+			return;
+		}
+				
 		HttpSession session = request.getSession();
 		ApplicationContext appContext = (ApplicationContext)session.getAttribute("applicationContext");
 		if(appContext==null) {
 			appContext = new ApplicationContext();
 			appContext.setLoggerId(session.getId());
-			ThreadLocalLogTracker.set(appContext.getLoggerId());
+			//ThreadLocalLogTracker.set(appContext.getLoggerId());
 			request.getSession().setAttribute("applicationContext", appContext);
 		}
 		String loggerId = appContext.getLoggerId();
 		try {
+			ThreadLocalLogTracker.set(appContext.getLoggerId());
 			action = request.getParameter("action");
 			if(action==null) {
 				action = request.getQueryString().substring(7,25);
@@ -144,11 +161,12 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				handleAjaxDownloadFile(appContext, request, response);
 				break;
 			case "getNeuralNetworkNames":
+				submitHitEntry(request); //we do this here because this is the default action when visiting the site
 				long gnnActionBeginTime = System.currentTimeMillis();
 				handleAjaxGetNeuralNetworkNames(appContext, request, response);
 				long gnnActionEndTime = System.currentTimeMillis();
 				long gnnProcessingTime = gnnActionEndTime-gnnActionBeginTime;
-				LOGGER.info("Processing time in ms for getNeuralNetworkNames=" + gnnProcessingTime);
+				//LOGGER.info("Processing time in ms for getNeuralNetworkNames=" + gnnProcessingTime);
 				break;
 			case "getThresholdImages":
 				long gtiActionBeginTime = System.currentTimeMillis();
@@ -157,8 +175,8 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				handleAjaxGetThresholdImages(appContext, request, response, false, null);
 				long gtiActionEndTime = System.currentTimeMillis();
 				long gtiProcessingTime = gtiActionEndTime-gtiActionBeginTime;
-				LOGGER.info("NetworkProbabilityDownloader.doGet()...selectedNeuralNetworkName=" + selectedNeuralNetworkName);
-				LOGGER.info("Processing time in ms for getThresholdImages=" + gtiProcessingTime);
+				//LOGGER.info("NetworkProbabilityDownloader.doGet()...selectedNeuralNetworkName=" + selectedNeuralNetworkName);
+				//LOGGER.info("Processing time in ms for getThresholdImages=" + gtiProcessingTime);
 				break;
 			}
 		
@@ -260,9 +278,25 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "handleAjaxDownloadFile()...invoked.");
 		String filePathAndName = request.getParameter("filePathAndName");
+		String ipAddress = request.getRemoteAddr();
+		//since we use NGINX as a front-end load distributor on AWS-LINUX then we need the following
+		if(ipAddress.contains("127.0.0.1")) {
+			String originalIP = request.getHeader("X-Forwarded-For");
+			if(originalIP != null) {
+				ipAddress = originalIP;
+			}
+		}
 		byte[] fileBinaryBuffer = DirectoryAccessor.getFileBytes(filePathAndName);
 		int slashIndex = filePathAndName.lastIndexOf("/");
 		String fileNameOnly = filePathAndName.substring(slashIndex+1);
+		LocalDateTime localTime = LocalDateTime.now();
+		String formattedTS = DT_FORMATTER_1.format(localTime);
+		String id = DT_FORMATTER_FOR_ID.format(localTime);
+		String downloadEntry = DOWNLOAD_ENTRY_TEMPLATE.replace("ID", id);
+		downloadEntry = downloadEntry.replace("IP_ADDRESS", ipAddress);
+		downloadEntry = downloadEntry.replace("DOWNLOAD_REQUESTED_FILE", fileNameOnly);
+		downloadEntry = downloadEntry.replace("TIMESTAMP", formattedTS);
+		DownloadTracker.getInstance().addDownloadEntry(downloadEntry);
 		WebResponder.sendFileDownloadResponse(response, fileBinaryBuffer, fileNameOnly);
 		LOGGER.trace(loggerId + "handleAjaxDownloadFile()...exit.");
 		
@@ -354,7 +388,8 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	 * configuration of the log4j logging mechanism.
 	 */
 	public void init() {
-		System.out.println("NetworkProbabilityDownloader.init()...invoked.");
+		//DO NOT USE LOGGER YET BECAUSE LogConfigurator has not run yet
+		System.out.println("NetworkProbabilityDownloader.init()...invoked...version=" + BUILD_DATE);
 		//we preload PropertyManager because it will invoke the LogConfigurator
 		PropertyManager.getInstance();
 		LOGGER = LogManager.getLogger(NetworkProbabilityDownloader.class);
@@ -362,7 +397,32 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		// AtlasDataCacheManager.getInstance() will cause the AtlasDataCacheManager
 		// to preload the default image data
 		AtlasDataCacheManager.getInstance();
+		DownloadTracker.getInstance();
+		HitTracker.getInstance();
+		LOGGER.info("exiting init().");
+	}
+	
+	protected void submitHitEntry(HttpServletRequest request) {
 		
+		String ipAddress = request.getRemoteAddr();
+	
+		//since we use NGINX as a front-end load distributor on AWS-LINUX then we need the following
+		//we make this a conditional check since this might be an environment without a load distributor
+		//in front of the servlet container (tomcat, for example)
+		if(ipAddress.contains("127.0.0.1")) {
+			String originalIP = request.getHeader("X-Forwarded-For");
+			if(originalIP != null) {
+				ipAddress = originalIP;
+			}
+		}
+		
+		LocalDateTime localTime = LocalDateTime.now();
+		String formattedTS = DT_FORMATTER_1.format(localTime);
+		String id = DT_FORMATTER_FOR_ID.format(localTime);
+		String hitEntry = HIT_ENTRY_TEMPLATE.replace("ID", id);
+		hitEntry = hitEntry.replace("IP_ADDRESS", ipAddress);
+		hitEntry = hitEntry.replace("TIMESTAMP", formattedTS);
+		HitTracker.getInstance().addHitEntry(hitEntry);
 	}
 
 
