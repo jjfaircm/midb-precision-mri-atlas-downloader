@@ -34,6 +34,8 @@
          var DELIMITER_NETWORK_MAP_DATA = "$@$";
          var download_target_map_nii = null;
          var downloadZIP_path = null;
+         var downloadDisabled = true;
+         var downloadDisabledMessage = "Downloads disabled pending approval process";
          
          
          function startup() {
@@ -321,6 +323,11 @@
          
          function downloadFile(choice) {
         	 console.log("downloadFile()...invoked.");
+        	 
+        	 if(downloadDisabled) {
+        		 doAlert(downloadDisabledMessage);
+        		 return;
+        	 }
         	 if(choice==1) {
             	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadZIP_path;
             	 anchor_downloadFile.click();
