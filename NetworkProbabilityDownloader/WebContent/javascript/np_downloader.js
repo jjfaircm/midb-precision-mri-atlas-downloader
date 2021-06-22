@@ -35,7 +35,19 @@
          var download_target_map_nii = null;
          var downloadZIP_path = null;
          var downloadDisabled = true;
-         var downloadDisabledMessage = "Downloads disabled pending approval process";
+         var downloadDisabledMessage = "Downloads disabled pending study review";
+         
+         /**
+          * 1) Move title and change font
+          * 2) Change tabs to just text items
+          * 3) splash image below tab selections
+          * 4) remove extra twitter button
+          * 5) Change fonts in captions
+          * 
+          * @returns
+          */
+         
+         
          
          
          function startup() {

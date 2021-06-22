@@ -169,30 +169,13 @@
 
 
 
-
+<!--
   <div style="text-align:center">
    <p class="aligncenter">
-      <h2 id="midb_header" class="tipToTheLeft_X style="color:DarkBlue;width:100%;text-align:center">MIDB PROBABILISTIC ATLASES </h2> 
+      <h3 id="midb_header" class="tipToTheLeft_X style="color:DarkBlue;width:100%;text-align:center">MIDB Probabilistic Atlases </h3> 
   </div> 
   
-  
-
-<div  id="div_splashImageWrapper" style="position: relative;">
-   <div id="div_splashImage" class="splashImage">
-       <img id="img_splashImage"  class="splashImage" alt="image not available" src="/NetworkProbabilityDownloader/images/midb_splash.png" height="200" width=100% style="object-fit: cover;">
-   </div>
-   <div id="div_overlayImage" style="position: absolute; z-index: 1;">
-      <img class="centerImageXX" title="Version: 0602.war" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75" style="position: relative; left: 0; top:0;">
-   </div>
-</div>
-
- 
- <!--
-  <p class="aligncenter">
-    <img class="centerImage" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="150" width="150">
-</p>
-
- -->
+-->
 
 <input type="radio" class="tabs_input" name="tabs" id="tab_overview" checked onclick="handleTabSelected(this)" />
 <label class="tabLabel" for="tab_overview">Overview</label>
@@ -208,6 +191,27 @@
 
 <input type="radio" class="tabs_input" name="tabs" id="tab_contactUs" onclick="handleTabSelected(this)"  />
 <label class="tabLabel"  for="tab_contactUs">Contact Us</label>
+
+
+<div  id="div_splashImageWrapper" style="position: relative;">
+   <div id="div_splashImage" class="splashImage">
+       <img id="img_splashImage"  class="splashImage" alt="image not available" src="/NetworkProbabilityDownloader/images/midb_splash.png" height="500" width=100% style="object-fit: cover;">
+   </div>
+   <div id="div_overlayImage" style="position: absolute; z-index: 1;">
+      <img class="centerImageXX" title="Version: 0602.war" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75" style="position: relative; left: 0; top:0;">
+   </div>
+   <div id="midb_atlases_text" style="position: absolute; z-index: 1; top:10px; right:16px">
+            <h3 id="midb_header" style="color:white;">MIDB Probabilistic Atlases </h3> 
+   </div>
+</div>
+
+ 
+ <!--
+  <p class="aligncenter">
+    <img class="centerImage" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="150" width="150">
+</p>
+
+ -->
 
 
 <!-- begin the overview div -->
@@ -360,7 +364,7 @@ gitlab</a>. &nbsp; We’ve generated a probabilistic ROI set based on network si
  <u>Individual-specific map example</u>
   </span>
   <br>
- <img class="centerImage" src="/NetworkProbabilityDownloader/images/brains_4.png" height=225 width=225>
+ <img class="centerImage" src="/NetworkProbabilityDownloader/images/brains_4.png" height=380 width=550>
  <br>
  <span class="aligncenter" style="display:block; text-align: center; font-size:14px; font-style: italic;">
  Each color represents a unique network. Brain surfaces are inflated for visualization purposes.<br>Networks were identified from data acquired by the 
@@ -695,6 +699,7 @@ Pronouns: He/His
 
 <div id="alertBox" >
     <div class="message" id="alertBoxMessage"></div>
+    <br>
     <button class="ok" id="button_alertOK">ok</button>
 </div>
 

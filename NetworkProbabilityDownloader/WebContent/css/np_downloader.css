@@ -262,11 +262,11 @@ textarea { font-size: 10px;
  
  #midb_header {
 
-    font-family: 'Amaranth';font-size: 22px;
+    /* font-family: 'Amaranth';font-size: 22px; */
 }
 
 #roi_image_header, #dcanFillerHeader {
-	font-family: 'Amaranth';font-size: 18px;
+	/* font-family: 'Amaranth';font-size: 18px; */
 	text-align: center;
 	color: DarkBlue;
 }
@@ -494,18 +494,29 @@ input[type=number] {
 input.tabs_input { display: none; }
 input.tabs_input + label { display: inline-block }
 
+/*
 input.tabs_input + label {
   border: 1px solid #999;
   background:    #f1f1f1;
-  /* padding: 4px 12px; */
   padding: 4px 50px;
   border-radius: 6px 6px 0 0;
   position: relative;
   z-index:999;
-  top: 10px;  /* was 7 px */
+  top: 10px;  /* was 7 px
 }
+*/
+
+input.tabs_input + label {
+    padding: 4px 50px;
+}
+
+input.tabs_input + label:hover {
+    color:  #3d85c6;
+}
+
 input.tabs_input:checked + label {
-  background:  #FFC300;
+  color:  #FFC300;
+  font-weight: bold;
   border-bottom: 1px solid transparent;
 }
 input.tabs_input ~ .tab {
