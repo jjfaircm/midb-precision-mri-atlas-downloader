@@ -77,7 +77,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	private static final long VERSION_NUMBER = 0;
-	public static final String BUILD_DATE = "Version beta_0.3  0621__2021:21:19__war=NPDownloader_0621.war"; 
+	public static final String BUILD_DATE = "Version beta_0.4  0625__2021:14:35__war=NPDownloader_0625.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String ROOT_PATH = "/midb/networks_small_package-compressed/"; 

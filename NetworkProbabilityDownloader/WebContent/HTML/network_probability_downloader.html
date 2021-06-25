@@ -137,7 +137,7 @@
             <p class="prefix-name">
                             <a target="_blank" href="https://clinicalaffairs.umn.edu">                Office of Academic Clinical Affairs
                 </a>                    </p>
-        <h1 class="sitename">
+        <h1 class="sitename" id="sitename">
     <a target="_blank" href="https://midb.umn.edu/">Masonic Institute for the Developing Brain </a>
 </h1>
 </header>
@@ -199,12 +199,12 @@
 
 <div  id="div_splashImageWrapper" style="position: relative;">
    <div id="div_splashImage" class="splashImage">
-       <img id="img_splashImage"  class="splashImage" alt="image not available" src="/NetworkProbabilityDownloader/images/midb_splash.png" height="500" width=100% style="object-fit: cover;">
+       <img id="img_splashImage"  class="splashImage" alt="image not available" src="/NetworkProbabilityDownloader/images/brain_splash.png" height="500" width=100% style="object-fit: cover;">
    </div>
-   <div id="div_overlayImage" style="position: absolute; z-index: 1;">
-      <img class="centerImageXX" title="Version: 0621.war" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75" style="position: relative; left: 0; top:0;">
+   <div id="div_overlayImage" style="position: absolute; z-index: 1; top:0px; right:10px;">
+      <img class="centerImageXX" title="Version: 0625.war" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75">
    </div>
-   <div id="midb_atlases_text" style="position: absolute; z-index: 1; top:10px; right:16px">
+   <div id="midb_atlases_text" style="position: absolute; z-index: 1; bottom:10px; right:16px">
             <h3 id="midb_header" style="color:white;">MIDB Probabilistic Atlases </h3> 
    </div>
 </div>
@@ -222,7 +222,7 @@
 <div id="div_overview" class="tab contentOverview" >
  <p class="aligncenter" style="font-size:15px;">
  <br>
- <h3 style="text-align:center"><u>The MIDB Precision Mapping Brain Atlas</u></h3>
+ <h3 id="overview_heading" style="text-align:center"><u>The MIDB Precision Mapping Brain Atlas</u></h3>
  <p class="aligncenter" style="font-size:17px; font-weight:700; color: #777;">
  Explore atlases derived from personalized brain topography
  </p>
@@ -440,6 +440,7 @@ We thresholded the probability maps to produce a probabilistic ROI set of high n
 <span style="display:block;font-size:18px; font-weight: 600; ">
 ABCD Study Website:&nbsp;
 <a href="https://abcdstudy.org" target="_blank" style="font-style: italic; color:DarkBlue;">Home Page</a>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://abcdstudy.org" target="_blank" style="font-style: italic; color:DarkBlue;"><img src="/NetworkProbabilityDownloader/images/abcd-study-logo.png" height=92.1 width=158></a>
 <br><br>
 ABCD Scan Details:&nbsp;
 <a href="https://pubmed.ncbi.nlm.nih.gov/29567376/" target="_blank" style="font-style: italic; color:DarkBlue;">
@@ -481,7 +482,8 @@ Midnight scan club dataset</a>
 <!-- begin the 'Contact Us' div -->
 <div id="div_contactUs" class="tab contentContactUs" style="display:none;">
 <br><br>
-Please contact <a href="mailto:hermosir@umn.edu">Robert Hermosillo</a> for any general questions:&nbsp;&nbsp;hermosir@umn.edu
+Please contact <a href="mailto:dcanlab@umn.edu">dcanlab</a> for any general questions:&nbsp;&nbsp;dcanlab@umn.edu
+<!--
 <br><br>
 Robert J.M. Hermosillo, MS., PhD
 <br>
@@ -494,6 +496,7 @@ Masonic Institute for the Developing Brain
 University of Minnesota
 <br>
 Pronouns: He/His
+  -->
 </div>
 <!-- end the 'Contact Us' div -->
 
@@ -713,10 +716,12 @@ Pronouns: He/His
 <br>
 <p class="aligncenter">
 <span style="font-style:italic; font-size:14px;">Follow us on Twitter:</span><br><br>
-<a href="https://twitter.com/Drscienceman?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @Drscienceman</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-<a href="https://twitter.com/DCANlabs?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @DCANlabs</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<a href="https://twitter.com/DCANlabs?ref_src=twsrc%5Etfw" target="_blank" class="twitter-follow-button" data-show-count="false">Follow @DCANlabs</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 <br>
+<!--
 <a href="https://groups.google.com/d/forum/dcanlab" style="color:#1da1f2;">Mailing list</a>
+-->
+<a href="https://groups.google.com/g/midb-atlas-forum" target="_blank" style="color:#1da1f2;">Mailing list</a>
 <br><br>
 <span style="font-style:italic; font-size:12px;">Website design by Jim Fair</span>
 
