@@ -1,4 +1,4 @@
-		 var version_buildString = "Version beta_0.4  0625__2021:14:35__war=NPDownloader_0625.war"; 
+		 var version_buildString = "Version beta_0.5  0709__2021:01:19__war=NPDownloader_0709.war"; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;
@@ -595,6 +595,25 @@
             	console.log("getThresholdImages()...exit...");
           }
          
+         function handleContactUsClicked() {
+             console.log("handleContactUsClicked()...invoked.");
+             
+             var div_overview = document.getElementById("div_overview");
+             var div_download = document.getElementById("div_download");
+             var div_resources = document.getElementById("div_resources");
+             var div_midbAtlas = document.getElementById("div_midbAtlas");
+             var div_contactUs = document.getElementById("div_contactUs");
+             
+             div_overview.style.display = "none";
+             div_resources.style.display = "none";
+             div_download.style.display = "none";
+             div_midbAtlas.style.display = "none";
+             div_contactUs.style.display = "block";
+             
+             console.log("handleContactUsClicked()...exit.");
+
+         }
+         
          function handleTabSelected(element) {
 
              console.log("handleTabSelected()...invoked, id=" + element.id);
@@ -605,6 +624,12 @@
              var div_midbAtlas = document.getElementById("div_midbAtlas");
              var div_contactUs = document.getElementById("div_contactUs");
              var heading_sitename = document.getElementById("sitename");
+             
+             div_overview.style.display = "none";
+             div_resources.style.display = "none";
+             div_download.style.display = "none";
+             div_midbAtlas.style.display = "none";
+             div_contactUs.style.display = "block";
 
 
              var id = element.id;
@@ -615,7 +640,7 @@
                div_resources.style.display = "none";
                div_midbAtlas.style.display = "none";
                div_contactUs.style.display = "none";
-               heading_sitename.scrollIntoView();
+               //heading_sitename.scrollIntoView();
              }
              else if(id.includes("tab_download")) {
                div_overview.style.display = "none";
