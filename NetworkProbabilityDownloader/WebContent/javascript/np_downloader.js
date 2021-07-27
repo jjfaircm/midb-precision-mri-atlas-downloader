@@ -1,4 +1,4 @@
-		 var version_buildString = "Version beta_0.5  0709__2021:01:19__war=NPDownloader_0709.war"; 
+		 var version_buildString = "Version beta_0.7  0726__2021:16:57__war=NPDownloader_0726_B.war"; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;

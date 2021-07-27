@@ -647,3 +647,9 @@ ul.atlas_summary:before{
     font-weight:bold;
     margin-left:-15px;
 }
+
+hr.footer {
+  border:none;
+  border-top:1px solid;/* or bottom */
+  margin:1em 45%; /* 15% or whatever fixed or % value that suits your needs*/
+  }
