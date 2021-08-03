@@ -52,7 +52,7 @@ button.downloader, button.downloaderThreshold, button.copy, button.downloader_ds
    outline:none;
 }
 
-button.downloader:active, button.downloader:active, button.copy:active {
+button.downloader:active, button.downloaderThreshold:active, button.copy:active, button.btn_mainMenu:active {
   background: #3282d3;
   border: 1px solid #154c8c;
   border-bottom: 1px solid #0e408e;
@@ -533,6 +533,10 @@ a:visited {
 	cursor: pointer;
 }
 
+/* menu related items follow below */
+
+/*
+
 ul li {
  position: relative;
 }
@@ -550,18 +554,6 @@ li.submenu {
    display: none;
 }
 
-
-/*
-ul.atlas li.atlas a.atlas {
- display: block;
- text-decoration: none;
- color: #777;
- background: #fff;
- padding: 5px;
- border: 1px solid #ccc;
- border-bottom: 0;
- }
-*/
 
 a.atlas {
  display: block;
@@ -598,11 +590,7 @@ a.atlas:hover {
 	background: #3d85c6 !important;
 	color: white !important;
 }
-/*
-li.submenu:hover {
-	background:#3d85c6 !important;
-}
-*/
+/
 
 #anchor_single, #anchor_combined, #anchor_overlapping {
 	border-bottom: 1px solid #ccc;
@@ -616,6 +604,8 @@ li.submenu:hover {
  li:hover ul { display: block; } 
 
 li:hover li.submenu { display: block; }
+
+*/
 
 li.subinstructions {
 	list-style-type: square;
@@ -653,3 +643,17 @@ hr.footer {
   border-top:1px solid;/* or bottom */
   margin:1em 45%; /* 15% or whatever fixed or % value that suits your needs*/
   }
+  
+ /* 
+.btn_mainMenu:active{
+  background: #e5e5e5;
+  -webkit-box-shadow: inset 0px 0px 5px #c1c1c1;
+     -moz-box-shadow: inset 0px 0px 5px #c1c1c1;
+          box-shadow: inset 0px 0px 5px #c1c1c1;
+   outline: none;
+}
+*/
+
+.btn_mainMenu:hover{
+  background-color: lightgrey;
+}

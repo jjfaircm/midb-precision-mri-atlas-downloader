@@ -116,6 +116,7 @@ public class AtlasDataCacheManager {
 		//we now add 2 more names that are not included in the neuralNetworkNames because
 		//they are not 'Single' network names
 		this.neuralNetworkNamesMap.put("combined_clusters", "combined_clusters");
+		//overlapping maps to integration-zone in browser menu nomenclature
 		this.neuralNetworkNamesMap.put("overlapping", "Number_of_overlapping_networks_Compressed");
 		
 		LOGGER.trace(loggerId + "loadNeuralNetworkNamesMap()...exit."); 

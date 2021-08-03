@@ -77,8 +77,10 @@
 <link href='https://fonts.googleapis.com/css?family=Amaranth:ital@1&display=swap' rel='stylesheet'>
 
 
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/np_downloader.css?id=.war_0726B_2021" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/np_downloader.css?id=.war_0803_2021" media="all" />
 <link rel="stylesheet" href="/NetworkProbabilityDownloader/css/alert.css" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/menu_orig.css" media="all" />
+
 
    <!-- 
 <link rel="stylesheet" href="/NetworkProbabilityDownloader/css/menu.css" media="all" />
@@ -181,19 +183,23 @@
   
 -->
 
-<input type="radio" class="tabs_input" name="tabs" id="tab_overview" checked onclick="handleTabSelected(this)" />
+<h3 style="text-align: center;">MIDB Probabilistic Atlases</h3>
+<input type="radio" class="tabs_input" name="tabs" id="tab_home" checked onclick="handleTabSelected(this.id)" />
+<label class="tabLabel" for="tab_home">Home</label>
+
+<input type="radio" class="tabs_input" name="tabs" id="tab_overview" checked onclick="handleTabSelected(this.id)" />
 <label class="tabLabel" for="tab_overview">Overview</label>
 
-<input type="radio" class="tabs_input" name="tabs" id="tab_midbAtlas" onclick="handleTabSelected(this)"  />
+<input type="radio" class="tabs_input" name="tabs" id="tab_midbAtlas" onclick="handleTabSelected(this.id)"  />
 <label class="tabLabel"  for="tab_midbAtlas">What Is The MIDB Atlas</label>
 
-<input type="radio" class="tabs_input" name="tabs" id="tab_download" onclick="handleTabSelected(this)"  />
+<input type="radio" class="tabs_input" name="tabs" id="tab_download" onclick="handleTabSelected(this.id)"  />
 <label class="tabLabel"  for="tab_download">Downloader Tool</label>
 
-<input type="radio" class="tabs_input" name="tabs" id="tab_resources" onclick="handleTabSelected(this)"  />
+<input type="radio" class="tabs_input" name="tabs" id="tab_resources" onclick="handleTabSelected(this.id)"  />
 <label class="tabLabel"  for="tab_resources">Additional Resources</label>
 
-<input type="radio" class="tabs_input" name="tabs" id="tab_contactUs" onclick="handleTabSelected(this)"  />
+<input type="radio" class="tabs_input" name="tabs" id="tab_contactUs" onclick="handleTabSelected(this.id)"  />
 <label class="tabLabel"  for="tab_contactUs">Contact Us</label>
 
 
@@ -202,11 +208,13 @@
        <img id="img_splashImage"  class="splashImage" alt="image not available" src="/NetworkProbabilityDownloader/images/brain_splash.png" height="320" width=100% style="object-fit: cover;">
    </div>
    <div id="div_overlayImage" style="position: absolute; z-index: 1; top:0px; right:10px;">
-      <img class="centerImageXX" title="Version: 0726_B.war" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75">
+      <img class="centerImageXX" title="Version: 0803.war" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75">
    </div>
+   <!--
    <div id="midb_atlases_text" style="position: absolute; z-index: 1; bottom:10px; right:16px">
             <h3 id="midb_header" style="color:white;">MIDB Probabilistic Atlases </h3> 
    </div>
+     -->
 </div>
 
  
@@ -217,9 +225,20 @@
 
  -->
 
+<div id="div_home" class="tab contentOverview" style="text-align: center;">
+
+<button class="btn_mainMenu" onclick="handleTabSelected('tab_overview')"><img src="/NetworkProbabilityDownloader/images/Neuroatlas_atlas_overview.png" height="194" width="345"></img></button>
+<button class="btn_mainMenu" onclick="handleTabSelected('tab_midbAtlas')"><img src="/NetworkProbabilityDownloader/images/Neuroatlas_atlas_atlas.png" height="194" width="345"></img></button>
+<br>
+<button class="btn_mainMenu" onclick="handleTabSelected('tab_download')"><img src="/NetworkProbabilityDownloader/images/Neuroatlas_atlas_download.png" height="194" width="345"></img></button>
+<button class="btn_mainMenu" onclick="handleTabSelected('tab_resources')"><img src="/NetworkProbabilityDownloader/images/Neuroatlas_atlas_external.png" height="194" width="345"></img></button>
+<button class="btn_mainMenu" onclick="handleTabSelected('tab_contactUs')"><img src="/NetworkProbabilityDownloader/images/Neuroatlas_atlas_contact.png" height="194" width="345"></img></button>
+
+</div>
+
 
 <!-- begin the overview div -->
-<div id="div_overview" class="tab contentOverview" >
+<div id="div_overview" class="tab contentOverview" style="display:none;">
  <p class="aligncenter" style="font-size:15px;">
  <br>
  <h3 id="overview_heading" style="text-align:center"><u>The MIDB Precision Mapping Brain Atlas</u></h3>
@@ -697,9 +716,8 @@ Pronouns: He/His
 	  <li class="li_atlasSummary"> Version: 1.0
 	  <li class="li_atlasSummary"> Number of Subjects: 5000
 	  <li class="li_atlasSummary"> Age of Subjects: 9-10y
-	  <li class="li_atlasSummary"> Funding:
+	  <li class="li_atlasSummary"> Data upload date: 07/31/2021
 	  <li class="li_atlasSummary"> Citation: Hermosillo et al
-	  <li class="li_atlasSummary"> Acknowledgements: John Doe
    </ul>
    </div>
 
@@ -728,7 +746,7 @@ Pronouns: He/His
 <!-- <p class="aligncenter"> -->
 <span style="display:block; text-align:center; font-style:italic; font-size:12px;">
 
-&copy; Copyright 2020-2021, Regents of the University of Minnesota
+&copy; Copyright 2020-2021 : Robert Hermosillo, Jim Fair
 <br><u>Copyright & License Notice</u>
 </span>
 <!-- </p>  -->

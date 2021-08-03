@@ -1,4 +1,4 @@
-		 var version_buildString = "Version beta_0.7  0726__2021:16:57__war=NPDownloader_0726_B.war"; 
+		 var version_buildString = "Version beta_0.83  0803__2021:20:24__war=NPDownloader_0803.war"; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;
@@ -207,6 +207,7 @@
         	 
     		 var div_selectNeuralNetwork = document.getElementById("div_selectNeuralNetworkName");
 
+    		 //NOTE: overlapping displays in menu as 'integration zone'
         	 if(selectedSubmenu.id.includes("Single") || selectedSubmenu.id.includes("Overlapping")) {
         		 div_selectNeuralNetwork.style.display = "block";
         		 div_dummyNetworkMap.style.display = "none";
@@ -420,11 +421,13 @@
          	var popUpErrorButton = document.getElementById("div_popUpErrorButton");
          	popUpErrorButton.style.display = "block";
 
+         	/*
          	var startOverDiv = document.getElementById("div_startOver");
          	startOverDiv.style.display = "block";
          	
          	var startOverButton = document.getElementById("startOverButton");
          	startOverButton.style.display = "inline-block";
+         	*/
          	console.log("errorAlertOK()...exit...");
          	
          }
@@ -614,10 +617,29 @@
 
          }
          
-         function handleTabSelected(element) {
+         function handleTabSelected(id) {
 
-             console.log("handleTabSelected()...invoked, id=" + element.id);
+        	 //alert("handleTabSelected()...invoked, id=" + id);
+             console.log("handleTabSelected()...invoked, id=" + id);
+             
+        	 var tab_home = document.getElementById("tab_home");
+        	 var tab_overview = document.getElementById("tab_overview");
+        	 var tab_resources = document.getElementById("tab_resources");
+        	 var tab_download = document.getElementById("tab_download");
+        	 var tab_contactUs = document.getElementById("tab_contactUs");
+        	 var tab_midbAtlas = document.getElementById("tab_midbAtlas");
 
+
+        	 tab_home.checked = false;
+        	 tab_overview.checked = false;
+        	 tab_download.checked = false;
+        	 tab_resources.checked = false;
+        	 tab_midbAtlas.checked = false;
+        	 tab_contactUs.checked = false;
+
+
+
+             var div_home = document.getElementById("div_home");
              var div_overview = document.getElementById("div_overview");
              var div_download = document.getElementById("div_download");
              var div_resources = document.getElementById("div_resources");
@@ -625,6 +647,7 @@
              var div_contactUs = document.getElementById("div_contactUs");
              var heading_sitename = document.getElementById("sitename");
              
+             div_home.style.display = "none";
              div_overview.style.display = "none";
              div_resources.style.display = "none";
              div_download.style.display = "none";
@@ -632,9 +655,19 @@
              div_contactUs.style.display = "block";
 
 
-             var id = element.id;
-
-             if(id.includes("tab_overview")) {
+             //var id = element.id;
+             
+             if(id.includes("tab_home")) {
+            	 tab_home.checked = true;
+            	 div_home.style.display = "block";
+                 div_overview.style.display = "none";
+                 div_download.style.display = "none";
+                 div_resources.style.display = "none";
+                 div_midbAtlas.style.display = "none";
+                 div_contactUs.style.display = "none"; 
+             }
+             else if(id.includes("tab_overview")) {
+               tab_overview.checked = true;
                div_overview.style.display = "block";
                div_download.style.display = "none";
                div_resources.style.display = "none";
@@ -643,6 +676,7 @@
                //heading_sitename.scrollIntoView();
              }
              else if(id.includes("tab_download")) {
+               tab_download.checked = true;
                div_overview.style.display = "none";
                div_resources.style.display = "none";
                mouseOutInstructions();
@@ -651,6 +685,7 @@
                div_contactUs.style.display = "none";
              }
              else if(id.includes("tab_resources")) {
+            	 tab_resources.checked = true;
                  div_overview.style.display = "none";
                  div_resources.style.display = "block";
                  div_download.style.display = "none";
@@ -658,6 +693,7 @@
                  div_contactUs.style.display = "none";
              }
              else if(id.includes("tab_midbAtlas")) {
+            	 tab_midbAtlas.checked = true;
                  div_overview.style.display = "none";
                  div_resources.style.display = "none";
                  div_download.style.display = "none";
@@ -665,6 +701,7 @@
                  div_contactUs.style.display = "none";
              }
              else if(id.includes("tab_contactUs")) {
+            	 tab_contactUs.checked = true;
                  div_overview.style.display = "none";
                  div_resources.style.display = "none";
                  div_download.style.display = "none";
@@ -768,8 +805,9 @@
         	 allDivNames.push("errorBox");
         	 allDivNames.push("div_selectNeuralNetworkName");
         	 allDivNames.push("div_networkMapImage");
-        	 //allDivNames.push("div_instructions");
         	 allDivNames.push("div_submenu");
+        	 allDivNames.push("div_networkMapImage");
+        	 allDivNames.push("div_dummyNetworkMap");
 
 
         	 //allDivNames.push("div_overview");
@@ -985,15 +1023,17 @@
 
          function resetSelectedTab() {
         	 console.log("resetSelectedTab()...invoked");
+        	 var tab_home = document.getElementById("tab_home");
         	 var tab_overview = document.getElementById("tab_overview");
         	 var tab_resources = document.getElementById("tab_resources");
         	 var tab_download = document.getElementById("tab_download");
 
-        	 tab_overview.checked = true;
+        	 tab_home.checked = true;
+        	 tab_overview.checked = false;
         	 tab_resources.checked = false;
         	 tab_download.checked = false;
 
-        	 handleTabSelected(tab_overview);
+        	 handleTabSelected(tab_home.id);
         	 console.log("resetSelectedTab()...exit");
          }
          

@@ -49,7 +49,18 @@ import logs.ThreadLocalLogTracker;
  * 
  * https://www.jotform.com/blog/multilevel-drop-down-navigation-menus-examples-and-tutorials/
 
+   1) Move MIDB...
+   2) New main landing page (landing div) : childmind.org
+   3)* copyright (robert, me)
+   4) remove funding
+   5) add upload date
+   6) remove acknowledgements
+   7) additional copyright images
+   8) TBD:FUTURE:  Choose data sets
+
  */
+
+
 public class NetworkProbabilityDownloader extends HttpServlet {
 	
 	/*
@@ -77,7 +88,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	private static final long VERSION_NUMBER = 0;
-	public static final String BUILD_DATE = "Version beta_0.7  0726__2021:16:57__war=NPDownloader_0726_B.war"; 
+	public static final String BUILD_DATE = "Version beta_0.83  0803__2021:20:24__war=NPDownloader_0803.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String ROOT_PATH = "/midb/networks_small_package-compressed/"; 
