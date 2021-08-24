@@ -18,7 +18,7 @@ public class DownloadTracker extends Thread {
 	private static final String TRACKING_DOWNLOAD_REQUESTS_FILE = "/midb/tracking/download_requests.csv";
 	private static Logger LOGGER = null;
 	private static final String LOGGER_ID = " ::LOGGERID=DOWNLOAD_TRACKER:: ";
-	private long pollingTimeoutSeconds = 600;
+	private long pollingTimeoutSeconds = 300;
 	private BlockingQueue<String> blockingQueue = new LinkedBlockingDeque<String>();
 	private static DownloadTracker instance = null;
 	private FileWriter fileWriter = null;

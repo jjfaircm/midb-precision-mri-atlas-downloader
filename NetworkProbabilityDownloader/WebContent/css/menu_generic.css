@@ -1,10 +1,30 @@
-
+/* background colors working with white and #fff */
 
 
 ul li {
  position: relative;
  }
 
+
+#ul_atlasMenu {
+	position: absolute;
+	left: 272px;
+}
+
+
+
+ul.subSubMenu {
+	/* left: 188px; */
+	left: 250px;
+}
+
+
+
+
+ul.submenu {
+	position: absolute;
+	left: 100px;
+}
 
 
 li ul {
@@ -14,13 +34,20 @@ li ul {
  display: none;
  }
 
+li.menu {
+	left: 89px;
+}
 
 li ul.submenu {
+   /* left: 189px; */
    left: 189px;
 }
 
-
-
+/*
+li.submenu {
+	width: 200px;
+}
+*/
 
 /*
 li ul.subSubmenu {
@@ -29,8 +56,8 @@ li ul.subSubmenu {
  top: 0;
  display: none;
  }
-
 */
+
 
 li.submenu, ul.ul_submenu {
    display: none;
@@ -40,15 +67,17 @@ a.menu, a.submenu {
  display: block;
  text-decoration: none;
  color: #777;
- background: #fff;
+ background: #fbf7f5;
  padding: 5px;
  border: 1px solid #ccc;
  border-bottom: 0;
 }
 
-a.menu, a.submenu, a.subSubMenu {
+a.menu, a.subSubMenu, a.submenu {
  display: block;
  text-decoration: none;
+ color: #777;
+ background: #fbf7f5;
  padding: 5px;
  border: 1px solid #ccc;
  border-bottom: 0;
@@ -59,9 +88,9 @@ a.menu {
     color: white !important;
 }
 
-a.submenu {
+a.submenu  {
    color: #777;
-   background: #fff;
+   background: #fbf7f5;
 }
 
 a.submenu:hover, a.subSubMenu:hover {
@@ -69,21 +98,36 @@ a.submenu:hover, a.subSubMenu:hover {
 	color: white !important;
 }
 
+
+/*
 li.subSubMenu_ABCD:hover ul li a  {
 	background: #3d85c6 !important;
 	color: white !important;
 }
+*/
 
 
 
-ul {
+ul.submenu, ul.subSubMenu {
  display: table;
  margin: 0 auto;
  padding: 0;
  list-style: none;
- width: 150px;
+ width: 250px; /*here  was 190 */
  border-bottom: 1px solid #ccc;
  }
+
+ul.menu {
+ display: table;
+ margin: 0 auto;
+ padding: 0;
+ list-style: none;
+ width: 250px; /*here  was 190 */
+ /*
+ border-bottom: 1px solid #ccc;
+ */
+ }
+
 
 /*
 ul.menu {
@@ -93,12 +137,15 @@ ul.menu {
 */
 
 
-
+/*
  li.menu:hover ul.submenu, li.submenu { display: block; } 
 
  #li_ABCD:hover ul.subSubMenu_ABCD, li.subSubMenu_ABCD { display: block; }
 
  #li_Human:hover ul.subSubMenu_Human, li.subSubMenu_Human { display: block; }
+*/
+
+
 /*
  li.menu:hover li.submenu { display: block; } 
 */

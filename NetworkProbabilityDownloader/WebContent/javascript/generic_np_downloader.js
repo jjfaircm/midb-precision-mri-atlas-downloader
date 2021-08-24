@@ -1,9 +1,9 @@
-		 var version_buildString = "Version beta_0.83  0803__2021:20:24__war=NPDownloader_0803.war"; 
+		 var version_buildString = "Version beta_0.99  0824_2021:20:24__war=NPDownloader_0824.war"; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;
          var ajaxRequest;
-         var autoScrollEnabled = true; 
+         var autoScrollEnabled = false; 
          var programName;
          var restart = false;
          var allDivNames = new Array();
@@ -25,10 +25,6 @@
          var autoScrollHelpPending = true;
    	     var div_snackbar = null;
          var ajaxRequest_startTime = null;
-         var selectedSubmenu = null;
-         var selectedNeuralNetworkName = null;
-         var selectElement = null;
-         var firstTimeSelectingSingle = true;
          var currentNetworkMapImage = null;
          var DELIMITER_NETWORK_MAP_ITEMS = "&@&";
          var DELIMITER_NETWORK_MAP_DATA = "$@$";
@@ -36,6 +32,9 @@
          var downloadZIP_path = null;
          var downloadDisabled = true;
          var downloadDisabledMessage = "Downloads disabled pending study review";
+         var loggingEnabled = true;
+         var oldConsoleLog = null;
+         var selectElement = null;
          
          /**
           * 1) Move title and change font
@@ -48,20 +47,20 @@
           */
          
          
-         
-         
          function startup() {
         	 console.log("startup()...invoked");
+        	 //console.log = function() {};
         	 console.log(version_buildString);
         	 sessionStorage.clear();
         	 setAjaxStyle();
+        	 startupMenu();
         	 loadAllDivNames();
         	 hideAllDivs();
         	 selectElement = document.getElementById("select_neuralNetworkName");
            	 var div_submitNotification = document.getElementById("div_submitNotification");
         	 div_submitNotification.style.display = "block";
-        	 var anchor_combined = document.getElementById("anchor_combined");
-        	 menuClicked(anchor_combined, true);
+        	 var anchor_ABCD_combined = document.getElementById("a_ABCD_Combined");
+        	 menuClicked(anchor_ABCD_combined, true, true);
         	 number_RangeThresholdValue = document.getElementById("number_thresholdValue");
         	 range_thresholdSlider = document.getElementById("range_threshold");
         	 anchor_downloadFile = document.getElementById("anchor_downloadFile");
@@ -93,6 +92,7 @@
 
        	     //registerScrollEventListener();
         	 console.log("startup()...exit.");
+        	 //toggleLogging();
          }
          
          function registerScrollEventListener() {
@@ -111,7 +111,8 @@
          
     
          function alertOK() {
-        	 
+        	 console.log("alertOK()...invoked.")
+        	 enableScroll();
          }
          
        
@@ -127,7 +128,7 @@
          }
          
          
-         function displayNeuralNetworkList(responseText) {
+         function buldNeuralNetworkDropdownList(responseText) {
         	 console.log("displayNeuralNetworkList()...invoked...");
         	 var neuralNetworkNames = JSON.parse(responseText); 
         	 //alert(neuralNetworkNames);
@@ -155,21 +156,33 @@
         	 console.log("displayNeuralNetworkList()...exit...");
          }
          
-         function disableScroll() {
-        	 console.log("disableScroll()...invoked.");
-        	 //var body_element = document.getElementById("body");
-        	 //body_element.classList.add("disable_scrolling");
+         function buildStudyMenu(responseData) {
+        	 console.log("buildStudyMenu()...invoked, responseData=" + responseData);
+        	 
+        	 var menuArray = responseData.split("::");
+        	 
+        	 
+    	     console.log("buildStudyMenu()...array[0]=" + menuArray[0]);
+    	     console.log("buildStudyMenu()...array[1]=" + menuArray[1]);
+
+        	 
          }
          
-         function enableScroll() {
-        	 console.log("enableScroll()...invoked.");
+         //function disableScroll() {
+        	 //console.log("disableScroll()...invoked.");
+        	 //var body_element = document.getElementById("body");
+        	 //body_element.classList.add("disable_scrolling");
+         //}
+         
+         //function enableScroll() {
+        	// console.log("enableScroll()...invoked.");
         	 //var body_element = document.getElementById("body");
         	 //body_element.classList.remove("disable_scrolling");
-         }
+         //}
          
          function displayThresholdImageElements() {
         	 console.log("displayThresholdImageElements()...invoked.");
-        	 
+
         	 hideAllDivs();
         	 
         	 var div_menu = document.getElementById("div_submenu");
@@ -237,8 +250,9 @@
          	 
              var ul_atlasMenu = document.getElementById("ul_atlasMenu");
              ul_atlasMenu.style.display = "block";
-         	 
+                	 
         	 trackThresholdValue(true);
+
         	 console.log("displayThresholdImageElements()...exit.");
          }
          
@@ -308,6 +322,7 @@
          }
          
          function doAlert(msg, okFn) {
+        	disableScroll();
          	var alertBox = $("#alertBox");
              alertBox.find(".message").text(msg);
              alertBox.find(".ok").unbind().click(function()
@@ -338,7 +353,7 @@
         	 console.log("downloadFile()...invoked.");
         	 
         	 if(downloadDisabled) {
-        		 doAlert(downloadDisabledMessage);
+        		 doAlert(downloadDisabledMessage, alertOK);
         		 return;
         	 }
         	 if(choice==1) {
@@ -434,6 +449,7 @@
          
          
          function getAjaxRequest() {
+        	console.log("getAjaxRequest()...invoked.");
           	var ajaxRequest = null;
           	
           	switch(ajaxType) {
@@ -446,18 +462,30 @@
           	  case 3:  
           		  ajaxRequest = new ActiveXObject("Microsoft.XMLHTTP");
           	} 
+        	console.log("getAjaxRequest()...exit: ajaxRequest=" + ajaxRequest);
           	return ajaxRequest;
           }
          
-         
+         /* getNeuralNetworkNames() returns the list of neural network names that display
+          * in the dropdown when Single Networks is the selected menu choice.
+          * 
+          * Additionally, it returns all image files for Combined Networks that appear in
+          * the main image panel.
+          * 
+          */
          function getNeuralNetworkNames() {
 
          	console.log("getNeuralNetworkNames()...invoked...");
          	
          	ajaxRequest_startTime = performance.now();
 
+           	var paramString = "&selectedStudy=" + selectedStudy;
+           	paramString += "&selectedDataType=" + selectedDataType;
+           	//alert("paramString=" + paramString);
+
          	var ajaxRequest = getAjaxRequest();
-         	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getNeuralNetworkNames";
+         	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getNeuralNetworkNames"
+         		      + paramString;
          	
          	var encodedUrl = encodeURI(url);
          	ajaxRequest.open('get', encodedUrl, true);
@@ -481,8 +509,12 @@
                    	 var div_submitNotification = document.getElementById("div_submitNotification");
                 	 div_submitNotification.style.display = "none";
            
-                     displayNeuralNetworkList(responseArray[0]);
-                     processThresholdImagesResponse(responseArray[1]);
+                	 console.log(responseArray[0]);
+                	 console.log(responseArray[1]);
+
+                	 buildStudyMenu(responseArray[0]);
+                	 buldNeuralNetworkDropdownList(responseArray[1]);
+                     processThresholdImagesResponse(responseArray[2]);
                  }
                  if (ajaxRequest.readyState==4 && ajaxRequest.status==503) {
                  	alert("The server is not responding.")
@@ -550,17 +582,21 @@
         	 
           	 var div_selectNeuralNetwork = document.getElementById("div_selectNeuralNetworkName");
          	 div_selectNeuralNetwork.style.display = "none";
- 
+        	 //scrollToProgressIndicator();
+
            	
            	var ajaxRequest = getAjaxRequest();
+           	console.log("selectedNeuralNetworkName=" + selectedNeuralNetworkName);
            	var paramString = "&neuralNetworkName=" + selectedNeuralNetworkName; 
+           	paramString += "&selectedStudy=" + selectedStudy;
+           	paramString += "&selectedDataType=" + selectedDataType;
            	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getThresholdImages" + paramString;
            	
            	var encodedUrl = encodeURI(url);
            	ajaxRequest.open('get', encodedUrl, true);
          
             ajaxRequest.onreadystatechange=function() {
-                   
+
                    if (ajaxRequest.readyState==4 && ajaxRequest.status==200) {
                        //console.log(ajaxRequest.responseText);
                 	   
@@ -579,11 +615,14 @@
                        var responseArray = ajaxRequest.responseText.split("!@!");
                        
                        if(selectedSubmenu.id.includes("Combined")) {
-                            processThresholdImagesResponse(responseArray[1]);
+                            processThresholdImagesResponse(responseArray[2]);
                        }
                        else {
-                    	   var combinedDataArray = responseArray[1].split(DELIMITER_NETWORK_MAP_DATA);
+                    	   priorSelectedDataType = selectedDataType;
+                    	   var combinedDataArray = responseArray[2].split(DELIMITER_NETWORK_MAP_DATA);
+                    	   /* first, process the image data for the Network Probabilistic Map  */
                     	   processNetworkProbabilityMapData(combinedDataArray[0]);
+                    	   /* now process all image files for the TEMPLATE MATCHNG PROBABILISTIC image panel */
                     	   processThresholdImagesResponse(combinedDataArray[1]);
                        }
                    }
@@ -593,7 +632,7 @@
                    }
                    
            	}
-           
+
             	ajaxRequest.send();
             	console.log("getThresholdImages()...exit...");
           }
@@ -728,52 +767,7 @@
         	 console.log("hideAllDivs()...exit...");
          }
          
-         function hideSubmenu() {
 
-             //console.log("hideSubmenu()...invoked.");
-            
-             //var ul_atlasMenu = document.getElementById("ul_atlasMenu");
-             //ul_atlasMenu.style.display = "none";
-            
-             var submenuCombined = document.getElementById("li_Combined");
-             var submenuOverlapping = document.getElementById("li_Overlapping");
-             var submenuSingle = document.getElementById("li_Single");
-
-             submenuCombined.style.display = "none";      
-             submenuOverlapping.style.display = "none";      
-             submenuSingle.style.display = "none";  
-            
-             
-             if(selectedSubmenu) {
-                selectedSubmenu.style.display = "inline";
-             }  
-            
-             //console.log("hideSubmenu()...exit.");
-         
-         }
-         
-         function hideMenu() {
-             //console.log("hideMenu()...invoked.");
-            
-              var ul_atlasMenu = document.getElementById("ul_atlasMenu");
-              ul_atlasMenu.style.display = "none";
-             /*
-             var submenuCombined = document.getElementById("li_Combined");
-             var submenuOverlapping = document.getElementById("li_Overlapping");
-             var submenuSingle = document.getElementById("li_Single");
-
-             submenuCombined.style.display = "none";      
-             submenuOverlapping.style.display = "none";      
-             submenuSingle.style.display = "none";  
-             */
-             
-             if(selectedSubmenu) {
-                selectedSubmenu.style.display = "inline";
-             }  
-            
-             //console.log("hideMenu()...exit.");
-         }
-         
          
          function playRangeSlider() {
         	 range_thresholdSlider.value = 0.98;
@@ -783,7 +777,7 @@
          
          function preProcessGetThresholdImages(isDropdownChanged) {
         	 console.log("preProcessGetThresholdImages()...invoked.");
-        	 
+
         	 hideAllDivs();
         	 
         	 //when dropdown changes, we don't go into menuClicked() function
@@ -791,6 +785,7 @@
         	 if(isDropdownChanged) {
                  selectedNeuralNetworkName = selectElement.options[selectElement.selectedIndex].value; 
         	 }
+
         	 getThresholdImages();
         	 console.log("preProcessGetThresholdImages()...exit.");
          }
@@ -829,51 +824,7 @@
          }
 
          
-         function menuClicked(element, startupTrigger) {
-             console.log("menuClicked()...invoked.");
-             var parent = element.parentElement;
-             var grandParent = parent.parentElement;
-             var networkTypeId = parent.id;
-             //alert("clicked:id=" + parent.id);
-             hideMenu(); 
-             grandParent.style.display = "inline";  
-             selectedSubmenu = parent;   
-             parent.style.display = "inline";
-             
-             if(networkTypeId.includes("li_Single")) {
-            	 /*
-            	 var div_thresholdImagePanel = document.getElementById("div_thresholdImage");
-            	 div_thresholdImagePanel.style.display = "none";
-            	 var div_selectNeuralNetwork = document.getElementById("div_selectNeuralNetworkName");
-            	 div_selectNeuralNetwork.style.display = "block";
-            	 */
-            	 var select_neuralNetworkName = document.getElementById("select_neuralNetworkName");
-            	 if(firstTimeSelectingSingle) {
-            		 select_neuralNetworkName.selectedIndex = 3;
-            		 selectedNeuralNetworkName = selectElement.options[selectElement.selectedIndex].value;
-            		 firstTimeSelectingSingle = false;
-            	 }
-            	 else {
-                     selectedNeuralNetworkName = selectElement.options[selectElement.selectedIndex].value;
-            	 }
-            	 preProcessGetThresholdImages();
-             }
-             else if(startupTrigger) {
-            	 getNeuralNetworkNames();
-             }
-             else if(networkTypeId.includes("li_Combined")) {
-            	 selectedNeuralNetworkName = "combined_clusters";
-            	 preProcessGetThresholdImages();
-             }
-             else if(networkTypeId.includes("li_Overlapping")) {
-            	 selectedNeuralNetworkName = "overlapping";
-            	 preProcessGetThresholdImages();
-             }
-     
-             
-             console.log("menuClicked()...exit.");
-         }
-         
+
          /*
           * 
           */
@@ -1014,6 +965,7 @@
         	  }
         	  
         	  displayThresholdImageElements();
+        	  //enableScroll();
        	  
         	  console.log("processThresholdImagesResponse()...exit.");
           }
@@ -1038,12 +990,19 @@
          }
          
          function scrollToInstructions() {
-        	 
+       	     console.log("scrollToInstructions()...invoked.")
     		 document.getElementById("h4_instructions").scrollIntoView({ behavior: 'smooth', block: 'center' });
-
          }
          
+         function scrollToProgressIndicator() {
+        	 //alert("scrolled...");
+        	 disableScroll();
+       	     console.log("scrollToProgressIndicator()...invoked.")
+    		 document.getElementById("div_submitNotification").scrollIntoView({ behavior: 'smooth', block: 'end' });
+         }  
+         
          function setAjaxStyle() {
+        	console.log("setAjaxStyle()...invoked");
 	        var ajaxRequestForCompatibility;  // The variable that makes Ajax possible!
 	
 	        try {
@@ -1068,6 +1027,8 @@
 	               }
 	            }
 	        ajaxRequestForCompatibility = null;
+        	console.log("setAjaxStyle()...exit: ajaxStyle=" + ajaxType);
+
          }
          
          function setRangeStep(path1, path2) {
@@ -1124,36 +1085,6 @@
         	  // After 3 seconds, remove the show class from DIV
         	  setTimeout(function(){ div_snackbar.className = div_snackbar.className.replace("show", ""); }, timeoutMS);
          } 
-         
-         function showSubmenu() {
-             //alert("onmouseover");
-             var submenuCombined = document.getElementById("li_Combined");
-             var submenuOverlapping = document.getElementById("li_Overlapping");
-             var submenuSingle = document.getElementById("li_Single");
-
-             submenuCombined.style.display = "inline";      
-             submenuOverlapping.style.display = "inline";      
-             submenuSingle.style.display = "inline";     
-          }
-
-         
-         function showSubmenu_alternate() {
-        	
-             console.log("showSubmenu()...invoked.");
-             var submenu_ul_block = document.getElementById("ul_submenu");;
-             var submenuCombined = document.getElementById("li_Combined");
-             var submenuOverlapping = document.getElementById("li_Overlapping");
-             var submenuSingle = document.getElementById("li_Single");
-
-             submenu_ul_block.style.display = "block";      
-             submenuCombined.style.display = "block";      
-             submenuOverlapping.style.display = "block";      
-             submenuSingle.style.display = "block"; 
-             //alert("submenuCombined.style.display=" + submenuCombined.style.display);
-             console.log("showSubmenu()...exit.");
-             
-         }
-         
          
          function toggleAutoScroll() {
         	        	         	 
@@ -1249,5 +1180,39 @@
         	 }
         	 */
         	 //console.log("trackThresholdValue()...exit.");
+         }
+         
+         var logger = function()
+         {
+             var oldConsoleLog = null;
+             var pub = {};
+
+             pub.enableLogger =  function enableLogger() 
+                                 {
+            	    
+                                     if(oldConsoleLog == null)
+                                         return;
+
+                                     window['console']['log'] = oldConsoleLog;
+                                 };
+
+             pub.disableLogger = function disableLogger()
+                                 {
+                                     oldConsoleLog = console.log;
+                                     window['console']['log'] = function() {};
+                                 };
+
+             return pub;
+         }();
+         
+         function toggleLogging() {
+        	 if(loggingEnabled) {
+        		 loggingEnabled = false;
+        		 logger.disableLogger();
+        	 }
+        	 else {
+        		 loggingEnabled = true;
+        		 logger.enableLogger();
+        	 }
          }
          

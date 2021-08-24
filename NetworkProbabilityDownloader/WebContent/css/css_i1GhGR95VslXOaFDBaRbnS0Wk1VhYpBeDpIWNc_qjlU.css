@@ -302,7 +302,7 @@ template {
     background-color: #58a616;
     color: #fff;
 }
-
+/* jjf changed for our buttons, removed padding */
 .btn,.simplesamlphp-auth-login-link,.button,button,[type='button'],[type='reset'],[type='submit'] {
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -315,7 +315,7 @@ template {
     line-height: 1.25em;
     margin-bottom: 1em;
     margin-right: 1em;
-    padding: 1em;
+    /* padding: 1em; */
     text-decoration: none;
     transition: background-color 400ms ease-in-out;
     -webkit-user-select: none;

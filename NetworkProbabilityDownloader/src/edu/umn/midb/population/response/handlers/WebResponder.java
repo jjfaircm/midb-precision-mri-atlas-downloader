@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Hashtable;
 import java.util.Iterator;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -12,8 +13,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
+import edu.umn.midb.population.atlas.utils.AtlasDataCacheManager;
 import edu.umn.midb.population.atlas.utils.NetworkMapData;
 import logs.ThreadLocalLogTracker;
 
@@ -68,6 +73,82 @@ public class WebResponder {
 
 	}
 	
+	public static JsonArray buildMenuResponseOld(ArrayList<String> menuStudyNames, Hashtable<String, ArrayList<String>> menuSubOptionsMap) {
+		   String loggerId = ThreadLocalLogTracker.get();
+		   LOGGER.trace(loggerId + "buildMenuResponse()...invoked.");
+
+		   JsonArray menuJsonArray = new JsonArray();
+		   Iterator<String> studyNamesIt = menuStudyNames.iterator();
+		   String currentStudyName = null;
+		   JsonPrimitive colonPrimitive = new JsonPrimitive(":");
+		   JsonPrimitive doubleColonPrimitive = new JsonPrimitive("::");
+
+		   ArrayList<String> subMenuOptions = null;
+		    // loop through your elements
+		    while(studyNamesIt.hasNext()) {
+		    	currentStudyName = studyNamesIt.next();
+	        	JsonPrimitive jsonPrimitiveStudy = new JsonPrimitive(currentStudyName);
+		    	menuJsonArray.add(jsonPrimitiveStudy);
+		    	subMenuOptions = menuSubOptionsMap.get(currentStudyName);
+		    	String anOption = null;
+		    	Iterator<String> subMenuOptionsIt = subMenuOptions.iterator();
+		        JsonArray submneuOptionsJsonArray = new JsonArray();
+		        
+		        while(subMenuOptionsIt.hasNext()) {
+		        	anOption = subMenuOptionsIt.next();
+		        	JsonPrimitive jsonPrimitive = new JsonPrimitive(anOption);
+		        	submneuOptionsJsonArray.add(jsonPrimitive);
+		        }
+		        menuJsonArray.add(colonPrimitive);
+		        menuJsonArray.add(submneuOptionsJsonArray);
+		        if(studyNamesIt.hasNext()) {
+		        	menuJsonArray.add(doubleColonPrimitive);
+		        }
+		        
+		    }
+			LOGGER.trace(loggerId + "buildMenuResponse()...menuJsonArray=" + menuJsonArray);
+		    return menuJsonArray;
+	}
+	
+	public static String buildMenuResponse(ArrayList<String> menuStudyNames, Hashtable<String, ArrayList<String>> menuSubOptionsMap) {
+		   String loggerId = ThreadLocalLogTracker.get();
+		   LOGGER.trace(loggerId + "buildMenuResponse()...invoked.");
+
+		   String responseString = "";
+		   String colon = ":";
+		   String doubleColon = "::";
+		   String comma = ",";
+		   
+		   ArrayList<String> subMenuOptions = null;
+		   Iterator<String> studyNamesIt = menuStudyNames.iterator();
+		   String currentStudyName = null;
+
+		    while(studyNamesIt.hasNext()) {
+		    	currentStudyName = studyNamesIt.next();
+		    	responseString += currentStudyName;
+		    	responseString += colon;
+		    	
+		    	subMenuOptions = menuSubOptionsMap.get(currentStudyName);
+		    	Iterator<String> subMenuOptionsIt = subMenuOptions.iterator();
+		    	String anOption = null;
+
+		        
+		    	while(subMenuOptionsIt.hasNext()) {
+		        	anOption = subMenuOptionsIt.next();
+			    	responseString += anOption;
+
+		        	if(subMenuOptionsIt.hasNext()) {
+				    	responseString += comma;
+		        	}
+		        	else if(studyNamesIt.hasNext()) {
+				    	responseString += doubleColon;
+		        	}
+		    	}
+		    }
+			LOGGER.trace(loggerId + "buildMenuResponse()...responseString=" + responseString);
+			return responseString;
+	}
+	
 	/**
 	 * Builds a JsonArray representing a list of the different neural network types.
 	 * 
@@ -101,12 +182,18 @@ public class WebResponder {
 		 String loggerId = ThreadLocalLogTracker.get();
 		 LOGGER.trace(loggerId + "sendThresholdImagesResponse()...invoked.");
 		 
-		 LOGGER.trace(filePaths);
+		 //LOGGER.trace(filePaths);
 		 
-		 JsonArray jsonArray = null;
+		 JsonArray jsonArrayNetworkNames = null;
+		 String menuResponse = null;
 		 
 		 if(neuralNetworkNames != null) {
-			 jsonArray = buildNeuralNetworkNamesResponse(neuralNetworkNames);
+			 jsonArrayNetworkNames = buildNeuralNetworkNamesResponse(neuralNetworkNames);
+             ArrayList<String> menuStudyNames = AtlasDataCacheManager.getInstance().getMenuStudyNames();
+             Hashtable<String, ArrayList<String>> menuSubOptionsMap = AtlasDataCacheManager.getInstance().getMenuOptionsMap();
+			 menuResponse = buildMenuResponse(menuStudyNames, menuSubOptionsMap);
+			 //LOGGER.trace(loggerId + "jsonArray follows");
+			 //LOGGER.trace(jsonArray);
 		 }
 
 		String base64ImageStringsCleaned = imageBase64Strings.toString();
@@ -126,12 +213,12 @@ public class WebResponder {
 		String responseString = null; 
 		
 		if(networkMapData == null) {
-			responseString = jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
+			responseString = menuResponse + DELIMITER_NEURAL_NAMES + jsonArrayNetworkNames + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
 		}
 		else {
 			String networkMapImagePNG = networkMapData.getNetworkMapImage_Base64_String();
 			String networkMapImageNIIPath = networkMapData.getCorrespondingNiftiFilePathName();
-			responseString = jsonArray + DELIMITER_NEURAL_NAMES + networkMapImagePNG + 
+			responseString = menuResponse + DELIMITER_NEURAL_NAMES + jsonArrayNetworkNames + DELIMITER_NEURAL_NAMES + networkMapImagePNG + 
 					         DELIMITER_NETWORK_MAP_ITEMS +  networkMapImageNIIPath + DELIMITER_NETWORK_MAP_DATA +
 					         base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
 		}

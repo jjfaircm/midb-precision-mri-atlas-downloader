@@ -1,6 +1,8 @@
 package edu.umn.midb.population.atlas.servlet;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -49,14 +51,18 @@ import logs.ThreadLocalLogTracker;
  * 
  * https://www.jotform.com/blog/multilevel-drop-down-navigation-menus-examples-and-tutorials/
 
-   1) Move MIDB...
-   2) New main landing page (landing div) : childmind.org
+   1)* Move MIDB...
+   2)* New main landing page (landing div) : childmind.org
    3)* copyright (robert, me)
-   4) remove funding
-   5) add upload date
-   6) remove acknowledgements
+   4)* remove funding
+   5)* add upload date
+   6)* remove acknowledgements
    7) additional copyright images
-   8) TBD:FUTURE:  Choose data sets
+   8)* TBD:FUTURE:  Choose data sets
+         Human Connectome Project
+              Combined
+              Single
+   9) Switch to Volume Data / Surface Data
 
  */
 
@@ -88,10 +94,13 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	private static final long VERSION_NUMBER = 0;
-	public static final String BUILD_DATE = "Version beta_0.83  0803__2021:20:24__war=NPDownloader_0803.war"; 
+	public static final String BUILD_DATE = "Version beta_0.99  0824_2021:20:24__war=NPDownloader_0824.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
-	public static final String ROOT_PATH = "/midb/networks_small_package-compressed/"; 
+	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd/surface/";
+	public static final String STUDY_NAME_PLACEHOLDER = "${STUDY_NAME}";
+	public static final String DATA_TYPE_PLACEHOLDER = "${DATA_TYPE}";
+	public static final String ROOT_PATH = "/midb/studies/${STUDY_NAME}/${DATA_TYPE}/"; 
 	//public static final String ROOT_PATH = "/Users/jjfair/midb_old/"; 
 	public static final String DEFAULT_NEURAL_NETWORK = "combined_clusters";
 	//public static final String DEFAULT_NEURAL_NETWORK = "Aud";
@@ -103,7 +112,8 @@ public class NetworkProbabilityDownloader extends HttpServlet {
     private static final DateTimeFormatter DT_FORMATTER_FOR_ID = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
 
 	public static final String ECLIPSE_RESOURCES_PATH = "/Users/jjfair/git/network_probability_downloader/NetworkProbabilityDownloader/build/classes/edu/umn/midb/population/atlas/config/files/";
-
+	private String localHostName = "UNKNOWN";
+	
 	/**
 	 * Checks for intermittent problem where NGINX generates a duplicate request which originates
 	 * from the local loopback interface of 127.0.0.1
@@ -112,16 +122,31 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	 * @return
 	 */
 	protected boolean checkDuplicateRequest(HttpServletRequest request) {
+		
+		if(localHostName.contains("JAMESs-MacBook-Pro")) {
+			return false;
+		}
 		boolean isDuplicate = false;
+		String action = null;
 		String originalIP = request.getHeader("X-Forwarded-For");
+		String requestorIPAddress = request.getRemoteAddr();
 		
 		if(originalIP != null) {
 			if(originalIP.contains("127.0.0.1")) {
 				isDuplicate = true;
-				String action = request.getParameter("action");
+				action = request.getParameter("action");
 				LOGGER.warn("Duplicate request received: action=" + action);
 			}
 		}
+		
+		/*
+		if(requestorIPAddress.contains("127.0.0.1")) {
+			action = request.getParameter("action");
+			LOGGER.warn("Duplicate request received: action=" + action);
+			isDuplicate = true;
+		}
+		*/
+		
 		return isDuplicate;
 	}
 	
@@ -138,8 +163,8 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		String action = null;
-		
+		String action = request.getParameter("action");
+				
 		if(checkDuplicateRequest(request)) {
 			return;
 		}
@@ -155,7 +180,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		String loggerId = appContext.getLoggerId();
 		try {
 			ThreadLocalLogTracker.set(appContext.getLoggerId());
-			action = request.getParameter("action");
+			//action = request.getParameter("action");
 			if(action==null) {
 				action = request.getQueryString().substring(7,25);
 			}
@@ -376,7 +401,12 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			isSingleNetworkResponse = true;
 		}
 		
-		String targetDirectory = ROOT_PATH + selectedNeuralNetworkPathName;
+		String selectedStudy = request.getParameter("selectedStudy");
+		String targetDirectory = ROOT_PATH.replace(STUDY_NAME_PLACEHOLDER, selectedStudy);
+		String selectedDataType = request.getParameter("selectedDataType");
+		targetDirectory = targetDirectory.replace(DATA_TYPE_PLACEHOLDER, selectedDataType);
+		targetDirectory = targetDirectory + selectedNeuralNetworkPathName;
+		LOGGER.trace(targetDirectory);
 		LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...selected network name=" + targetDirectory);
 
 		ArrayList<String> imagePaths = AtlasDataCacheManager.getInstance().getImagePathNames(targetDirectory);
@@ -410,13 +440,43 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		AtlasDataCacheManager.getInstance();
 		DownloadTracker.getInstance();
 		HitTracker.getInstance();
+		
+		//get local machine name
+		
+		
+		try {
+		    InetAddress addr;
+		    addr = InetAddress.getLocalHost();
+		    localHostName = addr.getHostName();
+		    LOGGER.info("local machine name=" + localHostName);
+		}
+		catch (UnknownHostException ex) {
+		    LOGGER.error("Hostname can not be resolved");
+		    LOGGER.error(ex.getLocalizedMessage(), ex);
+		}
 		LOGGER.info("exiting init().");
 	}
 	
 	protected void submitHitEntry(HttpServletRequest request) {
 		
 		String ipAddress = request.getRemoteAddr();
-	
+		
+		LOGGER.trace("remoteAddr=" + ipAddress);
+		
+		/*
+		Enumeration<String> headersEnum = request.getHeaderNames();
+		LOGGER.trace("HEADERS follow");
+		LOGGER.trace(headersEnum);
+		String aHeaderName = null;
+		String aHeaderValue = null;
+		
+		while(headersEnum.hasMoreElements()) {
+			aHeaderName = headersEnum.nextElement();
+			aHeaderValue = request.getHeader(aHeaderName);
+			LOGGER.trace(aHeaderName + "=" + aHeaderValue);
+		}
+	    */
+		
 		//since we use NGINX as a front-end load distributor on AWS-LINUX then we need the following
 		//we make this a conditional check since this might be an environment without a load distributor
 		//in front of the servlet container (tomcat, for example)

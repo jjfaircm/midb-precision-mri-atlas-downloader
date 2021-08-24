@@ -2,13 +2,20 @@
 <html lang="en">
   <meta charset="utf-8" />
 
-<link rel="stylesheet" href="menu2.css">
+<!--
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/menu2_test.css">
+-->
+
 <!--
 <link rel="stylesheet" href="np_downloader.css">
 -->
 
-<link rel="stylesheet" href="css_i1GhGR95VslXOaFDBaRbnS0Wk1VhYpBeDpIWNc_qjlU.css">
-<link rel="stylesheet" href="css_JF6gLPJ4MQDiYAqFXcLTlKBApkP02yfNOJXomnHeDfM.css">
+
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/css_i1GhGR95VslXOaFDBaRbnS0Wk1VhYpBeDpIWNc_qjlU.css">
+
+
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/css_JF6gLPJ4MQDiYAqFXcLTlKBApkP02yfNOJXomnHeDfM.css">
+
 
 <link rel="stylesheet" media="all" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i" />
 <link rel="stylesheet" media="all" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" />
@@ -26,10 +33,15 @@
    var abcdMenu = null;
    var humanMenu = null;
    var lastSelectedMenu = null;
+   var abcdAnchor = null;
+   var humanAnchor = null;
 
    function startUp() {
+       //alert("startUp");
        abcdMenu = document.getElementById("li_ABCD");
+       abcdAnchor = document.getElementById("a_ABCD");
        humanMenu = document.getElementById("li_Human");
+       humanAnchor = document.getElementById("a_Human");
    }
 
    function handleTabSelected() {
@@ -40,7 +52,17 @@
 
    function menuClicked(element) {
       console.log("menuClicked()...invoked, id=" + element.id);
-     
+
+      if(menuHasBeenClicked) {
+         abcdAnchor.style.color = "#777";
+         humanAnchor.style.color = "#777";
+         selectedSubmenuAnchor.style.color = "#777";
+
+         abcdAnchor.style.background = "#fff";
+         humanAnchor.style.background = "#fff";
+         selectedSubmenuAnchor.style.background = "#fff"; 
+      }
+
       menuHasBeenClicked = true;
       lastSelectedMenu = element;
       selectedSubmenu = element;
@@ -62,22 +84,25 @@
       selectedSubmenu = parent;   
       parent.style.display = "block";
 
-      selectedSubmenuAnchor.style.background = "#3d85c6";
-      selectedSubmenuAnchor.style.color = "white";
+      selectedSubmenuAnchor.style.background = "#FFC300";
+      selectedSubmenuAnchor.style.color = "black";
 
 
       if(greatGrandParent.id.includes("ABCD")) {
         console.log("Hiding humanMenu");
         humanMenu.style.display = "none";
-        var abcdAnchor = document.getElementById("a_ABCD");
-        abcdAnchor.style.background = "#3d85c6";
-        abcdAnchor.style.color = "white";
+        //abcdAnchor = document.getElementById("a_ABCD");
+        abcdAnchor.style.background = "#FFC300";
+        abcdAnchor.style.color = "black";
 
         //resetHumanMenu();
       }
       else {
         console.log("Hiding abcdMenu");
         abcdMenu.style.display = "none";
+        //var humanAnchor = document.getElementById("a_Human");
+        humanAnchor.style.background = "#FFC300";
+        humanAnchor.style.color = "black";
       }
       
    }
@@ -127,6 +152,7 @@
       //alert("onmouseover");
       console.log("showSubmenu_ABCD()...invoked.");
       hideSubmenu_Human();
+      showSubmenuLevel_1();
       var submenuCombined = document.getElementById("li_Combined");
       var submenuOverlapping = document.getElementById("li_Overlapping");
       var submenuSingle = document.getElementById("li_Single");
@@ -147,6 +173,7 @@
       var submenuHuman_2 = document.getElementById("li_Human_2");
       var submenuHuman_3 = document.getElementById("li_Human_3");
       var ul_Human = document.getElementById("ul_Human");
+      showSubmenuLevel_1();
 
 
       submenuHuman_1.style.display = "inline";      
@@ -157,26 +184,37 @@
 
 
    function mouseOver(element) {
-      console.log("mouseover()...invoked");
+      console.log("mouseover()...invoked, id=" + element.id);
       var id=element.id;
 
 
       if(id.includes("a_Combined") || id.includes("a_Overlapping") || id.includes("a_Single")) {
-         console.log("mouseover()...inside if statement...");
+         console.log("mouseover()...inside if for abcd choices...");
          var targetE = document.getElementById("a_ABCD");
          targetE.style.background = "#3d85c6";
          targetE.style.color = "white";
          showSubmenu_ABCD();
-         hideMenu_Human();
+         hideSubmenu_Human();
       }
+      if(id.includes("a_Human_1") || id.includes("a_Human_2") || id.includes("a_Human_3")) {
+         console.log("mouseover()...inside if for human choices...");
+         var targetE = document.getElementById("a_ABCD");
+         targetE.style.background = "#3d85c6";
+         targetE.style.color = "white";
+         showSubmenu_Human();
+         hideSubmenu_ABCD();
+      }
+
       console.log("mouseover()...exit");
 
    }
 
    function mouseOut(element, showSelection) {
+      console.log("mouseOut()...invoked, element.id=" + element.id);
       console.log("mouseOut()...invoked, showSelection=" + showSelection);
       console.log("mouseOut()...invoked, menuHasBeenClicked=" + menuHasBeenClicked);
 
+      var id = element.id;
       var id=element.id;
       var selectedId = null;
       var localShowSelection = false;
@@ -208,13 +246,21 @@
       }
 
       
-      console.log("mouseOut()...exit");
+      console.log("mouseOut()...exit, id=" + element.id);
    }
 
    function hideMenu_Human() {
       console.log("hideMenu_Human()...invoked.");
       var li_Human = document.getElementById("li_Human");
       li_Human.style.display = "none";
+
+      console.log("hideMenu_Human()...exit.");
+   }
+
+   function hideMenu_ABCD() {
+      console.log("hideMenu_Human()...invoked.");
+      var li_ABCD = document.getElementById("li_ABCD");
+      li_ABCD.style.display = "none";
 
       console.log("hideMenu_Human()...exit.");
    }
@@ -261,12 +307,12 @@
 </head>
 <body onload="startUp()">
 
-
-<div style="text-align: center;">
+<div id="download">
+<div style="text-align: center;" id="menuContainer" onmouseoutX="mouseOut(this)">
 <br>
 <ul class="ul_menu"> 
 
-  <li class="menu" style="width: 200px"><a class="menu" href="#"  onmouseout="mouseOut(this, true)" onmouseover="showSubmenuLevel_1()">Select Study/Atlas</a> 
+  <li class="menu" id="ul_menu" style="width: 200px"><a class="menu" href="#"  onmouseout="mouseOut(this, true)" onmouseover="showSubmenuLevel_1()">Select Study/Atlas</a> 
 
       <ul class="submenu" id="ul_submenu"> 
          <li class="submenu" id="li_ABCD"><a class="submenu submenu_ABCD" id="a_ABCD" href="#" onmouseout="mouseOut(this, true)" onmouseover="showSubmenu_ABCD()">ABCD</a>
@@ -280,20 +326,21 @@
              </ul>
          </li> 
         
-         <li class="submenu" id="li_Human"><a class="submenu" onmouseout="mouseOut(this)" onmouseover="showSubmenu_Human()" href="#">Human</a>
+         <li class="submenu" id="li_Human"><a class="submenu" id="a_Human"onmouseout="mouseOut(this, true)" onmouseover="showSubmenu_Human()" href="#">Human Connectome</a>
              <ul class="subSubMenu_Human" id="ul_Human">
-                 <li class="subSubMenu subSubMenu_Human" id="li_Human_1"><a class="subSubMenu subSubMenu_Human" id="a_Human_1" href="#" 
-                                                                            onclick="menuClicked(this)">Human Sub_1</a></li> 
-                 <li class="subSubMenu subSubMenu_Human" id="li_Human_2"><a class="subSubMenu subSubMenu_Human" id="a_Human_2" href="#"
-                                                                               onclick="menuClicked(this)">Human Sub_2</a></li> 
-                 <li class="subSubMenu subSubMenu_Human" id="li_Human_3"><a class="subSubMenu subSubMenu_Human" id="a_Human_3" href="#" onclick="menuClicked(this)">Human Sub_3</a></li> 
+                 <li class="subSubMenu subSubMenu_Human" id="li_Human_1"><a class="subSubMenu subSubMenu_Human" id="a_Human_1" href="#" onmouseover="mouseOver(this)" 
+                                                                               onmouseout="mouseOut(this, true)" onclick="menuClicked(this)">Human Sub_1</a></li> 
+                 <li class="subSubMenu subSubMenu_Human" id="li_Human_2"><a class="subSubMenu subSubMenu_Human" id="a_Human_2" href="#" onmouseover="mouseOver(this)" 
+                                                                               onmouseout="mouseOut(this, true)" onclick="menuClicked(this)">Human Sub_2</a></li> 
+                 <li class="subSubMenu subSubMenu_Human" id="li_Human_3"><a class="subSubMenu subSubMenu_Human" id="a_Human_3" href="#" onmouseover="mouseOver(this)" 
+                                                                               onmouseout="mouseOut(this, true)" onclick="menuClicked(this)">Human Sub_3</a></li> 
              </ul>
          </li> 
       </ul> 
     </li> 
 </ul>
 </div>  
-
+</div>
 
 
 <!--

@@ -19,7 +19,7 @@ public class HitTracker extends Thread {
 	private static final String TRACKING_HITS_FILE = "/midb/tracking/hits_tracker.csv";
 	private static Logger LOGGER = null;
 	private static final String LOGGER_ID = " ::LOGGERID=HITS_TRACKER:: ";
-	private long pollingTimeoutSeconds = 600;
+	private long pollingTimeoutSeconds = 180;
 	private BlockingQueue<String> blockingQueue = new LinkedBlockingDeque<String>();
 	private static HitTracker instance = null;
 	private FileWriter fileWriter = null;
@@ -84,7 +84,7 @@ public class HitTracker extends Thread {
 		LOGGER.info(LOGGER_ID + "entering dequeue loop...");
 
 		while(shouldContinue) {
-			//LOGGER.info(LOGGER_ID + "entering top of loop...");
+			LOGGER.info(LOGGER_ID + "entering top of loop...");
 			try {
 				newHitEntry = this.blockingQueue.poll(pollingTimeoutSeconds, TimeUnit.SECONDS);
 				if(newHitEntry==null || newHitEntry.contains("null")) {

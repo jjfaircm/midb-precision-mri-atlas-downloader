@@ -1,5 +1,10 @@
 package edu.umn.midb.population.atlas.utils;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Enumeration;
@@ -37,6 +42,9 @@ public class AtlasDataCacheManager {
 	private Hashtable<String, String> neuralNetworkNamesMap = new Hashtable<String, String>();
 	private Hashtable<String, NetworkMapData> networkMapDataCache = new Hashtable<String, NetworkMapData>();
 	private byte[] allDataZipBuffer = null;
+	private ArrayList<String> menuStudyNames = new ArrayList<String>();
+	private Hashtable<String, ArrayList<String>> menuChoicesMap = new Hashtable<String, ArrayList<String>>();
+	private static final String MENU_FILE_PATH = "/midb/menu.txt";
 
 	
 	static {
@@ -52,8 +60,9 @@ public class AtlasDataCacheManager {
 		
 		if(instance==null) {
 			instance = new AtlasDataCacheManager();
-			instance.loadDefaultGlobalData(NetworkProbabilityDownloader.ROOT_PATH);
+			instance.loadDefaultGlobalData(NetworkProbabilityDownloader.DEFAULT_ROOT_PATH);
 			instance.loadNeuralNetworkNamesMap();
+			instance.loadMenuFile();
 		}
 		return instance;
 	}
@@ -78,10 +87,80 @@ public class AtlasDataCacheManager {
 		LOGGER.trace(loggerId + "loadDefaultGlobalData()...loadBase64ImagePathStrings.size=" + this.base64NetworkImageStrings.size());
 	}
 	
+	private void loadMenuFile() {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "loadMenuFile()...invoked.");
+
+		File file = new File(MENU_FILE_PATH);
+		boolean menuEntryInProgress = false;
+		boolean menuEntryNamePending = true;
+		boolean menuSubEntriesPending = false;
+		String menuStudyName = null;
+		String menuSubEntry = null;
+		ArrayList<String> subMenuEntries = null;
+		
+		
+		
+		if(!file.exists()) {
+			return;
+		}
+		
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String outputLine = null;
+			boolean continueToRead = true;
+			
+			while ((outputLine = br.readLine()) != null) {
+				if(outputLine.trim().length() == 0) {
+					continue;
+				}
+				if(outputLine.contains("MENU ENTRY")) {
+					menuEntryNamePending = true;
+					continue;
+				}
+				if(menuEntryNamePending) {
+					menuStudyName = outputLine;
+					this.menuStudyNames.add(menuStudyName);
+					menuEntryNamePending = false;
+					menuSubEntriesPending = true;
+					subMenuEntries = new ArrayList<String>();
+					this.menuChoicesMap.put(menuStudyName, subMenuEntries);
+					continue;
+				}
+				else if(menuSubEntriesPending) {
+					menuSubEntry = outputLine;
+					subMenuEntries.add(menuSubEntry);
+				}
+				else if(outputLine.contains("END MENU")) {
+					menuSubEntriesPending = false;
+				}
+			}
+			
+			Enumeration<String> keys = this.menuChoicesMap.keys();
+			String currentKey = null;
+			ArrayList<String> subMenuChoices = null;
+			
+			while(keys.hasMoreElements()) {
+				currentKey = keys.nextElement();
+				subMenuChoices = this.menuChoicesMap.get(currentKey);
+				LOGGER.trace(loggerId + "menuDetails->>" + currentKey + ":" + subMenuChoices);
+			}
+		}
+		catch(Exception e) {
+			LOGGER.error(e.getMessage(), e);
+		}
+		LOGGER.trace(loggerId + "loadMenuFile()...exit.");
+	}
+	
 	private void loadNeuralNetworkNamesMap() {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "loadNeuralNetworkNamesMap()...invoked.");
 
+		// this is a map that associates the names in the browser dropdown to the
+		// actual names of the directories that contain the threshold files of the
+		// different networks.
+		// The neuralNetworkNames arrayList are the names that appear in the dropdown
+		// selection in the browser
 		this.neuralNetworkNamesMap.put("Auditory Network", "Aud");
 		this.neuralNetworkNames.add("Auditory Network");
 		this.neuralNetworkNamesMap.put("Cingulo-Opercular Network", "CO");
@@ -114,7 +193,8 @@ public class AtlasDataCacheManager {
 		LOGGER.info(this.neuralNetworkNames);
 			
 		//we now add 2 more names that are not included in the neuralNetworkNames because
-		//they are not 'Single' network names
+		//they are not 'Single' network names, however they still have directories that 
+		//contain threshold image files that may be selected for display in the browser
 		this.neuralNetworkNamesMap.put("combined_clusters", "combined_clusters");
 		//overlapping maps to integration-zone in browser menu nomenclature
 		this.neuralNetworkNamesMap.put("overlapping", "Number_of_overlapping_networks_Compressed");
@@ -124,6 +204,11 @@ public class AtlasDataCacheManager {
 	
 	/**
 	 * Creates a cache of base64 encoded Strings for all the probabilistic thresholds for the given neural network.
+	 * The names of the files are stored in an arrayList, and then the base64Strings representing the image bytes
+	 * will be created and stored in a corresponding arrayList in the same order as the file names are stored.
+	 * Therefore there is a 1-1 correspondence between the file names stored in the imagePaths array list and the
+	 * base64 byte arrays stored in the imageByteBuffers arrayList.  In other words, for example, to find the name
+	 * of the file represented in imageByteBuffers position 5, you would interrogate position 5 of the imagePathNames.
 	 * 
 	 * @param networkNamePath Name of the selected neural network type.
 	 * 
@@ -216,6 +301,14 @@ public class AtlasDataCacheManager {
 		
 		LOGGER.trace(loggerId + "getImagePathNames()...exit.");
 		return imagePathNames;
+	}
+	
+	public ArrayList<String> getMenuStudyNames() {
+		return this.menuStudyNames;
+	}
+	
+	public Hashtable<String, ArrayList<String>> getMenuOptionsMap() {
+		return this.menuChoicesMap;
 	}
 	
 	/**
