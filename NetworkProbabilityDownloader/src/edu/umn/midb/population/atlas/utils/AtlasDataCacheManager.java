@@ -37,14 +37,18 @@ public class AtlasDataCacheManager {
 	//neural network types
 	private ArrayList<String> neuralNetworkNames = new ArrayList<String>();
 	private Hashtable<String, ArrayList<String>> base64NetworkImageStrings = new Hashtable<String, ArrayList<String>>();
-	private Hashtable<String, ArrayList<byte[]>> binaryNetworkImageBuffers = new Hashtable<String, ArrayList<byte[]>>();
+	//private Hashtable<String, ArrayList<byte[]>> binaryNetworkImageBuffers = new Hashtable<String, ArrayList<byte[]>>();
 	private Hashtable<String, ArrayList<String>> imagePathNames = new Hashtable<String, ArrayList<String>>();
 	private Hashtable<String, String> neuralNetworkNamesMap = new Hashtable<String, String>();
 	private Hashtable<String, NetworkMapData> networkMapDataCache = new Hashtable<String, NetworkMapData>();
 	private byte[] allDataZipBuffer = null;
 	private ArrayList<String> menuStudyNames = new ArrayList<String>();
 	private Hashtable<String, ArrayList<String>> menuChoicesMap = new Hashtable<String, ArrayList<String>>();
-	private static final String MENU_FILE_PATH = "/midb/menu.txt";
+	private static final String MENU_FILE_PATH = "/midb/menu.conf";
+	private static final String ACL_FILE_PATH = "/midb/acl.conf";
+	private ArrayList<String> privilegedIPs = new ArrayList<String>();
+
+	private final Object menuLock = new Object();
 
 	
 	static {
@@ -62,7 +66,8 @@ public class AtlasDataCacheManager {
 			instance = new AtlasDataCacheManager();
 			instance.loadDefaultGlobalData(NetworkProbabilityDownloader.DEFAULT_ROOT_PATH);
 			instance.loadNeuralNetworkNamesMap();
-			instance.loadMenuFile();
+			instance.loadMenuConfig();
+			instance.loadACL();
 		}
 		return instance;
 	}
@@ -87,12 +92,43 @@ public class AtlasDataCacheManager {
 		LOGGER.trace(loggerId + "loadDefaultGlobalData()...loadBase64ImagePathStrings.size=" + this.base64NetworkImageStrings.size());
 	}
 	
-	private void loadMenuFile() {
+	private void loadACL() {
+
 		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "loadMenuFile()...invoked.");
+		LOGGER.trace(loggerId + "loadACL()...invoked.");
+
+		String ipAddress = null;
+		File file = new File(ACL_FILE_PATH);
+		
+		if(!file.exists()) {
+			return;
+		}
+		
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String outputLine = null;
+			
+			while ((outputLine = br.readLine()) != null) {
+				if(outputLine.trim().length() == 0) {
+					continue;
+				}
+				ipAddress = outputLine.trim();
+				this.privilegedIPs.add(ipAddress);
+			}
+			br.close();
+		}
+		catch(Exception e) {
+			LOGGER.error(e.getMessage(), e);
+		}
+		LOGGER.trace(loggerId + "loadMenuConfig()...exit.");
+	
+	}
+	
+	private void loadMenuConfig() {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "loadMenuConfig()...invoked.");
 
 		File file = new File(MENU_FILE_PATH);
-		boolean menuEntryInProgress = false;
 		boolean menuEntryNamePending = true;
 		boolean menuSubEntriesPending = false;
 		String menuStudyName = null;
@@ -108,7 +144,6 @@ public class AtlasDataCacheManager {
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(file));
 			String outputLine = null;
-			boolean continueToRead = true;
 			
 			while ((outputLine = br.readLine()) != null) {
 				if(outputLine.trim().length() == 0) {
@@ -145,11 +180,12 @@ public class AtlasDataCacheManager {
 				subMenuChoices = this.menuChoicesMap.get(currentKey);
 				LOGGER.trace(loggerId + "menuDetails->>" + currentKey + ":" + subMenuChoices);
 			}
+			br.close();
 		}
 		catch(Exception e) {
 			LOGGER.error(e.getMessage(), e);
 		}
-		LOGGER.trace(loggerId + "loadMenuFile()...exit.");
+		LOGGER.trace(loggerId + "loadMenuConfig()...exit.");
 	}
 	
 	private void loadNeuralNetworkNamesMap() {
@@ -197,7 +233,7 @@ public class AtlasDataCacheManager {
 		//contain threshold image files that may be selected for display in the browser
 		this.neuralNetworkNamesMap.put("combined_clusters", "combined_clusters");
 		//overlapping maps to integration-zone in browser menu nomenclature
-		this.neuralNetworkNamesMap.put("overlapping", "Number_of_overlapping_networks_Compressed");
+		this.neuralNetworkNamesMap.put("overlapping", "overlapping_networks");
 		
 		LOGGER.trace(loggerId + "loadNeuralNetworkNamesMap()...exit."); 
 	}
@@ -213,7 +249,7 @@ public class AtlasDataCacheManager {
 	 * @param networkNamePath Name of the selected neural network type.
 	 * 
 	 */
-	private void loadBase64ImagePathStrings(String networkNamePath) {
+	private ArrayList<String> loadBase64ImagePathStrings(String networkNamePath) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "loadBase64ImagePathStrings()...invoked, networkNamePath=" + networkNamePath);
@@ -242,8 +278,13 @@ public class AtlasDataCacheManager {
 		}
 		LOGGER.info(loggerId + "loadBase64ImagePathStrings()...adding base564ImageStrings array to cache, key=" + networkNamePath);
 		LOGGER.trace(loggerId + "loadBase64ImagePathStrings()...exit.");
-		this.base64NetworkImageStrings.put(networkNamePath, base64ImageStrings);
-		this.binaryNetworkImageBuffers.put(networkNamePath, imageByteBuffers);
+		// we only cache abcd template matching study data
+		if(networkNamePath.contains("abcd_template_matching")) {
+			this.base64NetworkImageStrings.put(networkNamePath, base64ImageStrings);
+			//this.binaryNetworkImageBuffers.put(networkNamePath, imageByteBuffers);
+		}
+		
+		return base64ImageStrings;
 	}
 	
 	/**
@@ -261,7 +302,11 @@ public class AtlasDataCacheManager {
 	 */
 	public ArrayList<String> getBase64ImagePathStrings(String networkNamePath) {
 		
-		return this.base64NetworkImageStrings.get(networkNamePath);
+		ArrayList<String> targetList = this.base64NetworkImageStrings.get(networkNamePath);
+		if(targetList == null) {
+			targetList = this.loadBase64ImagePathStrings(networkNamePath);
+		}
+		return targetList;
 	}
 	
 	/**
@@ -274,14 +319,14 @@ public class AtlasDataCacheManager {
 	public synchronized ArrayList<String> getImagePathNames(String networkNamePath) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "getImagePathNames()...invoked.");
+		LOGGER.trace(loggerId + "getImagePathNames()...invoked,networkNamePath=" + networkNamePath);
 		//if it's null in the cache then load them and then
 		//invoke loadBase64ImagePathStrings(...)
 		
-		boolean isSingleNetworkRequest = true;
+		boolean networkMapImageExists = true;
 		
-		if(networkNamePath.equals("combined_clusters") || networkNamePath.equals("overlapping")) {
-			isSingleNetworkRequest = false;
+		if(networkNamePath.contains("combined_clusters")) {
+			networkMapImageExists = false;
 		}
 		
 		ArrayList<String> imagePathNames = this.imagePathNames.get(networkNamePath);
@@ -289,7 +334,7 @@ public class AtlasDataCacheManager {
 		
 		if(imagePathNames==null) {
 			imagePathNames = DirectoryAccessor.getThresholdImagePaths(networkNamePath);
-			if(isSingleNetworkRequest) {
+			if(networkMapImageExists) {
 				this.addNetworkMapImage(networkNamePath, imagePathNames);
 			}
 			LOGGER.info(loggerId + " adding imagePathNames to cache, key=" + networkNamePath);
@@ -304,11 +349,15 @@ public class AtlasDataCacheManager {
 	}
 	
 	public ArrayList<String> getMenuStudyNames() {
-		return this.menuStudyNames;
+		synchronized(menuLock) {
+			return this.menuStudyNames;
+		}
 	}
 	
 	public Hashtable<String, ArrayList<String>> getMenuOptionsMap() {
-		return this.menuChoicesMap;
+		synchronized(menuLock) {
+			return this.menuChoicesMap;
+		}
 	}
 	
 	/**
@@ -320,6 +369,10 @@ public class AtlasDataCacheManager {
 	public ArrayList<String> getNeuralNetworkNames() {
 		
 		return this.neuralNetworkNames;
+	}
+	
+	public ArrayList<String> getPrivilegedList() {
+		return this.privilegedIPs;
 	}
 	
 	public String getNetworkPathName(String networkName) {
@@ -341,5 +394,17 @@ public class AtlasDataCacheManager {
 	
 	public NetworkMapData getNetworkMapData(String networkName) {
 		return this.networkMapDataCache.get(networkName);
+	}
+	
+	public void reloadMenuConfig() {
+		synchronized(menuLock) {
+			String loggerId = ThreadLocalLogTracker.get();
+			LOGGER.trace(loggerId + "reloadMenuConfig()...invoked.");
+		
+			this.menuStudyNames = new ArrayList<String>();
+			menuChoicesMap = new Hashtable<String, ArrayList<String>>();
+			loadMenuConfig();
+			LOGGER.trace(loggerId + "reloadMenuConfig()...invoked.");
+		}
 	}
 }

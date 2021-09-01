@@ -127,7 +127,74 @@ ul.menu {
  border-bottom: 1px solid #ccc;
  */
  }
+ 
+ #ul_zipList {
+ 	list-style: none;
+ 	margin: auto;
+ 	width: 80%;
+ }
+ 
+ figure.zipFigure {
+ 	display: table;
+ 	
+ 
+ }
+ 
+ figcaption.zipList {
+  background-color: black;
+  color: white;
+  font-style: italic;
+  padding: 2px;
+  margin: 2px;
+  text-align: center;
+  font-size: 12px;
+  display: table-caption;
+  caption-side: bottom;
+}
 
+#div_dropZone {
+    width:300px;
+    height:325px;
+    border: 2px dashed gray;
+    display: inline-block;
+    margin: 0 auto;
+    padding: 3px;
+    /* background-color: #fbf7f5; */
+    background-color: #f3e1c0;
+    /* background-image: linear-gradient(#a49561, #474747); */
+  }
+
+#div_dropZone.active {
+    border: 2px dashed red;
+    background-color: #fbf7f5;
+  }
+  
+  /* study horizontal menu */
+  
+  ul.studyMenu {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #7a0019;
+}
+
+li.studyMenu {
+  float: left;
+}
+
+li.studyMenu a {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 16px;
+  text-decoration: none;
+}
+
+li.studyMenu a:hover {
+  text-decoration: underline;;
+}
+  
 
 /*
 ul.menu {

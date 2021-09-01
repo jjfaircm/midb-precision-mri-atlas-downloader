@@ -1,4 +1,4 @@
-		 var version_buildString = "Version beta_0.99  0824_2021:20:24__war=NPDownloader_0824.war"; 
+		 var version_buildString = "Version beta_3.0  0901_2021:02:36__war=NPDownloader_0901.war"; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;
@@ -35,6 +35,12 @@
          var loggingEnabled = true;
          var oldConsoleLog = null;
          var selectElement = null;
+         var div_uploadProgress = null;
+         var progress_upload = null;
+         var div_unzipProgress = null;
+         var token = null;
+         var studyMenuIDArray = new Array();
+
          
          /**
           * 1) Move title and change font
@@ -51,15 +57,24 @@
         	 console.log("startup()...invoked");
         	 //console.log = function() {};
         	 console.log(version_buildString);
+        	 div_uploadProgress = document.getElementById("div_uploadProgress");
+        	 progress_upload = document.getElementById("progress_upload");
+        	 div_unzipProgress = document.getElementById("div_unzipProgress");
         	 sessionStorage.clear();
         	 setAjaxStyle();
+        	 getMenuData();
+        	 console.log("startup()...end");
+         }
+         
+         function continueStartup() {
+        	 console.log("continueStartup()...invoked");
         	 startupMenu();
         	 loadAllDivNames();
         	 hideAllDivs();
         	 selectElement = document.getElementById("select_neuralNetworkName");
            	 var div_submitNotification = document.getElementById("div_submitNotification");
         	 div_submitNotification.style.display = "block";
-        	 var anchor_ABCD_combined = document.getElementById("a_ABCD_Combined");
+        	 var anchor_ABCD_combined = document.getElementById("a_ABCD_combined_clusters");
         	 menuClicked(anchor_ABCD_combined, true, true);
         	 number_RangeThresholdValue = document.getElementById("number_thresholdValue");
         	 range_thresholdSlider = document.getElementById("range_threshold");
@@ -89,9 +104,12 @@
         	 var button_dscalar_x_offset = getOffset(button_dscalar).right;
         	 var new_button_dscalar_x_offset = button_dscalar_x_offset - 78;
         	 button_dscalar.style.right = new_button_dscalar_x_offset;
+        	 
+        	 
+        	 initializeDragDrop();
 
        	     //registerScrollEventListener();
-        	 console.log("startup()...exit.");
+        	 console.log("continueStartup()...exit.");
         	 //toggleLogging();
          }
          
@@ -109,7 +127,53 @@
         	 
          }
          
-    
+         function addTableRow(tableId) {
+            console.log("addTableRow()...invoked.");
+            
+       	 	var networkTypes = document.getElementsByClassName("select_networkType");
+       	 	if(networkTypes.length == 3) {
+       	 		doAlert("The maximum number of network type entries is 3", alertOK);
+       	 		return;
+       	 	}
+
+ 			var table = document.getElementById(tableId);
+
+ 			var rowCount = table.rows.length;
+ 			var row = table.insertRow(rowCount);
+ 			row.className = "admin";
+
+ 			var cell1 = row.insertCell(0);
+ 			cell1.innerHTML = "Network Display Name";
+ 			cell1.className = "admin";
+
+ 			var cell2 = row.insertCell(1);
+ 			var td_addNetworkType = document.getElementById("td_selectNetworkType");
+ 			var innerHTML = td_addNetworkType.innerHTML;
+ 			cell2.className = "admin";
+ 			
+ 			cell2.innerHTML = innerHTML;
+ 			
+ 			/*
+ 			var element2 = document.createElement("input");
+ 			element2.type = "text";
+            element2.className = "option_folder_name";
+            element2.size = "25";
+            cell2.appendChild(element2);
+            */
+            console.log("addTableRow()...exit.");
+
+ 		}
+
+         function deleteTableRow(tableID) {
+            console.log("deleteTableRow()...invoked.");
+            
+ 			var table = document.getElementById(tableID);
+ 			var rowCount = table.rows.length;
+            table.deleteRow(rowCount-1);
+            console.log("deleteTableRow()...exit.");
+
+         }
+         
          function alertOK() {
         	 console.log("alertOK()...invoked.")
         	 enableScroll();
@@ -125,6 +189,28 @@
          	
          	console.log("copyStackTrace()...exit...");
 
+         }
+         
+         function buildMenuIdDropdown() {
+        	 console.log("buildMenuIdDropdown()...invoked...");
+        	 var dropdown_menuIDs = document.getElementById("select_menuId");
+        	 dropdown_menuIDs.length = 0;
+        	 var option = null;
+        	 
+        	 option = document.createElement('option');
+        	 option.text = "choose a study id";
+        	 option.classList.add("menuIdOption");
+        	 option.value = "none selected";
+    	 	 dropdown_menuIDs.add(option);
+
+        	 for(let i=0; i<studyMenuIDArray.length; i++) {
+        		 option = document.createElement('option');
+        	 	 option.text = studyMenuIDArray[i];
+        	 	 option.classList.add("menuIdOption");
+        	 	 option.value = studyMenuIDArray[i];
+        	 	 dropdown_menuIDs.add(option);
+         	 }
+        	 console.log("buildMenuIdDropdown()...exit...");
          }
          
          
@@ -157,15 +243,114 @@
          }
          
          function buildStudyMenu(responseData) {
-        	 console.log("buildStudyMenu()...invoked, responseData=" + responseData);
+        	 console.log("buildStudyMenu()...invoked, responseData follows");
+        	 console.log(responseData);
         	 
         	 var menuArray = responseData.split("::");
+        	 var menuEntry = null;
+        	 var studyEntry = null;
+        	 var menuEntryArray = null;
+        	 var submenuOptionsArray = null;
+        	 var menuInnerHTML = "";
+        	 var surfaceVolumeType = null;
         	 
+        	 for(var i=0; i<menuArray.length; i++) {
+        		 menuEntry = menuArray[i];
+        		 menuEntryArray = menuEntry.split(":");
+        		 studyEntry = menuEntryArray[0];
+        		 
+            	 var openParenIndex = menuEntry.indexOf("(");
+            	 var closeParenIndex = menuEntry.indexOf(")");
+            	 var studyName = menuEntry.substring(openParenIndex+1, closeParenIndex);
+            	 var dashIndex = menuEntry.indexOf("-");
+            	 var shortId = menuEntry.substring(0, dashIndex).trim();
+            	 
+            	 openParenIndex = studyEntry.lastIndexOf("(");
+            	 closeParenIndex = studyEntry.lastIndexOf(")");
+            	 surfaceVolumeType = studyEntry.substring(openParenIndex+1, closeParenIndex);
+            	 
+            	 submenuOptionsArray = menuEntryArray[1].split(",");
+        		 menuInnerHTML += buildStudyMenuEntry(studyEntry);
+        		 menuInnerHTML += buildSubmenuOptionEntries(submenuOptionsArray, studyName, shortId, surfaceVolumeType);
+        	 }
         	 
-    	     console.log("buildStudyMenu()...array[0]=" + menuArray[0]);
-    	     console.log("buildStudyMenu()...array[1]=" + menuArray[1]);
+        	//menuInnerHTML += tag_endLI;
+        	//menuInnerHTML += tag_endUL;
+        	 
+        	buildMenuIdDropdown();
+        	
+        	var targetMenuParent = document.getElementById("ul_submenu");
+        	targetMenuParent.innerHTML = menuInnerHTML; 
+        	
+       	    console.log("buildStudyMenu()...exit.");
+         }
+         
+         function buildSubmenuOptionEntries(optionsArray, studyName, shortId, surfaceVolumeType) {
+        	 //<li class=\x22subSubMenu\x22><a class=\x22subSubMenu\x22  data-study=\x22${studyName}\x22 onmouseover=\x22showSubSubMenu(this)\x22" 
+             //+ "onmouseout=\x22mouseOut(this)\x22 onclick=\x22menuClicked(this, false, true )\x22>${displayName} data-networkId=\x22${networkId}</a></li>";
 
+        	 console.log("buildSubmenuOptionEntries()...invoked, optionsArray=" + optionsArray);
+
+        	 var optionEntry = null;
+        	 var liEntry = null;
+        	 var openParenIndex = null;
+        	 var closeParenIndex = null;
+        	 var displayText = null;
+        	 var networkId = null;
+        	 var menuHTML = "";
+        	 var id = null;
         	 
+        	 
+        	 for(var i=0; i<optionsArray.length; i++) {
+        		 optionEntry = optionsArray[i];
+            	 openParenIndex = optionEntry.indexOf("(");
+            	 closeParenIndex = optionEntry.indexOf(")");
+            	 displayText = optionEntry.substring(0, openParenIndex).trim();
+            	 networkId = optionEntry.substring(openParenIndex+1, closeParenIndex).trim();
+            	 id = "a_" + shortId + "_" + networkId;
+        		 liEntry = template_li_subSubMenu;
+        		 liEntry = liEntry.replace(idReplacementMarker, id);
+        		 liEntry = liEntry.replace(networkIdReplacementMarker, networkId);
+        		 liEntry = liEntry.replace(studyReplacementMarker, studyName);
+        		 liEntry = liEntry.replace(displayNameReplacementMarker, displayText);
+        		 liEntry = liEntry.replace(surfaceVolumeTypeReplacementMarker, surfaceVolumeType);
+        		 menuHTML += liEntry;
+        	 }
+        	 menuHTML += tag_endUL;
+        	 menuHTML += tag_endLI;
+
+        	 return menuHTML;
+         }
+         
+         function buildStudyMenuEntry(menuEntry) {
+        	 console.log("buildStudyMenuEntry()...invoked, menuEntry=" + menuEntry);
+        	 // ABCD - Template Matching (abcd_template_matching) (surface, volume)
+        	 var openParenIndex = menuEntry.indexOf("(");
+        	 var closeParenIndex = menuEntry.indexOf(")");
+        	 var studyFolderName = menuEntry.substring(openParenIndex+1, closeParenIndex);
+        	 studyMenuIDArray.push(studyFolderName);
+        	 var dashIndex = menuEntry.indexOf("-");
+        	 var shortId = menuEntry.substring(0, dashIndex).trim();
+        	 var displayText = menuEntry.substring(0, openParenIndex).trim();
+        	 var studyName = menuEntry.substring(openParenIndex+1, closeParenIndex);
+        	 
+        	 openParenIndex = menuEntry.lastIndexOf("(");
+        	 var dataTypes = menuEntry.substring(openParenIndex);
+        	 
+        	 var liTag = template_li_submenu;
+        	 liTag = liTag.replaceAll(idReplacementMarker, shortId);
+        	 liTag = liTag.replace(displayNameReplacementMarker, displayText);
+        	 var ulTag = template_ul_subSubMenu;
+        	 ulTag = ulTag.replace(idReplacementMarker, shortId);
+        	 
+        	 console.log("buildStudyMenuEntry()...invoked, response=" + liTag + "\n" + ulTag);
+        	 return liTag + ulTag;
+        	 
+        	 
+        	 //console.log("buildStudyMenuEntry()...invoked, displayText=" + displayText);
+        	 //console.log("buildStudyMenuEntry()...invoked, studyName=" + studyName);
+        	 //console.log("buildStudyMenuEntry()...invoked, dataTypes=" + dataTypes);
+
          }
          
          //function disableScroll() {
@@ -179,6 +364,8 @@
         	 //var body_element = document.getElementById("body");
         	 //body_element.classList.remove("disable_scrolling");
          //}
+         
+ 
          
          function displayThresholdImageElements() {
         	 console.log("displayThresholdImageElements()...invoked.");
@@ -221,16 +408,16 @@
     		 var div_selectNeuralNetwork = document.getElementById("div_selectNeuralNetworkName");
 
     		 //NOTE: overlapping displays in menu as 'integration zone'
-        	 if(selectedSubmenu.id.includes("Single") || selectedSubmenu.id.includes("Overlapping")) {
+        	 if(selectedSubmenuAnchor.id.includes("single") || selectedSubmenu.id.includes("overlapping")) {
         		 div_selectNeuralNetwork.style.display = "block";
         		 div_dummyNetworkMap.style.display = "none";
         	 }
         	 
-        	 if(selectedSubmenu.id.includes("Overlapping")) {
+        	 if(selectedSubmenuAnchor.id.includes("overlapping")) {
           		 div_selectNeuralNetwork.style.display = "none"; 
         	 }
         	 
-        	 if(selectedSubmenu.id.includes("Combined")) {
+        	 if(selectedSubmenuAnchor.id.includes("combined")) {
         		 div_networkMapImage.style.display = "none";
           		 div_selectNeuralNetwork.style.display = "none"; 
         		 div_dummyNetworkMap.style.display = "block";
@@ -466,6 +653,58 @@
           	return ajaxRequest;
           }
          
+         function getMenuData() {
+         	console.log("getMenuData()...invoked...");
+         	
+         	ajaxRequest_startTime = performance.now();
+
+           	//var paramString = "&selectedStudy=" + selectedStudy;
+           	//paramString += "&selectedDataType=" + selectedDataType;
+           	//alert("paramString=" + paramString);
+
+         	var ajaxRequest = getAjaxRequest();
+         	
+         	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getMenuData";
+         	
+         	var encodedUrl = encodeURI(url);
+         	ajaxRequest.open('get', encodedUrl, true);
+         	
+         	ajaxRequest.onreadystatechange=function() {
+                
+                if (ajaxRequest.readyState==4 && ajaxRequest.status==200) {
+                    //console.log(ajaxRequest.responseText);
+                    if(ajaxRequest.responseText.includes("Unexpected Error")) {
+                    	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+                 		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+                 		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+                     	var errorArray = errorData.split("&");
+                    	var msg1 = errorArray[0];
+                    	var msg2 = errorArray[1];
+                    	stackTraceData = errorArray[2];
+                    	doErrorAlert(msg1, msg2, errorAlertOK);
+                    	return;
+                    }
+                    //var responseArray = ajaxRequest.responseText.split("!@!");
+                  	//var div_submitNotification = document.getElementById("div_submitNotification");
+               	    //div_submitNotification.style.display = "none";
+ 
+                    var responseArray = ajaxRequest.responseText.split("&&&");
+                    token = responseArray[0];
+               	    buildStudyMenu(responseArray[1]);
+               	    continueStartup();
+               	    //buldNeuralNetworkDropdownList(responseArray[1]);
+                    //processThresholdImagesResponse(responseArray[2]);
+                }
+                if (ajaxRequest.readyState==4 && ajaxRequest.status==503) {
+                	alert("The server is not responding.")
+                	return;
+                }
+       		
+         	}
+          	ajaxRequest.send();
+         	console.log("getMenuData()...exit...");
+         }
+         
          /* getNeuralNetworkNames() returns the list of neural network names that display
           * in the dropdown when Single Networks is the selected menu choice.
           * 
@@ -512,9 +751,9 @@
                 	 console.log(responseArray[0]);
                 	 console.log(responseArray[1]);
 
-                	 buildStudyMenu(responseArray[0]);
-                	 buldNeuralNetworkDropdownList(responseArray[1]);
-                     processThresholdImagesResponse(responseArray[2]);
+                	 //buildStudyMenu(responseArray[0]);
+                	 buldNeuralNetworkDropdownList(responseArray[0]);
+                     processThresholdImagesResponse(responseArray[1]);
                  }
                  if (ajaxRequest.readyState==4 && ajaxRequest.status==503) {
                  	alert("The server is not responding.")
@@ -591,7 +830,8 @@
            	paramString += "&selectedStudy=" + selectedStudy;
            	paramString += "&selectedDataType=" + selectedDataType;
            	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getThresholdImages" + paramString;
-           	
+           	console.log("getThresholdImages()...url=" + url);
+
            	var encodedUrl = encodeURI(url);
            	ajaxRequest.open('get', encodedUrl, true);
          
@@ -614,12 +854,12 @@
                        
                        var responseArray = ajaxRequest.responseText.split("!@!");
                        
-                       if(selectedSubmenu.id.includes("Combined")) {
-                            processThresholdImagesResponse(responseArray[2]);
+                       if(selectedSubmenuAnchor.id.includes("combined")) {
+                            processThresholdImagesResponse(responseArray[1]);
                        }
                        else {
                     	   priorSelectedDataType = selectedDataType;
-                    	   var combinedDataArray = responseArray[2].split(DELIMITER_NETWORK_MAP_DATA);
+                    	   var combinedDataArray = responseArray[1].split(DELIMITER_NETWORK_MAP_DATA);
                     	   /* first, process the image data for the Network Probabilistic Map  */
                     	   processNetworkProbabilityMapData(combinedDataArray[0]);
                     	   /* now process all image files for the TEMPLATE MATCHNG PROBABILISTIC image panel */
@@ -636,6 +876,8 @@
             	ajaxRequest.send();
             	console.log("getThresholdImages()...exit...");
           }
+         
+        
          
          function handleContactUsClicked() {
              console.log("handleContactUsClicked()...invoked.");
@@ -656,6 +898,14 @@
 
          }
          
+         function handleFileUploadResponse(responseText) {
+             console.log("handleFileUploadResponse()...invoked.");
+             doAdminAlert(responseText);
+             
+             console.log("handleFileUploadResponse()...exit.");
+
+         }
+         
          function handleTabSelected(id) {
 
         	 //alert("handleTabSelected()...invoked, id=" + id);
@@ -667,7 +917,7 @@
         	 var tab_download = document.getElementById("tab_download");
         	 var tab_contactUs = document.getElementById("tab_contactUs");
         	 var tab_midbAtlas = document.getElementById("tab_midbAtlas");
-
+        	 
 
         	 tab_home.checked = false;
         	 tab_overview.checked = false;
@@ -685,6 +935,8 @@
              var div_midbAtlas = document.getElementById("div_midbAtlas");
              var div_contactUs = document.getElementById("div_contactUs");
              var heading_sitename = document.getElementById("sitename");
+             var div_admin = document.getElementById("div_admin");
+             var div_addStudy = document.getElementById("div_addStudy");
              
              div_home.style.display = "none";
              div_overview.style.display = "none";
@@ -704,6 +956,7 @@
                  div_resources.style.display = "none";
                  div_midbAtlas.style.display = "none";
                  div_contactUs.style.display = "none"; 
+                 div_admin.style.display = "none";
              }
              else if(id.includes("tab_overview")) {
                tab_overview.checked = true;
@@ -712,6 +965,7 @@
                div_resources.style.display = "none";
                div_midbAtlas.style.display = "none";
                div_contactUs.style.display = "none";
+               div_admin.style.display = "none";
                //heading_sitename.scrollIntoView();
              }
              else if(id.includes("tab_download")) {
@@ -722,6 +976,7 @@
                div_download.style.display = "block";
                div_midbAtlas.style.display = "none";
                div_contactUs.style.display = "none";
+               div_admin.style.display = "none";
              }
              else if(id.includes("tab_resources")) {
             	 tab_resources.checked = true;
@@ -730,6 +985,7 @@
                  div_download.style.display = "none";
                  div_midbAtlas.style.display = "none";
                  div_contactUs.style.display = "none";
+                 div_admin.style.display = "none";
              }
              else if(id.includes("tab_midbAtlas")) {
             	 tab_midbAtlas.checked = true;
@@ -738,6 +994,7 @@
                  div_download.style.display = "none";
                  div_midbAtlas.style.display = "block";
                  div_contactUs.style.display = "none";
+                 div_admin.style.display = "none";
              }
              else if(id.includes("tab_contactUs")) {
             	 tab_contactUs.checked = true;
@@ -745,7 +1002,20 @@
                  div_resources.style.display = "none";
                  div_download.style.display = "none";
                  div_midbAtlas.style.display = "none";
+                 div_admin.style.display = "none";
                  div_contactUs.style.display = "block";
+             }
+             else if(id.includes("div_admin")) {
+                 div_overview.style.display = "none";
+                 div_resources.style.display = "none";
+                 div_download.style.display = "none";
+                 div_midbAtlas.style.display = "none";
+                 div_contactUs.style.display = "none";
+          	     var anchor_addStudy = document.getElementById("a_addStudy");
+          	     anchor_addStudy.style.color = "#FFC300";
+                 //div_dropZone.style.display = "block";
+                 div_admin.style.display = "block";
+                 div_addStudy.style.display = "block";
              }
              
              console.log("handleTabSelected()...exit.");
@@ -767,6 +1037,7 @@
         	 console.log("hideAllDivs()...exit...");
          }
          
+
 
          
          function playRangeSlider() {
@@ -823,6 +1094,11 @@
         	   //instructionsSpan.style.display = "none";
          }
 
+         function notifyUploadComplete(event) {
+        	 console.log("notifyUploadComplete()...invoked, e=" + event);
+             div_uploadProgress.style.display = "none";
+             div_unzipProgress.style.display = "block";
+         }
          
 
          /*
@@ -1182,6 +1458,7 @@
         	 //console.log("trackThresholdValue()...exit.");
          }
          
+      
          var logger = function()
          {
              var oldConsoleLog = null;
@@ -1215,4 +1492,99 @@
         		 logger.enableLogger();
         	 }
          }
+         
+         function toggleDownloadLock() {
+        	 console.log("toggleDownloadLock()...invoked.");
+        	 downloadDisabled = !downloadDisabled;
+        	 console.log("toggleDownloadLock()...exit.");
+         }
+         
+         function uploadMenuFiles(studyFolderName, availableDataTypes, menuEntry) {
+        	 console.log("uploadFiles()...invoked.");
+        	 
+          	var ajaxRequest = getAjaxRequest();
+         	//var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getNeuralNetworkNames";
+         	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=uploadStudyFiles";
+         	
+         	var paramString = "&studyFolderName=" + studyFolderName;
+         	paramString += "&menuEntry=" + menuEntry;
+         	paramString += "&availableDataTypes=" + availableDataTypes;
+
+         	
+         	url += paramString;
+
+         	var encodedUrl = encodeURI(url);
+         	ajaxRequest.open('post', encodedUrl, true);
+         	ajaxRequest.timeout = 600000*2;
+   
+         	ajaxRequest.onreadystatechange=function() {
+         		console.log("onreadystatechange, responseText=" + ajaxRequest.responseText);
+         		console.log("onreadystatechange, readyState=" + ajaxRequest.readyState);
+         		console.log("onreadystatechange, status=" + ajaxRequest.status);
+
+                //console.log(ajaxRequest.responseText);
+                if(ajaxRequest.responseText.includes("Unexpected Error")) {
+                	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+             		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+             		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+                 	var errorArray = errorData.split("&");
+                	var msg1 = errorArray[0];
+                	var msg2 = errorArray[1];
+                	stackTraceData = errorArray[2];
+                	var divSubmitNotification = document.getElementById("div_submitNotification");
+                	divSubmitNotification.style.display = "none";
+                	doErrorAlert(msg1, msg2, errorAlertOK);
+                	console.log("uploadMenuFiles()...onreadystatechange...error");
+                	console.log("msg1=" + msg1);
+                	console.log("msg2=" + msg2);
+                	console.log(stackTraceData);
+                	return;
+                }
+                if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+                	div_uploadProgress.style.display = "none";
+                	div_unzipProgress.style.display = "none";
+                    handleFileUploadResponse(ajaxRequest.responseText);
+         	    }
+
+         	}
+         	
+         	ajaxRequest.upload.onprogress = function(e) {
+         		
+         		// https://stackoverflow.com/questions/32045093/xmlhttprequest-upload-addeventlistenerprogress-not-working
+                //div_uploadProgress.style.display = "block";
+				// if the file upload length is known, then show progress bar
+				if (e.lengthComputable) {
+	                div_uploadProgress.style.display = "block";
+					//uploadProgress.classList.remove("hide-me");
+					// total number of bytes being uploaded
+					progress_upload.setAttribute("max", e.total);
+					// total number of bytes that have been uploaded
+					progress_upload.setAttribute("value", e.loaded);
+					if(e.total == e.loaded) {
+		                div_uploadProgress.style.display = "none";
+		                div_unzipProgress.style.display = "block";
+					}
+					//console.log(e.loaded);
+				}
+
+			};
+						
+			// this does not work on firefox so using comparison of e.loaded == e.value -> see above
+         	/*
+			ajaxRequest.onloadend = function(e) {
+         		console.log("onloadend");
+         		// https://stackoverflow.com/questions/32045093/xmlhttprequest-upload-addeventlistenerprogress-not-working
+                //div_uploadProgress.style.display = "block";
+				// if the file upload length is known, then show progress bar
+                div_uploadProgress.style.display = "none";
+                div_unzipProgress.style.display = "block";
+                
+			};
+			*/
+         	
+         	
+          	ajaxRequest.send(zipFormData);
+          	console.log("uploadFiles()...exit.");
+         }
+            
          

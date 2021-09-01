@@ -17,9 +17,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
+import edu.umn.midb.population.atlas.base.ApplicationContext;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import edu.umn.midb.population.atlas.utils.AtlasDataCacheManager;
 import edu.umn.midb.population.atlas.utils.NetworkMapData;
+import edu.umn.midb.population.atlas.utils.TokenManager;
+import edu.umn.midb.population.atlas.utils.Utils;
 import logs.ThreadLocalLogTracker;
 
 
@@ -43,6 +46,55 @@ public class WebResponder {
 
 
 	private static final Logger LOGGER = LogManager.getLogger(WebResponder.class);
+	
+	public static void sendCreateMenuResponse(ApplicationContext appContext, HttpServletResponse response) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendCreateMenuResponse()...invoked.");
+
+		try {
+		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
+			  response.getWriter().println("Study created, please refresh page to view new menu");
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+
+		
+		LOGGER.trace(loggerId + "sendCreateMenuResponse()...exit.");
+
+	}
+	
+	
+	public static void sendMenuDataResponse(HttpServletResponse response, ApplicationContext appContext) {
+		
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendMenuDataResponse()...invoked.");
+
+		
+		String menuResponse = "";
+		
+        ArrayList<String> menuStudyNames = AtlasDataCacheManager.getInstance().getMenuStudyNames();
+        Hashtable<String, ArrayList<String>> menuSubOptionsMap = AtlasDataCacheManager.getInstance().getMenuOptionsMap();
+		menuResponse = buildMenuResponse(menuStudyNames, menuSubOptionsMap);
+		
+		TokenManager tokenManager = new TokenManager();
+		String token = tokenManager.getToken();
+		appContext.setTokenManager(tokenManager);
+		
+		try {
+		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
+			  response.getWriter().println(token + "&&&" + menuResponse);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+
+		LOGGER.trace(loggerId + "sendMenuDataResponse()...exit.");
+
+	}
+
 	
 	/**
 	 * Sends the requested NII file related to a selected probabilistic threshold.
@@ -185,13 +237,13 @@ public class WebResponder {
 		 //LOGGER.trace(filePaths);
 		 
 		 JsonArray jsonArrayNetworkNames = null;
-		 String menuResponse = null;
+		 //String menuResponse = null;
 		 
 		 if(neuralNetworkNames != null) {
 			 jsonArrayNetworkNames = buildNeuralNetworkNamesResponse(neuralNetworkNames);
              ArrayList<String> menuStudyNames = AtlasDataCacheManager.getInstance().getMenuStudyNames();
              Hashtable<String, ArrayList<String>> menuSubOptionsMap = AtlasDataCacheManager.getInstance().getMenuOptionsMap();
-			 menuResponse = buildMenuResponse(menuStudyNames, menuSubOptionsMap);
+			 //menuResponse = buildMenuResponse(menuStudyNames, menuSubOptionsMap);
 			 //LOGGER.trace(loggerId + "jsonArray follows");
 			 //LOGGER.trace(jsonArray);
 		 }
@@ -213,12 +265,12 @@ public class WebResponder {
 		String responseString = null; 
 		
 		if(networkMapData == null) {
-			responseString = menuResponse + DELIMITER_NEURAL_NAMES + jsonArrayNetworkNames + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
+			responseString = jsonArrayNetworkNames + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
 		}
 		else {
 			String networkMapImagePNG = networkMapData.getNetworkMapImage_Base64_String();
 			String networkMapImageNIIPath = networkMapData.getCorrespondingNiftiFilePathName();
-			responseString = menuResponse + DELIMITER_NEURAL_NAMES + jsonArrayNetworkNames + DELIMITER_NEURAL_NAMES + networkMapImagePNG + 
+			responseString = jsonArrayNetworkNames + DELIMITER_NEURAL_NAMES + networkMapImagePNG + 
 					         DELIMITER_NETWORK_MAP_ITEMS +  networkMapImageNIIPath + DELIMITER_NETWORK_MAP_DATA +
 					         base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
 		}
@@ -243,7 +295,7 @@ public class WebResponder {
 	public static void sendTestFile(HttpServletResponse resp, HttpServletRequest req) {
 		
 		 resp.setContentType("image/png");
-	        resp.setHeader("Content-disposition", "attachment; filename=DCAN.png");
+	     resp.setHeader("Content-disposition", "attachment; filename=DCAN.png");
 	 
 	        try(InputStream in = req.getServletContext().getResourceAsStream("/WEB-INF/DCAN.png");
 	          OutputStream out = resp.getOutputStream()) {
@@ -258,5 +310,43 @@ public class WebResponder {
 		catch(Exception e) {
 			LOGGER.error(e.getLocalizedMessage(), e);
 		}
+	}
+	
+	public static void sendAdminValidationResponse(HttpServletResponse response, ApplicationContext appContext, String token, String password, String ipAddress) {
+		
+		TokenManager tokenManager = appContext.getTokenManager();
+		boolean isValid = tokenManager.validateToken(token, password, ipAddress);
+		appContext.setAdminActionValidated(isValid);
+		
+		String responseString = (isValid) ? "true":"false";
+		
+		try {
+		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
+			  response.getWriter().println(responseString);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		
+	}
+	
+	public static void sendRemoveStudyResponse(HttpServletResponse response, String studyFolder) {
+		
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendRemoveStudyResponse()...invoked.");
+		
+		String responseString = "Study successfully removed: " + studyFolder
+				              + "<br>Please refresh page to see current menu";
+
+		try {
+		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
+			  response.getWriter().println(responseString);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		 
 	}
 }

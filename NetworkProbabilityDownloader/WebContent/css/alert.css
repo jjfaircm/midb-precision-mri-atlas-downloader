@@ -1,10 +1,10 @@
-#alertBox
+#alertBox, #div_promptAdminPasswordBox
 {
     display: none;
     z-index:10;
     background-color: #241f20;
     border-radius: 5px;
-    border: 1px solid #aaa;
+    border: 3px solid white;
     position: fixed;
     width: 300px;
     left: 50%;
@@ -28,11 +28,28 @@
 {
     background-color: #ddd;
 }
-#alertBox .message
+#alertBox .message, #div_promptAdminPasswordBox .message, #adminAlertBox .message
 {
     text-align: center;
     color: white;
     margin-bottom: 8px;
+}
+
+#adminAlertBox
+{
+    display: none;
+    z-index:10;
+    background-color: #644B26;
+    border-radius: 5px;
+    border: 3px solid white;
+    position: fixed;
+    width: 300px;
+    left: 50%;
+    top: 50%;
+    margin-left: -150px;
+    padding: 6px 8px 8px;
+    box-sizing: border-box;
+    text-align: center;
 }
 
 

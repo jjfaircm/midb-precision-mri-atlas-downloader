@@ -12,19 +12,27 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import edu.umn.midb.population.atlas.base.ApplicationContext;
 import edu.umn.midb.population.atlas.config.PropertyManager;
 import edu.umn.midb.population.atlas.data.access.DirectoryAccessor;
+import edu.umn.midb.population.atlas.exception.BIDS_FatalException;
 import edu.umn.midb.population.atlas.tasks.DownloadTracker;
 import edu.umn.midb.population.atlas.tasks.HitTracker;
 import edu.umn.midb.population.atlas.utils.AtlasDataCacheManager;
+import edu.umn.midb.population.atlas.utils.CreateStudyHandler;
 import edu.umn.midb.population.atlas.utils.NetworkMapData;
+import edu.umn.midb.population.atlas.utils.RemoveStudyHandler;
+import edu.umn.midb.population.atlas.utils.TokenManager;
+import edu.umn.midb.population.atlas.utils.ZipChunkHandler;
 import edu.umn.midb.population.response.handlers.WebResponder;
 import logs.ThreadLocalLogTracker;
 
@@ -62,10 +70,29 @@ import logs.ThreadLocalLogTracker;
          Human Connectome Project
               Combined
               Single
-   9) Switch to Volume Data / Surface Data
+   9)  Add controls to switch from Volume Data / Surface Data
+   10) Change menu processing to generic traversal without IDs
+   11) Automate dynamic menu building based on config file
+   12) Add admin screens to change menu config
+   13) reformat tab selections
+   14) add new landing screen (main div/layer)
+   15) add logging toggle to javascript
+   16) add drag/drop and interface for creating new menu entry
+   
+   
+   @MultipartConfig(fileSizeThreshold = 1024 * 1024 * 1024 * 2,
+   maxFileSize = 2147483647, 
+   maxRequestSize = 1024 * 1024 * 1024 * 5)
+   
+   
+   https://stackoverflow.com/questions/20212851/slice-large-file-into-chunks-and-upload-using-ajax-and-html5-filereader
 
+   https://coderanch.com/t/479604/java/Creating-file-chunks-files-java
  */
 
+
+
+@MultipartConfig(location = "/midb/temp")
 
 public class NetworkProbabilityDownloader extends HttpServlet {
 	
@@ -94,10 +121,10 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	private static final long VERSION_NUMBER = 0;
-	public static final String BUILD_DATE = "Version beta_0.99  0824_2021:20:24__war=NPDownloader_0824.war"; 
+	public static final String BUILD_DATE = "Version beta_3.0  0901_2021:02:36__war=NPDownloader_0901.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
-	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd/surface/";
+	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";
 	public static final String STUDY_NAME_PLACEHOLDER = "${STUDY_NAME}";
 	public static final String DATA_TYPE_PLACEHOLDER = "${DATA_TYPE}";
 	public static final String ROOT_PATH = "/midb/studies/${STUDY_NAME}/${DATA_TYPE}/"; 
@@ -196,7 +223,11 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			case "downloadFile":
 				handleAjaxDownloadFile(appContext, request, response);
 				break;
+			case "getMenuData":
+				handleAjaxGetMenuDataRequest(appContext, request, response);
+				break;
 			case "getNeuralNetworkNames":
+				appContext.setTokenManager(new TokenManager());
 				submitHitEntry(request); //we do this here because this is the default action when visiting the site
 				long gnnActionBeginTime = System.currentTimeMillis();
 				handleAjaxGetNeuralNetworkNames(appContext, request, response);
@@ -214,6 +245,12 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				//LOGGER.info("NetworkProbabilityDownloader.doGet()...selectedNeuralNetworkName=" + selectedNeuralNetworkName);
 				//LOGGER.info("Processing time in ms for getThresholdImages=" + gtiProcessingTime);
 				break;
+			case "removeStudy":
+				handleAjaxRemoveStudy(appContext, request, response);
+				break;
+			case "validateAdminAccess":
+				handleAjaxValidateAdminAccess(appContext, request, response);
+				break;
 			}
 		
 		}
@@ -222,6 +259,38 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			handleFatalError(request, response, e);
 		} 
 	}
+	
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		LOGGER.trace("doPost()...request received.");
+		String action = request.getParameter("action");
+		HttpSession session = request.getSession();
+		ApplicationContext appContext = (ApplicationContext)session.getAttribute("applicationContext");
+		String loggerId = appContext.getLoggerId();
+
+		try {
+			switch (action) {
+			case "uploadStudyFiles":
+				LOGGER.trace(loggerId + "doPost()...action=" + action);
+				response.setContentType(CONTENT_TEXT_PLAIN);
+				response.setCharacterEncoding(CHARACTER_ENCODING_UTF8);
+				handleAjaxAddStudyRequest(appContext, request, response);
+				break;
+			case "uploadZipChunks":
+				LOGGER.trace(loggerId + "doPost()...action=" + action);
+				response.setContentType(CONTENT_TEXT_PLAIN);
+				response.setCharacterEncoding(CHARACTER_ENCODING_UTF8);
+				handleAjaxUploadZipChunk(appContext, request, response);
+				break;
+			}
+		}
+		catch(Exception e) {
+			LOGGER.error(e.getMessage(), e);
+			handleFatalError(request, response, e);
+		}
+
+	}
+
 	
 	/**
 	 * 
@@ -314,6 +383,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "handleAjaxDownloadFile()...invoked.");
 		String filePathAndName = request.getParameter("filePathAndName");
+		LOGGER.trace(loggerId + "handleAjaxDownloadFile()...filePathAndName=" + filePathAndName);
 		String ipAddress = request.getRemoteAddr();
 		//since we use NGINX as a front-end load distributor on AWS-LINUX then we need the following
 		if(ipAddress.contains("127.0.0.1")) {
@@ -338,6 +408,16 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		return;
 	}
+	
+	protected void handleAjaxGetMenuDataRequest(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "handleAjaxGetMenuData()...invoked.");
+
+		WebResponder.sendMenuDataResponse(response, appContext);
+		
+		LOGGER.trace(loggerId + "handleAjaxGetMenuData()...exit.");
+	}
+
 
 	
 	/**
@@ -360,6 +440,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
 		return;
 	}
+	
 	
 	/**
 	 * When the client selects a specific neural network, a request to get all the threshold images is sent
@@ -393,7 +474,9 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		if(!isFirstRequest) {
 			selectedNeuralNetworkName = request.getParameter("neuralNetworkName");
+			LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...selectedNeuralNetworkName=" + selectedNeuralNetworkName);
 			selectedNeuralNetworkPathName = AtlasDataCacheManager.getInstance().getNetworkPathName(selectedNeuralNetworkName);
+			LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...selectedNeuralNetworkPathName=" + selectedNeuralNetworkPathName);
 			neuralNetworkNames = AtlasDataCacheManager.getInstance().getNeuralNetworkNames();
 		}
 		
@@ -422,6 +505,63 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		return;
 	}
+	
+	protected void handleAjaxAddStudyRequest(ApplicationContext appContext, HttpServletRequest request,
+			                                   HttpServletResponse response) throws IOException {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "handleAjaxUploadMenuFiles()...invoked.");
+		
+		//Part part = null;
+		String fileName = null;
+		
+		CreateStudyHandler createStudyHandler = new CreateStudyHandler(request, response);
+		createStudyHandler.deployStudy();
+
+		
+		String studyFolderName = request.getParameter("studyFolderName");
+		WebResponder.sendCreateMenuResponse(appContext, response);
+		
+		LOGGER.trace(loggerId + "handleAjaxUploadMenuFiles()...exit.");
+
+
+	}
+	
+	protected void handleAjaxUploadZipChunk(ApplicationContext appContext, HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+		
+		    //ZipChunkHandler.uploadChunk(request, response);
+	}
+	
+	protected void handleAjaxRemoveStudy(ApplicationContext appContext, HttpServletRequest request,
+            HttpServletResponse response) throws IOException, BIDS_FatalException {
+				
+		if(!appContext.isAdminActionValidated()) {
+			StackTraceElement[] ste = Thread.currentThread().getStackTrace();
+			String message = "Invalid Admin State";
+			BIDS_FatalException bidsFatalError = new BIDS_FatalException(message, ste);
+			throw bidsFatalError;
+		}
+		
+		String studyFolder = request.getParameter("studyFolder");
+		RemoveStudyHandler rsh = new RemoveStudyHandler(studyFolder);
+		rsh.removeStudy();
+		WebResponder.sendRemoveStudyResponse(response, studyFolder);
+		
+	}
+
+	protected void handleAjaxValidateAdminAccess(ApplicationContext appContext, HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+		
+			String loggerId = ThreadLocalLogTracker.get();
+			LOGGER.trace(loggerId + "handleAjaxValidateAdminAccess()...invoked.");
+			
+			String token = request.getParameter("token");
+			String password = request.getParameter("mriVersion");
+			String ipAddress = request.getRemoteAddr();
+			WebResponder.sendAdminValidationResponse(response, appContext, token, password, ipAddress);
+
+			LOGGER.trace(loggerId + "handleAjaxValidateAdminAccess()...exit.");
+	}
 		
 	/**
 	 * Override of the init() method which handles instantiation and initialization of the
@@ -440,6 +580,12 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		AtlasDataCacheManager.getInstance();
 		DownloadTracker.getInstance();
 		HitTracker.getInstance();
+		try {
+			Class.forName("edu.umn.midb.population.atlas.utils.TokenManager");
+		}
+		catch(Exception e) {
+			LOGGER.error(e.getMessage(), e);
+		}
 		
 		//get local machine name
 		

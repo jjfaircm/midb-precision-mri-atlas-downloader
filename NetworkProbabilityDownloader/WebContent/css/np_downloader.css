@@ -35,7 +35,7 @@ input[type="range"]::-moz-range-track {
     text-align: center;
 }
 
-.centerImage, .centerROI_imageHeading {
+.centerImage, .centerROI_imageHeading, .uploadHeader, .dropZoneHeader {
   display: block;
   margin-left: auto;
   margin-right: auto;
@@ -52,7 +52,7 @@ button.downloader, button.downloaderThreshold, button.copy, button.downloader_ds
    outline:none;
 }
 
-button.downloader:active, button.downloaderThreshold:active, button.copy:active, button.btn_mainMenu:active {
+button.downloader:active, button.downloaderThreshold:active, button.copy:active, button.btn_mainMenu:active, button.ok:active {
   background: #3282d3;
   border: 1px solid #154c8c;
   border-bottom: 1px solid #0e408e;
@@ -223,38 +223,6 @@ input[type=range]:focus {
 	white-space: -moz-pre-wrap;
 }
 
-#errorBox
-{
-    display: none;
-    background-color: lightgrey;
-    border-radius: 5px;
-    border: 1px solid #aaa;
-    position: relative;
-    width: 400px;
-    left: 50%;
-    margin-left: -200px;
-    padding: 6px 8px 8px;
-    box-sizing: border-box;
-    text-align: center;
-    /* overflow-y: scroll; */
-}
-#errorBox button {
-    background-color: black;
-    color: white;
-    display: inline-block;
-    border-radius: 3px;
-    border: 1px solid #aaa;
-    padding: 2px;
-    text-align: center;
-    width: 120px;
-    cursor: pointer;
-}
-#errorBox .message
-{
-    text-align: center;
-    color: red;
-    margin-bottom: 8px;
-}
 
 textarea { font-size: 10px;
            resize: none;
@@ -659,3 +627,189 @@ hr.footer {
 .btn_mainMenu:hover{
   background-color: lightgrey;
 }
+
+/*
+#div_promptAdminPasswordBox
+{
+    display: none;
+    background-color: #241f20;
+    border-radius: 5px;
+    border: 1px solid #aaa;
+    position: fixed;
+    width: 400px;    
+    left: 50%;
+    margin-left: -150px;
+    margin-bottom: 150px;
+    padding: 6px 8px 8px;
+    box-sizing: border-box;
+    text-align: center;
+    z-index: 20;
+}
+*/
+
+#div_errorStackTrace
+{
+    display: none;
+    z-index:10;
+    background-color: lightgrey;
+    border-radius: 5px;
+    border: 3px solid black;
+    position: fixed;
+    width: 800px;
+    left: 50%;
+    top: 50%;
+    margin-left: -400px;
+    padding: 6px 8px 8px;
+    box-sizing: border-box;
+    text-align: center;
+    /* overflow-y: scroll; */
+}
+
+#errorBox
+{
+    display: none;
+    z-index:10;
+    background-color: lightgrey;
+    border-radius: 5px;
+    border: 3px solid black;
+    position: fixed;
+    width: 400px;
+    left: 50%;
+    top: 50%;
+    margin-left: -200px;
+    padding: 6px 8px 8px;
+    box-sizing: border-box;
+    text-align: center;
+    /* overflow-y: scroll; */
+}
+#errorBox button {
+    background-color: black;
+    color: white;
+    display: inline-block;
+    border-radius: 3px;
+    border: 1px solid #aaa;
+    padding: 2px;
+    text-align: center;
+    width: 120px;
+    cursor: pointer;
+}
+#errorBox .message
+{
+    text-align: center;
+    color: red;
+    margin-bottom: 8px;
+}
+
+
+#div_confirm {
+    display: none;
+    z-index:10;
+    /* background-color: #241f20;*/
+    background-color: #644B26;
+    border-radius: 5px;
+    border: 3px solid white;
+    position: fixed;
+    width: 300px;
+    left: 50%;
+    top: 50%;
+    margin-left: -150px;
+    padding: 6px 8px 8px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+#promptAdminPasswordBox .span_adminPasswordPrompt {
+ 
+  text-align : center;
+  color: white;
+  clear: none;
+  float: left;
+  display: block;
+  margin-left: 34px;
+  padding: 2px 1em 0 0;
+}
+
+#promptAdminPasswordBox button {
+    background-color: #ccc;
+    display: inline-block;
+    border-radius: 3px;
+    border: 1px solid #aaa;
+    padding: 2px;
+    text-align: center;
+    width: 80px;
+    cursor: pointer;
+}
+#div_promptAdminPasswordBox button:hover
+{
+    background-color: #ddd;
+}
+#promptAdminPasswordBox .message, #div_confirm .message
+{
+    text-align: center;
+    color: white;
+    margin-bottom: 8px;
+}
+
+td.td_adminPasswordPromptLabel {
+	color: white;
+}
+
+#table_adminInfoPrompt {
+	font-size: 1.0em;
+	line-height: 1.0;
+}
+
+#pwd_adminPasswordPrompt {
+	font-size: 0.75em;
+	padding: 3px;
+	display: block;
+}
+
+#table_adminInfoPrompt {
+	 margin-left: auto;
+     margin-right: auto;
+}
+
+table.admin {
+     background-color:#E3E3E3;
+     margin: auto;
+     border: 3px solid black;
+}
+
+th.admin {
+    border: 1px solid black;
+    background-color:#f3e1c0;
+    padding: 1px;
+}
+
+td.admin {
+    border: 1px solid black;
+    font-size: 18px;
+    padding: 1px;
+}
+
+td.header {
+   font-size: 20px;
+   /* background-color: #BBDDFF; */
+   background-color: #f3e1c0;
+   text-align: center;
+   font-weight: 500;
+   padding: 1px;
+}
+
+select.admin {
+	margin-bottom: 1px;
+	font-size: 16px;
+	background-color: slategrey;
+    color: white;	
+}
+
+
+[type="text"].admin {
+	margin-bottom: 0px;
+	padding : 1px;
+    font-size: 16px;
+}
+
+
+/*  original button start color #0073ceff, new color #a49561ff */
