@@ -89,6 +89,11 @@ public class DirectoryAccessor {
 		    @Override
 		    public boolean accept(File file) {
 		    	
+		    	//file name designates 3 or more decimal places
+		    	//for example Aud_thresh0.005.png
+		    	//we ignore such files because we only care about
+		    	//thresholds from 1% to 100% in increments of 1%
+		    	//such as 1, 2, 3, etc.
 		    	boolean fraction_GTE_3_DEC = false;
 		    	
 		    	if(file.isDirectory()) {
@@ -110,7 +115,7 @@ public class DirectoryAccessor {
 		    	     fraction_GTE_3_DEC = fraction_GTE_3_DEC(filePathName);
 		    	}
 		    	
-		    	
+		    	//ignore files that represent .005 percentages such as Aud_thresh0.005.png
 		    	if(fraction_GTE_3_DEC) {
 		    		return false;
 		    	}
@@ -125,8 +130,9 @@ public class DirectoryAccessor {
 		for(int i=0; i<directories.length; i++ ) {
 			aFile = directories[i];
 			anImagePath = aFile.getAbsolutePath();
-		
-			if(anImagePath.contains("_network_probability") || anImagePath.contains("_network_probability")) {
+			// the client always expects the network probability map to be first in the array
+			// because it is processed differently on the client
+			if(anImagePath.contains("_network_probability") || anImagePath.contains("_number_of_nets")) {
 				imagePaths.add(0, anImagePath);
 			}
 			else {

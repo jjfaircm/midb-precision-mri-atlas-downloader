@@ -11,7 +11,10 @@ var networkDisplayNameReplacementMarker = "${networkDisplayName}";
 var networkFolderNameReplacementMarker = "${networkFolderName}";
 var fileNameReplacementMarker = "${fileName}";
 var menuIdReplacementMarker = "${menuId}";
-var surfaceVolumeTypeReplacementMarker = "{surface_volume}";
+var surfaceVolumeTypeReplacementMarker = "${surface_volume}";
+var summaryEntryReplacementMarker = "${summaryEntry}";
+var formKeyReplacementMarker = "${formKey}";
+
 
 
 var networkIdReplacementMarker = "${networkId}";
@@ -23,7 +26,10 @@ var template_ul_subSubMenu = "<ul class=\x22subSubMenu\x22 id=\x22ul_${id}\x22>"
 //                                                                            onmouseout="mouseOut(this)" onclick="menuClicked(this, false, true )">Combined Networks</a></li> 
                  
 var template_li_subSubMenu = "<li class=\x22subSubMenu\x22><a class=\x22subSubMenu\x22 id=\x22${id}\x22 data-study=\x22${studyName}\x22 onmouseover=\x22showSubSubMenu(this)\x22" 
-                                                                           + " onmouseout=\x22mouseOut(this)\x22 onclick=\x22menuClicked(this, false, true)\x22 data-surfaceVolumeType=\x22${surface_volume}\x22 data-networkId=\x22${networkId}\x22>${displayName}</a></li>";
+                                                                           + " onmouseout=\x22mouseOut(this)\x22 onclick=\x22menuClicked(this, false, true)\x22 "
+                                                                           + " data-studyDisplayName=\x22${studyDisplayName}\x22 "
+                                                                           + "data-surfaceVolumeType=\x22${surface_volume}\x22 data-networkId=\x22${networkId}\x22>${displayName}"
+                                                                           + "</a></li>";
 
 var tag_endLI = "</li>";
 var tag_endUL = "</ul>";
@@ -35,10 +41,28 @@ var template_networkEntry = "${networkDisplayName} (${networkFolderName})" + new
 var template_endMenuEntry = "END MENU ENTRY" + newLine + newLine;
 
 
-var template_li_zipImage =   "<li class=\x22zipList\x22>" + newLine
+var template_li_surfaceZipImage =   "<li class=\x22zipList\x22 onclick=\x22removeDroppedFile(this)\x22 data-formKey=\x22${formKey}\x22 id=\x22surface.zip\x22>" + newLine
                   + "<figure class=\x22zipFigure\x22>" + newLine
                   + "<img src=\x22/NetworkProbabilityDownloader/images/zip_vice.jpg\x22 height=\x2265\x22 width=\x2265\x22>" + newLine
                   + "<figcaption class=\x22zipList\x22>${fileName}</figcaption>" + newLine
                   + "</figure>" + newLine
                   + "</li>";
+
+var template_li_volumeZipImage =   "<li class=\x22zipList\x22 onclick=\x22removeDroppedFile(this)\x22 data-formKey=\x22${formKey}\x22 id=\x22volume.zip\x22>" + newLine
++ "<figure class=\x22zipFigure\x22>" + newLine
++ "<img src=\x22/NetworkProbabilityDownloader/images/zip_vice.jpg\x22 height=\x2265\x22 width=\x2265\x22>" + newLine
++ "<figcaption class=\x22zipList\x22>${fileName}</figcaption>" + newLine
++ "</figure>" + newLine
++ "</li>";
+
+var template_li_textImage =   "<li class=\x22zipList\x22 onclick=\x22removeDroppedFile(this)\x22  data-formKey=\x22${formKey}\x22 id=\x22summary.txt\x22>" + newLine
++ "<figure class=\x22zipFigure\x22>" + newLine
++ "<img src=\x22/NetworkProbabilityDownloader/images/txt-file.png\x22 height=\x2265\x22 width=\x2265\x22>" + newLine
++ "<figcaption class=\x22zipList\x22>${fileName}</figcaption>" + newLine
++ "</figure>" + newLine
++ "</li>";
+
+
+var template_summary_li = "<li class=\x22li_atlasSummary\x22> ${summaryEntry}</li>";  
+
  

@@ -1,6 +1,9 @@
 package edu.umn.midb.population.atlas.servlet;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Timestamp;
@@ -11,6 +14,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Map;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
@@ -25,13 +30,14 @@ import edu.umn.midb.population.atlas.base.ApplicationContext;
 import edu.umn.midb.population.atlas.config.PropertyManager;
 import edu.umn.midb.population.atlas.data.access.DirectoryAccessor;
 import edu.umn.midb.population.atlas.exception.BIDS_FatalException;
+import edu.umn.midb.population.atlas.security.TokenManager;
 import edu.umn.midb.population.atlas.tasks.DownloadTracker;
 import edu.umn.midb.population.atlas.tasks.HitTracker;
 import edu.umn.midb.population.atlas.utils.AtlasDataCacheManager;
 import edu.umn.midb.population.atlas.utils.CreateStudyHandler;
+import edu.umn.midb.population.atlas.utils.EmailNotifier;
 import edu.umn.midb.population.atlas.utils.NetworkMapData;
 import edu.umn.midb.population.atlas.utils.RemoveStudyHandler;
-import edu.umn.midb.population.atlas.utils.TokenManager;
 import edu.umn.midb.population.atlas.utils.ZipChunkHandler;
 import edu.umn.midb.population.response.handlers.WebResponder;
 import logs.ThreadLocalLogTracker;
@@ -121,7 +127,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	private static final long VERSION_NUMBER = 0;
-	public static final String BUILD_DATE = "Version beta_3.0  0901_2021:02:36__war=NPDownloader_0901.war"; 
+	public static final String BUILD_DATE = "Version beta_20.0  0930_2021:00:00__war=NPDownloader_0930.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";
@@ -130,10 +136,14 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	public static final String ROOT_PATH = "/midb/studies/${STUDY_NAME}/${DATA_TYPE}/"; 
 	//public static final String ROOT_PATH = "/Users/jjfair/midb_old/"; 
 	public static final String DEFAULT_NEURAL_NETWORK = "combined_clusters";
-	//public static final String DEFAULT_NEURAL_NETWORK = "Aud";
+	public static final String DIAGNOSTICS_FILE = "/midb/diagnostics/diagnostics.txt";
+	public static final String DIAGNOSTICS_DEMARCATION = "*********************************************************************";
+	public static final String ADMIN_ACCESS_FILE = "/midb/tracking/admin_access.csv";
 	public static Logger LOGGER = null;
-	public static final String DOWNLOAD_ENTRY_TEMPLATE = "ID,IP_ADDRESS,DOWNLOAD_REQUESTED_FILE,TIMESTAMP";
-	public static final String HIT_ENTRY_TEMPLATE = "ID,IP_ADDRESS,TIMESTAMP";
+	public static final String DOWNLOAD_ENTRY_TEMPLATE = "ID,IP_ADDRESS,TIMESTAMP,DOWNLOAD_REQUESTED_FILE";
+	public static final String HIT_ENTRY_TEMPLATE = "ID,IP_ADDRESS,TIMESTAMP,USER_AGENT";
+	public static final String ADMIN_ENTRY_TEMPLATE = "IP_ADDRESS,ACTION,TIMESTAMP,USER_AGENT";
+
     //private static final SimpleDateFormat SDF1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final DateTimeFormatter DT_FORMATTER_1 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final DateTimeFormatter DT_FORMATTER_FOR_ID = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
@@ -177,6 +187,32 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		return isDuplicate;
 	}
 	
+	static protected void createDiagnosticEntry(String entry) {
+		
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "createDiagnosticEntry()...invoked.");
+		
+		try {
+			FileWriter fw = new FileWriter(DIAGNOSTICS_FILE, true);
+		    BufferedWriter bw = new BufferedWriter(fw);
+		    bw.write(DIAGNOSTICS_DEMARCATION);
+		    bw.newLine();
+		    bw.write(entry);
+		    bw.newLine();
+		    bw.write(DIAGNOSTICS_DEMARCATION);
+		    bw.newLine();
+		    bw.newLine();
+		    bw.close();
+		}
+		catch(Exception e) {
+			LOGGER.error(loggerId + "createDiagnosticEntry()...error encountered.");
+			LOGGER.error(loggerId + e.getMessage(), e);
+		}
+		
+		LOGGER.trace(loggerId + "createDiagnosticEntry()...invoked.");
+
+	}
+	
 	/**
 	 * Entry point into the servlet. The 'action' parameter is read from the query
 	 * string which then directs the request to the appropriate action-handler method.
@@ -194,6 +230,16 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				
 		if(checkDuplicateRequest(request)) {
 			return;
+		}
+		
+		String ipAddress = null;
+		
+		ipAddress = request.getRemoteAddr();
+		if(ipAddress.contains("127.0.0.1")) {
+			String originalIP = request.getHeader("X-Forwarded-For");
+			if(originalIP != null) {
+				ipAddress = originalIP;
+			}
 		}
 				
 		HttpSession session = request.getSession();
@@ -218,45 +264,52 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			response.setContentType(CONTENT_TEXT_PLAIN);
 			response.setCharacterEncoding(CHARACTER_ENCODING_UTF8);
 			
+			String queryString = request.getQueryString();
+			appContext.addQueryStringToHistoryChain(queryString);
+			
 			switch (action) {
 			
 			case "downloadFile":
 				handleAjaxDownloadFile(appContext, request, response);
 				break;
 			case "getMenuData":
+				//pause(5000);
+				submitHitEntry(request);
+				appContext.setTokenManager(new TokenManager());
 				handleAjaxGetMenuDataRequest(appContext, request, response);
 				break;
-			case "getNeuralNetworkNames":
-				appContext.setTokenManager(new TokenManager());
-				submitHitEntry(request); //we do this here because this is the default action when visiting the site
-				long gnnActionBeginTime = System.currentTimeMillis();
-				handleAjaxGetNeuralNetworkNames(appContext, request, response);
-				long gnnActionEndTime = System.currentTimeMillis();
-				long gnnProcessingTime = gnnActionEndTime-gnnActionBeginTime;
-				//LOGGER.info("Processing time in ms for getNeuralNetworkNames=" + gnnProcessingTime);
+			case "getNetworkFolderNamesConfig":
+				handleAjaxGetNetworkFolderNamesConfig(appContext, request, response);
 				break;
 			case "getThresholdImages":
+				//pause(30000);
 				long gtiActionBeginTime = System.currentTimeMillis();
 				String selectedNeuralNetworkName = request.getParameter("neuralNetworkName");
 
-				handleAjaxGetThresholdImages(appContext, request, response, false, null);
+				handleAjaxGetThresholdImages(appContext, request, response, false);
 				long gtiActionEndTime = System.currentTimeMillis();
 				long gtiProcessingTime = gtiActionEndTime-gtiActionBeginTime;
 				//LOGGER.info("NetworkProbabilityDownloader.doGet()...selectedNeuralNetworkName=" + selectedNeuralNetworkName);
 				//LOGGER.info("Processing time in ms for getThresholdImages=" + gtiProcessingTime);
 				break;
 			case "removeStudy":
+				updateAdminAccessFile(request, ipAddress, action);
 				handleAjaxRemoveStudy(appContext, request, response);
 				break;
 			case "validateAdminAccess":
+				updateAdminAccessFile(request, ipAddress, action);
 				handleAjaxValidateAdminAccess(appContext, request, response);
+				break;
+			case "validateAdminAccessStatus":
+				updateAdminAccessFile(request, ipAddress, action);
+				handleAjaxValidateAdminAccessStatus(appContext, request, response);
 				break;
 			}
 		
 		}
 		catch(Exception e) {
 			LOGGER.error("doGet()...error encountered", e);
-			handleFatalError(request, response, e);
+			handleFatalError(appContext, request, response, e);
 		} 
 	}
 	
@@ -267,6 +320,11 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		HttpSession session = request.getSession();
 		ApplicationContext appContext = (ApplicationContext)session.getAttribute("applicationContext");
 		String loggerId = appContext.getLoggerId();
+		ThreadLocalLogTracker.set(appContext.getLoggerId());
+		
+		String queryString = request.getQueryString();
+		appContext.addQueryStringToHistoryChain(queryString);
+
 
 		try {
 			switch (action) {
@@ -286,7 +344,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		}
 		catch(Exception e) {
 			LOGGER.error(e.getMessage(), e);
-			handleFatalError(request, response, e);
+			handleFatalError(appContext, request, response, e);
 		}
 
 	}
@@ -303,14 +361,36 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	protected void handleFatalError(HttpServletRequest request, HttpServletResponse response, Exception e) throws ServletException, IOException {
+	protected void handleFatalError(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response, Exception e) throws ServletException, IOException {
 
-		String loggerId = ThreadLocalLogTracker.get();
+		String loggerId = appContext.getLoggerId();
 		LOGGER.fatal(loggerId + "handleFatalError()...invoked");
 		String NEW_LINE = "\r\n";
-	
-		String queryString = request.getQueryString();
-		String privateQueryString = queryString;
+		String ipAddress = request.getRemoteAddr();
+		
+		if(ipAddress.contains("127.0.0.1")) {
+			String originalIP = request.getHeader("X-Forwarded-For");
+			if(originalIP != null) {
+				ipAddress = originalIP;
+			}
+		}
+		
+		appContext.setRemoteAddress(ipAddress);
+		
+		/*
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+		LocalTime localTime = LocalTime.now();
+		String timeStamp = dtf.format(localTime);
+		*/
+		//use local system clock
+	    String timeString = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+		
+		String id = request.getSession().getId();
+		id += "__";
+		id += timeString;
+		appContext.setId(id);
+		String queryStringHistory = appContext.getQueryStringHistory();
 		
 		StackTraceElement[] stackTraceEntries = e.getStackTrace();
 	    int stackEntriesCount = stackTraceEntries.length;
@@ -360,12 +440,14 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		//responseError += stackTraceEntries[0] + "\n";
 		//responseError += stackTraceEntries[1] + "\n";
 		String completeResponseMessage = fatalErrorPrefix + responseError1 + responseError2 + stackTraceData + 
-				                         privateQueryString + fatalErrorSuffix;
+				                         queryStringHistory + fatalErrorSuffix;
 		
 
 		response.getWriter().println(completeResponseMessage);
 		response.getWriter().flush();
+		createDiagnosticEntry(completeResponseMessage);
 
+		EmailNotifier.sendEmailNotification("INCIDENT_ID=" + id);
 		LOGGER.fatal(loggerId + "handleFatalError()...exit");
 		return;
 		
@@ -380,7 +462,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	 */
 	protected void handleAjaxDownloadFile(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
 		
-		String loggerId = ThreadLocalLogTracker.get();
+		String loggerId = appContext.getLoggerId();
 		LOGGER.trace(loggerId + "handleAjaxDownloadFile()...invoked.");
 		String filePathAndName = request.getParameter("filePathAndName");
 		LOGGER.trace(loggerId + "handleAjaxDownloadFile()...filePathAndName=" + filePathAndName);
@@ -397,10 +479,11 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		String fileNameOnly = filePathAndName.substring(slashIndex+1);
 		LocalDateTime localTime = LocalDateTime.now();
 		String formattedTS = DT_FORMATTER_1.format(localTime);
+		formattedTS = formattedTS.replace(" ", ",");
 		String id = DT_FORMATTER_FOR_ID.format(localTime);
 		String downloadEntry = DOWNLOAD_ENTRY_TEMPLATE.replace("ID", id);
 		downloadEntry = downloadEntry.replace("IP_ADDRESS", ipAddress);
-		downloadEntry = downloadEntry.replace("DOWNLOAD_REQUESTED_FILE", fileNameOnly);
+		downloadEntry = downloadEntry.replace("DOWNLOAD_REQUESTED_FILE", filePathAndName);
 		downloadEntry = downloadEntry.replace("TIMESTAMP", formattedTS);
 		DownloadTracker.getInstance().addDownloadEntry(downloadEntry);
 		WebResponder.sendFileDownloadResponse(response, fileBinaryBuffer, fileNameOnly);
@@ -409,8 +492,16 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		return;
 	}
 	
+	protected void handleAjaxGetAdminValidationStatus(ApplicationContext appContext, HttpServletResponse response) {
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleAjaxGetAdminValidationStatus()...invoked.");
+		
+		
+		LOGGER.trace(loggerId + "handleAjaxGetAdminValidationStatus()...exit.");
+	}
+	
 	protected void handleAjaxGetMenuDataRequest(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
-		String loggerId = ThreadLocalLogTracker.get();
+		String loggerId = appContext.getLoggerId();
 		LOGGER.trace(loggerId + "handleAjaxGetMenuData()...invoked.");
 
 		WebResponder.sendMenuDataResponse(response, appContext);
@@ -420,25 +511,15 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
 
 	
-	/**
-	 * Handles the request to retrieve the list of available neural network types.
-	 * 
-	 * @param appContext  A reference to the session's {@linkplain ApplicationContext}
-	 * @param request HttpServletRequest A reference to the current HttpServletRequest
-	 * @param response HttpServletResponse A reference to the current HttpServletResponse
-	 */
-	protected void handleAjaxGetNeuralNetworkNames(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
+	protected void handleAjaxGetNetworkFolderNamesConfig(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleAjaxGetNetworkFolderNamesConfig()...invoked.");
 		
-		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "handleAjaxGetNeuralNetworkNames()...invoked.");
+		//ArrayList<String> folderNamesConfig = AtlasDataCacheManager.getInstance().getNeuralNetworkFolderNamesConfig();
+		//handleAjaxGetThresholdImages(appContext, request, response, true, folderNamesConfig);
+		WebResponder.sendNetworkFolderNamesConfigResponse(response);
 		
-		boolean includeNetworkNames = true;
-		ArrayList<String> networkTypesList = AtlasDataCacheManager.getInstance().getNeuralNetworkNames();
-		handleAjaxGetThresholdImages(appContext, request, response, true, networkTypesList);
-		//WebResponder.sendNeuralNetworkNamesResponse(response, networkTypesList);
-		LOGGER.trace(loggerId + "handleAjaxGetNeuralNetworkNames()...exit.");
-
-		return;
+		LOGGER.trace(loggerId + "handleAjaxGetNetworkFolderNamesConfig()...invoked.");
 	}
 	
 	
@@ -453,13 +534,14 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	 * @param isFirstRequest boolean
 	 * @param neuralNetworkNames A list of available neural network names
 	 */
-	protected void handleAjaxGetThresholdImages(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response, boolean isFirstRequest, ArrayList<String> neuralNetworkNames) {
+	protected void handleAjaxGetThresholdImages(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response, boolean isFirstRequest) {
 
-		String loggerId = ThreadLocalLogTracker.get();
+		String loggerId = appContext.getLoggerId();
 		LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...invoked.");
 		
 		boolean isSingleNetworkResponse = false;
 		NetworkMapData networkMapData = null;
+			
 		
 		//String rootDirectory = "/myPath";
 		
@@ -469,15 +551,15 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		//Also if this is the default request then the 'selected' neuralNetworkName
 		//will be DEFAULT_NEURAL_NETWORK
 		
-		String selectedNeuralNetworkName = DEFAULT_NEURAL_NETWORK;
-		String selectedNeuralNetworkPathName = AtlasDataCacheManager.getInstance().getNetworkPathName(selectedNeuralNetworkName);
+		String selectedNeuralNetworkName = null;
+		//String selectedNeuralNetworkPathName = AtlasDataCacheManager.getInstance().getNetworkPathName(selectedNeuralNetworkName);
+		//String selectedNeuralNetworkPathName = null;
 		
 		if(!isFirstRequest) {
 			selectedNeuralNetworkName = request.getParameter("neuralNetworkName");
 			LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...selectedNeuralNetworkName=" + selectedNeuralNetworkName);
-			selectedNeuralNetworkPathName = AtlasDataCacheManager.getInstance().getNetworkPathName(selectedNeuralNetworkName);
-			LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...selectedNeuralNetworkPathName=" + selectedNeuralNetworkPathName);
-			neuralNetworkNames = AtlasDataCacheManager.getInstance().getNeuralNetworkNames();
+			//selectedNeuralNetworkPathName = AtlasDataCacheManager.getInstance().getNetworkPathName(selectedNeuralNetworkName);
+			LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...selectedNeuralNetworkPathName=" + selectedNeuralNetworkName);
 		}
 		
 		if(!selectedNeuralNetworkName.equals("combined_clusters")) {
@@ -485,10 +567,15 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		}
 		
 		String selectedStudy = request.getParameter("selectedStudy");
+		
+		//for diagnostic logging test
+		if(selectedStudy.contains("bogus")) {
+				throw new NullPointerException("test");
+		}
 		String targetDirectory = ROOT_PATH.replace(STUDY_NAME_PLACEHOLDER, selectedStudy);
 		String selectedDataType = request.getParameter("selectedDataType");
 		targetDirectory = targetDirectory.replace(DATA_TYPE_PLACEHOLDER, selectedDataType);
-		targetDirectory = targetDirectory + selectedNeuralNetworkPathName;
+		targetDirectory = targetDirectory + selectedNeuralNetworkName;
 		LOGGER.trace(targetDirectory);
 		LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...selected network name=" + targetDirectory);
 
@@ -496,32 +583,55 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		ArrayList<String> imageBase64Strings = AtlasDataCacheManager.getInstance().getBase64ImagePathStrings(targetDirectory);
 		
 		if(isSingleNetworkResponse) {
-			String shortNetworkName = AtlasDataCacheManager.getInstance().getNetworkPathName(selectedNeuralNetworkName);
-			networkMapData = AtlasDataCacheManager.getInstance().getNetworkMapData(shortNetworkName);
+			networkMapData = AtlasDataCacheManager.getInstance().getNetworkMapData(targetDirectory);
 		}
 		
-		WebResponder.sendThresholdImagesResponse(response, imagePaths, imageBase64Strings, neuralNetworkNames, networkMapData);
+		WebResponder.sendThresholdImagesResponse(response, imagePaths, imageBase64Strings, networkMapData);
 		LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...exit.");
 		
 		return;
 	}
 	
 	protected void handleAjaxAddStudyRequest(ApplicationContext appContext, HttpServletRequest request,
-			                                   HttpServletResponse response) throws IOException {
-		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "handleAjaxUploadMenuFiles()...invoked.");
+			                                   HttpServletResponse response) throws IOException, BIDS_FatalException {
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleAjaxAddStudyRequest()...invoked.");
 		
-		//Part part = null;
+		//Part part = null;	
 		String fileName = null;
+		String currentFileNumberString = request.getParameter("currentFileNumber");
+		int currentFileNumber = Integer.parseInt(currentFileNumberString);
+		String totalFileNumberString = request.getParameter("totalFileNumber");
+		int totalFileNumber = Integer.parseInt(totalFileNumberString);
+		String fileSizeString = request.getParameter("fileSize");
+		long fileSize = Long.parseLong(fileSizeString);
+		boolean finished = false;
 		
-		CreateStudyHandler createStudyHandler = new CreateStudyHandler(request, response);
-		createStudyHandler.deployStudy();
+		if(currentFileNumber == totalFileNumber) {
+			finished = true;
+		}
 
+		CreateStudyHandler createStudyHandler = null;
+		if(currentFileNumber == 1) {
+			createStudyHandler = new CreateStudyHandler(appContext, request, response);
+			appContext.setCreateStudyHandler(createStudyHandler);
+			appContext.clearErrors();
+			fileName = createStudyHandler.uploadFile(request, fileSize);
+		}
+		else {
+			createStudyHandler = appContext.getCreateStudyHandler();
+			fileName = createStudyHandler.uploadFile(request, fileSize);
+		}
 		
-		String studyFolderName = request.getParameter("studyFolderName");
-		WebResponder.sendCreateMenuResponse(appContext, response);
+		if(finished) {
+			createStudyHandler.completeStudyDeploy();
+			WebResponder.sendAddStudyResponse(appContext, response);
+		}
+		if(!finished) {
+			WebResponder.sendUploadFileResponse(response, fileName);
+		}
 		
-		LOGGER.trace(loggerId + "handleAjaxUploadMenuFiles()...exit.");
+		LOGGER.trace(loggerId + "handleAjaxAddStudyRequest()...exit.");
 
 
 	}
@@ -536,10 +646,14 @@ public class NetworkProbabilityDownloader extends HttpServlet {
             HttpServletResponse response) throws IOException, BIDS_FatalException {
 				
 		if(!appContext.isAdminActionValidated()) {
+			response.getWriter().write("Session timeout<br>study not removed.<br>Please refresh browser page");
+			return;
+			/*
 			StackTraceElement[] ste = Thread.currentThread().getStackTrace();
 			String message = "Invalid Admin State";
 			BIDS_FatalException bidsFatalError = new BIDS_FatalException(message, ste);
 			throw bidsFatalError;
+			*/
 		}
 		
 		String studyFolder = request.getParameter("studyFolder");
@@ -552,16 +666,36 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	protected void handleAjaxValidateAdminAccess(ApplicationContext appContext, HttpServletRequest request,
             HttpServletResponse response) throws IOException {
 		
-			String loggerId = ThreadLocalLogTracker.get();
+			String loggerId = appContext.getLoggerId();
 			LOGGER.trace(loggerId + "handleAjaxValidateAdminAccess()...invoked.");
 			
 			String token = request.getParameter("token");
 			String password = request.getParameter("mriVersion");
 			String ipAddress = request.getRemoteAddr();
+			
+			if(ipAddress.contains("127.0.0.1")) {
+				String originalIP = request.getHeader("X-Forwarded-For");
+				if(originalIP != null) {
+					ipAddress = originalIP;
+				}
+			}
+			
 			WebResponder.sendAdminValidationResponse(response, appContext, token, password, ipAddress);
 
 			LOGGER.trace(loggerId + "handleAjaxValidateAdminAccess()...exit.");
 	}
+	
+	protected void handleAjaxValidateAdminAccessStatus(ApplicationContext appContext, HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+		
+			String loggerId = appContext.getLoggerId();
+			LOGGER.trace(loggerId + "handleAjaxValidateAdminAccessStatus()...invoked.");
+
+			WebResponder.sendAdminValidationStatus(appContext, response);
+			LOGGER.trace(loggerId + "handleAjaxValidateAdminAccessStatus()...exit.");			
+	}
+
+
 		
 	/**
 	 * Override of the init() method which handles instantiation and initialization of the
@@ -574,21 +708,6 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		//we preload PropertyManager because it will invoke the LogConfigurator
 		PropertyManager.getInstance();
 		LOGGER = LogManager.getLogger(NetworkProbabilityDownloader.class);
-
-		// AtlasDataCacheManager.getInstance() will cause the AtlasDataCacheManager
-		// to preload the default image data
-		AtlasDataCacheManager.getInstance();
-		DownloadTracker.getInstance();
-		HitTracker.getInstance();
-		try {
-			Class.forName("edu.umn.midb.population.atlas.utils.TokenManager");
-		}
-		catch(Exception e) {
-			LOGGER.error(e.getMessage(), e);
-		}
-		
-		//get local machine name
-		
 		
 		try {
 		    InetAddress addr;
@@ -600,12 +719,73 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		    LOGGER.error("Hostname can not be resolved");
 		    LOGGER.error(ex.getLocalizedMessage(), ex);
 		}
+		
+		AtlasDataCacheManager.getInstance().setLocalHostName(localHostName);
+		
+		if(localHostName.contains("JAMESs-MacBook-Pro")) {
+			AtlasDataCacheManager.getInstance().loadKeyFromFile();
+			AtlasDataCacheManager.getInstance().loadSettingsConfig();
+		}
+
+		
+		Map<String,String> envMap = System.getenv();
+		
+		LOGGER.trace("Environment Variables follow!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		
+		for (Map.Entry<String, String> entry : envMap.entrySet()) {
+			if(entry.getKey().contains("MIDB_ROOT")) {
+				LOGGER.trace("EMAIL_ARGS found...continue");
+				EmailNotifier.setKey(entry.getValue());
+				TokenManager.setKey(entry.getValue());
+
+				continue;
+			}
+			else if(entry.getKey().contains("MIDB_SERIALIZATION")) {
+				LOGGER.trace("MIDB_SERIALIZATION found...continue");
+				String[] encryptedArray = entry.getValue().split("::");
+				EmailNotifier.setSender(encryptedArray[0]);
+				EmailNotifier.setPassword(encryptedArray[1]);
+				continue;
+			}
+			else if(entry.getKey().contains("MIDB_VERSION")) {
+				LOGGER.trace("MIDB_VERSION found...continue");
+				String encryptedRecipient = entry.getValue();
+				EmailNotifier.setRecipient(encryptedRecipient);
+				continue;
+			}
+			else if(entry.getKey().contains("MIDB_MRI")) {
+				LOGGER.trace("MIDB_MRI found...continue");
+				String encryptedPassword = entry.getValue();
+				TokenManager.setPassword(encryptedPassword);
+				continue;
+			}
+			
+            LOGGER.trace(entry.getKey() + " : " + entry.getValue());
+        }
+		
+		LOGGER.info("exiting init().");
+
+		// AtlasDataCacheManager.getInstance() will cause the AtlasDataCacheManager
+		// to preload the default image data
+		DownloadTracker.getInstance();
+		HitTracker.getInstance();
+		try {
+			Class.forName("edu.umn.midb.population.atlas.security.TokenManager");
+			Class.forName("edu.umn.midb.population.atlas.utils.EmailNotifier");
+		}
+		catch(Exception e) {
+			LOGGER.error(e.getMessage(), e);
+		}
+		
+		//get local machine name
+		
 		LOGGER.info("exiting init().");
 	}
 	
 	protected void submitHitEntry(HttpServletRequest request) {
 		
 		String ipAddress = request.getRemoteAddr();
+		String userAgent = request.getHeader("USER-AGENT");
 		
 		LOGGER.trace("remoteAddr=" + ipAddress);
 		
@@ -635,12 +815,54 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		LocalDateTime localTime = LocalDateTime.now();
 		String formattedTS = DT_FORMATTER_1.format(localTime);
+		formattedTS = formattedTS.replace(" ", ",");
 		String id = DT_FORMATTER_FOR_ID.format(localTime);
 		String hitEntry = HIT_ENTRY_TEMPLATE.replace("ID", id);
 		hitEntry = hitEntry.replace("IP_ADDRESS", ipAddress);
 		hitEntry = hitEntry.replace("TIMESTAMP", formattedTS);
+		hitEntry = hitEntry.replace("USER_AGENT", userAgent);
 		HitTracker.getInstance().addHitEntry(hitEntry);
 	}
+	
+	protected static synchronized void updateAdminAccessFile(HttpServletRequest request, String ipAddress, String action) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "updateAdminAccessFile()...invoked.");
+		
+		String userAgent = request.getHeader("USER-AGENT");
+		
+		LocalDateTime localTime = LocalDateTime.now();
+		String formattedTS = DT_FORMATTER_1.format(localTime);
+		formattedTS = formattedTS.replace(" ", ",");
+		//String id = DT_FORMATTER_FOR_ID.format(localTime);
+		String adminEntry = ADMIN_ENTRY_TEMPLATE.replace("IP_ADDRESS", ipAddress);
+		adminEntry = adminEntry.replace("ACTION", action);
+		adminEntry = adminEntry.replace("TIMESTAMP", formattedTS);
+		adminEntry = adminEntry.replace("USER_AGENT", userAgent);
 
+		FileWriter fw = null;
+		PrintWriter pw = null;
+		
+		try {
+			fw = new FileWriter(ADMIN_ACCESS_FILE, true);
+			pw = new PrintWriter(fw);
+			pw.println(adminEntry);
+			pw.close();
+			LOGGER.info(loggerId + "adminAccess, ipAddress=" + ipAddress);
+		}
+		catch(IOException ioE) {
+			LOGGER.error(loggerId + "Failed to create PrintWriter for file=" + ADMIN_ACCESS_FILE);
+			LOGGER.error(ioE.getMessage(), ioE);
+		}
+		LOGGER.trace(loggerId + "updateAdminAccessFile()...exit.");
+	}
+
+	public static void pause(long milliseconds) {
+		try {
+			Thread.sleep(milliseconds);
+		}
+		catch(Exception e) {
+			
+		}
+	}
 
 }

@@ -15,7 +15,7 @@ ul li {
 
 ul.subSubMenu {
 	/* left: 188px; */
-	left: 250px;
+	left: 270px;
 }
 
 
@@ -108,12 +108,21 @@ li.subSubMenu_ABCD:hover ul li a  {
 
 
 
-ul.submenu, ul.subSubMenu {
+ul.submenu {
  display: table;
  margin: 0 auto;
  padding: 0;
  list-style: none;
- width: 250px; /*here  was 190 */
+ width: 270px; /*here  was 190 */
+ border-bottom: 1px solid #ccc;
+}
+
+ul.subSubMenu {
+ display: table;
+ margin: 0 auto;
+ padding: 0;
+ list-style: none;
+ width: 220px; /*here  was 190 */
  border-bottom: 1px solid #ccc;
  }
 
@@ -122,16 +131,29 @@ ul.menu {
  margin: 0 auto;
  padding: 0;
  list-style: none;
- width: 250px; /*here  was 190 */
+ width: 270px; /*here  was 190 */
  /*
  border-bottom: 1px solid #ccc;
  */
  }
  
+ /* original
  #ul_zipList {
  	list-style: none;
  	margin: auto;
- 	width: 80%;
+ 	width: 62%;
+ }
+ */
+ 
+ #ul_zipList {
+ 	list-style: none;
+ 	margin: 0;
+ 	padding; 0;
+ }
+ 
+ /* added for test */
+ li.zipList {
+ 	float: left;
  }
  
  figure.zipFigure {
@@ -153,8 +175,8 @@ ul.menu {
 }
 
 #div_dropZone {
-    width:300px;
-    height:325px;
+    width:650px;
+    height:200px;
     border: 2px dashed gray;
     display: inline-block;
     margin: 0 auto;
@@ -193,6 +215,10 @@ li.studyMenu a {
 
 li.studyMenu a:hover {
   text-decoration: underline;;
+}
+
+select.select_networkType, #select_dataType {
+	width:100%;
 }
   
 

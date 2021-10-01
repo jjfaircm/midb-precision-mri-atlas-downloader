@@ -39,11 +39,15 @@
 {
     display: none;
     z-index:10;
+    /*background-color: #7a0019;*/
     background-color: #644B26;
+   /* background-color: #a49561;*/
+   /* background-image: linear-gradient(#a49561ff, #474747ff); */   
     border-radius: 5px;
-    border: 3px solid white;
+    border: 2px solid white;
+    outline: 2px solid black;
     position: fixed;
-    width: 300px;
+    width: 320px;
     left: 50%;
     top: 50%;
     margin-left: -150px;

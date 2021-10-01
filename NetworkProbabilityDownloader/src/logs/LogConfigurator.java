@@ -59,7 +59,7 @@ public class LogConfigurator {
 		  layoutBuilder.addAttribute("pattern", "%d{ISO8601} [%t] %-5p (%F\\:%L) - %m%n");
 		  
 		  ComponentBuilder<AppenderComponentBuilder> triggeringPolicy = builder.newComponent("Policies");
-		  triggeringPolicy.addComponent(builder.newComponent("SizeBasedTriggeringPolicy").addAttribute("size", "3M"));
+		  triggeringPolicy.addComponent(builder.newComponent("SizeBasedTriggeringPolicy").addAttribute("size", "1M"));
 		  rollingFile.addComponent(triggeringPolicy);
 		  rollingFile.add(layoutBuilder);
 		  console.add(layoutBuilder);

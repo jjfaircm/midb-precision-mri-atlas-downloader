@@ -1,4 +1,4 @@
-		 var version_buildString = "Version beta_3.0  0901_2021:02:36__war=NPDownloader_0901.war"; 
+		 var version_buildString = "Version beta_18.0  0918_2021:00:00__war=NPDownloader_0918.war"; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;
@@ -39,8 +39,13 @@
          var progress_upload = null;
          var div_unzipProgress = null;
          var token = null;
+         var studySummaryMap = new Map();
          var studyMenuIDArray = new Array();
-
+         var priorSelectedStudy = "none";
+         var readyToDisplayDownloadDiv = false;
+         var lastTokenActionTime = null;
+         var mobileDeviceActive = false;
+         
          
          /**
           * 1) Move title and change font
@@ -52,17 +57,37 @@
           * @returns
           */
          
+         function isMobile() {
+        	  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        	}
+
+         
          
          function startup() {
         	 console.log("startup()...invoked");
+ 		     console.log("navigator=" + navigator.userAgent);
+
+        	 
+ 		     if(navigator.userAgent.includes("obile")) {
+ 		    	 mobileDeviceActive = true;
+ 		     }
+        	 
+        	 //alert("startup");
         	 //console.log = function() {};
         	 console.log(version_buildString);
+        	 //toggleLogging();
+        	 var div_download = document.getElementById("div_download");
+        	 div_download.style.display = "none";
+         	 var div_submitNotification = document.getElementById("div_submitNotification");
+         	 div_submitNotification.style.display = "block";
         	 div_uploadProgress = document.getElementById("div_uploadProgress");
         	 progress_upload = document.getElementById("progress_upload");
         	 div_unzipProgress = document.getElementById("div_unzipProgress");
         	 sessionStorage.clear();
         	 setAjaxStyle();
+        	 resetSelectedTab();
         	 getMenuData();
+        	 //getNetworkFolderNamesConfig();
         	 console.log("startup()...end");
          }
          
@@ -71,10 +96,12 @@
         	 startupMenu();
         	 loadAllDivNames();
         	 hideAllDivs();
+        	 //resetSelectedTab();
         	 selectElement = document.getElementById("select_neuralNetworkName");
            	 var div_submitNotification = document.getElementById("div_submitNotification");
         	 div_submitNotification.style.display = "block";
         	 var anchor_ABCD_combined = document.getElementById("a_ABCD_combined_clusters");
+        	 //alert("ready to auto click menu");
         	 menuClicked(anchor_ABCD_combined, true, true);
         	 number_RangeThresholdValue = document.getElementById("number_thresholdValue");
         	 range_thresholdSlider = document.getElementById("range_threshold");
@@ -87,7 +114,7 @@
        	     div_snackbar = document.getElementById("snackbar");
         	 number_inputThresholdValueControl = document.getElementById("number_thresholdValue");
 
-        	 resetSelectedTab();
+        	 //resetSelectedTab();
         	 
         	 // do a little centering adjustment so that the menu element
         	 // lines up nicely with the dropdown
@@ -109,6 +136,7 @@
         	 initializeDragDrop();
 
        	     //registerScrollEventListener();
+        	 resetAddStudyForm()
         	 console.log("continueStartup()...exit.");
         	 //toggleLogging();
          }
@@ -140,7 +168,7 @@
 
  			var rowCount = table.rows.length;
  			var row = table.insertRow(rowCount);
- 			row.className = "admin";
+ 			row.className = "admin networkDisplayNameRow";
 
  			var cell1 = row.insertCell(0);
  			cell1.innerHTML = "Network Display Name";
@@ -166,6 +194,13 @@
 
          function deleteTableRow(tableID) {
             console.log("deleteTableRow()...invoked.");
+            
+            var selectNTElements = document.getElementsByClassName("select_networkType");
+            
+            if(selectNTElements.length<2) {
+            	doAdminAlert("At least 1 Available Network Type must be selected");
+            	return;
+            }
             
  			var table = document.getElementById(tableID);
  			var rowCount = table.rows.length;
@@ -194,9 +229,15 @@
          function buildMenuIdDropdown() {
         	 console.log("buildMenuIdDropdown()...invoked...");
         	 var dropdown_menuIDs = document.getElementById("select_menuId");
-        	 dropdown_menuIDs.length = 0;
-        	 var option = null;
+        	 //dropdown_menuIDs.length = 0;
         	 
+		     var j = 0;
+		     var maxIndex = dropdown_menuIDs.options.length-1;
+		     for(j=maxIndex; j>=0; j--) {
+		    	 dropdown_menuIDs.remove(j);
+		     }
+
+        	 var option = null;
         	 option = document.createElement('option');
         	 option.text = "choose a study id";
         	 option.classList.add("menuIdOption");
@@ -213,38 +254,136 @@
         	 console.log("buildMenuIdDropdown()...exit...");
          }
          
-         
-         function buldNeuralNetworkDropdownList(responseText) {
-        	 console.log("displayNeuralNetworkList()...invoked...");
-        	 var neuralNetworkNames = JSON.parse(responseText); 
-        	 //alert(neuralNetworkNames);
-        	 let option;
-        	 let selectedIndex = 0;
-        	 let dropdown_neuralNetworkName = document.getElementById("select_neuralNetworkName");
+         function buildNetworkFolderNamesMap(responseText) {
+        	 console.log("buildNetworkFolderNamesMap()...invoked...");
+        	 //alert("receiving networkFolderNames config");
+        	 //console.log(responseText);
+        	 var endIndex = 0;
         	 
-        	 for(let i=0; i<neuralNetworkNames.length; i++) {
-        		 option = document.createElement('option');
-        	 	 option.text = neuralNetworkNames[i];
-        	 	 option.classList.add("networkOption");
-        	 	 if(option.text.includes("combined_clusters")) {
-        	 		selectedIndex = i; 
-        	 	 }
-        	 	 option.value = neuralNetworkNames[i];
-        	 	 dropdown_neuralNetworkName.add(option);
-         	 }
+        	 while(responseText.endsWith("\n")) {
+        		 //console.log("removing trailing new line");
+        		 endIndex = responseText.lastIndexOf("\n");
+        		 responseText = responseText.substring(0, endIndex);
+        		 responseText = responseText.trim();
+        	 }
+        	 var configArray = responseText.split("&&");
+        	 //console.log("arrayLength=" + configArray.length);
+        	 var arrayForSpecificStudy = null;
         	 
-        	 dropdown_neuralNetworkName.selectedIndex = selectedIndex;
-        	 let div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
-        	 //div_selectNeuralNetworkName.style.display = "block";
-        	 //div_getThresholdImagesButton = document.getElementById("div_getThresholdImagesButton");
-        	 //div_getThresholdImagesButton.style.display = "block";
+        	 
+        	 for(var i=0; i<configArray.length; i++) {
+        		 if(configArray[i].length == 0) {
+        			 return;
+        		 }
+        		 //console.log("array element " + i + "follows");
+        		 //console.log(configArray[i]);
+        		 arrayForSpecificStudy = configArray[i].split(",");
+        		 buildNetworkFolderNameConfigEntry(arrayForSpecificStudy);
+        	 }
+        	 
+        	 console.log("buildNetworkFolderNamesMap()...exit...");
+        	 //toggleLogging();
 
-        	 console.log("displayNeuralNetworkList()...exit...");
+         }
+         
+         function buildNetworkFolderNameConfigEntry(folderNamesArray) {
+        	 console.log("buildNetworkFolderNameConfigEntry()...invoked...");
+        	 //alert("buildNetworkFolderNameConfigEntry");
+
+        	 var length = folderNamesArray.length;
+        	 var headerLine = folderNamesArray[0];
+        	 var startIndex = headerLine.indexOf("=");
+        	 var endIndex = headerLine.indexOf(")");
+        	 var studyNameKey = headerLine.substring(startIndex+1, endIndex);
+        	 
+        	 //now remove header and closing lines to end up with folderNames
+        	 folderNamesArray.splice(0, 1);
+        	 length = folderNamesArray.length;
+        	 folderNamesArray.splice(length-1, 1);
+        	 //console.log(folderNamesArray);
+        	 var currentEntry = null;
+        	 
+        	 //now remove new line characters
+        	 
+        	 for(var i=0; i<folderNamesArray.length; i++) {
+        		 currentEntry = folderNamesArray[i];
+        		 currentEntry = currentEntry.replaceAll("\n", "");
+        		 folderNamesArray[i] = currentEntry;
+        		 //console.log(folderNamesArray[i]);
+        	 }
+        	 //console.log("setting entry key=" + studyNameKey);
+        	 networkFolderNamesMap.set(studyNameKey, folderNamesArray);
+        	 console.log("buildNetworkFolderNameConfigEntry()...exit...");
+         }
+         
+         function buildNeuralNetworkDropdownList() {
+        	 console.log("buildNeuralNetworkDropdownList()...invoked...");
+
+        	 var dropdown_neuralNetworkName = document.getElementById("select_neuralNetworkName");      	 
+        	 
+        	 //first clear existing options from dropdown
+		     var j = 0;
+		     var maxIndex = dropdown_neuralNetworkName.options.length -1;
+		     for(j=maxIndex; j>=0; j--) {
+		    	 dropdown_neuralNetworkName.remove(j);
+		     }
+
+        	 
+        	 var option = null;
+        	 var selectedIndex = 0;
+        	 var folderNamesArray = networkFolderNamesMap.get(selectedStudy);
+        	 //console.log(folderNamesArray);
+        	 var entryArray = null;
+        	 var anEntry = null;
+        	 var displayName = null;
+        	 var value = null;
+        	 
+        	 for(var i=0; i<folderNamesArray.length; i++) {
+        		 anEntry = folderNamesArray[i];
+        		 //console.log("entry=" + folderNamesArray[i]);
+        		 entryArray = anEntry.split("=");
+        		 displayName = entryArray[0].trim();
+        		 value = entryArray[1].trim();
+        		 
+        		 option = document.createElement('option');
+        		 option.text = displayName;
+        		 option.value = value;
+        	 	 option.classList.add("networkOption");
+        	 	 if(value.includes("DMN")) {
+         	 		selectedIndex = i; 
+         	 	 }
+        	 	 dropdown_neuralNetworkName.add(option);        		 
+        	 }
+        	 dropdown_neuralNetworkName.selectedIndex = selectedIndex;
+        	 selectedNeuralNetworkName = dropdown_neuralNetworkName.options[dropdown_neuralNetworkName.selectedIndex].value;
+        	 
+        	 console.log("buildNeuralNetworkDropdownList()...exit...");
+         }
+         
+         function buildStudySummaryMap(summaryData) {
+        	 console.log("buildStudySummaryMap()...invoked.");
+        	 
+        	 var studySummaryArray = summaryData.split("::");
+        	 var summaryEntriesArray = null;
+        	 var studyName_EntriesArray = null;
+        	 var studyName = null;
+        	 var beginIndex = 0;
+        	 var endIndex = 0;
+
+        	 for(var i=0; i<studySummaryArray.length; i++) {
+        		 studyName_EntriesArray = studySummaryArray[i].split("??");
+        		 studyName = studyName_EntriesArray[0];
+        		 summaryEntriesArray = studyName_EntriesArray[1];
+            	 //console.log("buildStudySummaryMap()...adding mapEntry, key=" + studyName);
+            	 //console.log("buildStudySummaryMap()...adding mapEntry, data=" + summaryEntriesArray);
+
+        		 studySummaryMap.set(studyName, summaryEntriesArray);
+        	 }
          }
          
          function buildStudyMenu(responseData) {
-        	 console.log("buildStudyMenu()...invoked, responseData follows");
-        	 console.log(responseData);
+        	 console.log("buildStudyMenu()...invoked...");
+        	 //console.log(responseData);
         	 
         	 var menuArray = responseData.split("::");
         	 var menuEntry = null;
@@ -269,9 +408,12 @@
             	 closeParenIndex = studyEntry.lastIndexOf(")");
             	 surfaceVolumeType = studyEntry.substring(openParenIndex+1, closeParenIndex);
             	 
+            	 openParenIndex = studyEntry.indexOf("(");
+            	 var studyDisplayName = studyEntry.substring(0, openParenIndex).trim();
+            	 
             	 submenuOptionsArray = menuEntryArray[1].split(",");
         		 menuInnerHTML += buildStudyMenuEntry(studyEntry);
-        		 menuInnerHTML += buildSubmenuOptionEntries(submenuOptionsArray, studyName, shortId, surfaceVolumeType);
+        		 menuInnerHTML += buildSubmenuOptionEntries(submenuOptionsArray, studyName, shortId, surfaceVolumeType, studyDisplayName);
         	 }
         	 
         	//menuInnerHTML += tag_endLI;
@@ -285,10 +427,10 @@
        	    console.log("buildStudyMenu()...exit.");
          }
          
-         function buildSubmenuOptionEntries(optionsArray, studyName, shortId, surfaceVolumeType) {
+         function buildSubmenuOptionEntries(optionsArray, studyName, shortId, surfaceVolumeType, studyDisplayName) {
         	 //<li class=\x22subSubMenu\x22><a class=\x22subSubMenu\x22  data-study=\x22${studyName}\x22 onmouseover=\x22showSubSubMenu(this)\x22" 
              //+ "onmouseout=\x22mouseOut(this)\x22 onclick=\x22menuClicked(this, false, true )\x22>${displayName} data-networkId=\x22${networkId}</a></li>";
-
+             //alert("building option");
         	 console.log("buildSubmenuOptionEntries()...invoked, optionsArray=" + optionsArray);
 
         	 var optionEntry = null;
@@ -314,6 +456,7 @@
         		 liEntry = liEntry.replace(studyReplacementMarker, studyName);
         		 liEntry = liEntry.replace(displayNameReplacementMarker, displayText);
         		 liEntry = liEntry.replace(surfaceVolumeTypeReplacementMarker, surfaceVolumeType);
+        		 liEntry = liEntry.replace(studyDisplayReplacementMarker, studyDisplayName);
         		 menuHTML += liEntry;
         	 }
         	 menuHTML += tag_endUL;
@@ -369,7 +512,8 @@
          
          function displayThresholdImageElements() {
         	 console.log("displayThresholdImageElements()...invoked.");
-
+        	 //alert("displayThresholdImageElements()");
+        	 //alert("displayThresholdImageElements()");
         	 hideAllDivs();
         	 
         	 var div_menu = document.getElementById("div_submenu");
@@ -435,30 +579,16 @@
          	 var div_submitNotification = document.getElementById("div_submitNotification");
          	 div_submitNotification.style.display = "none";
          	 
+         	 readyToDisplayDownloadDiv = true;
+          	 var div_download = document.getElementById("div_download");
+        	 div_download.style.display = "block";
+         	 
              var ul_atlasMenu = document.getElementById("ul_atlasMenu");
              ul_atlasMenu.style.display = "block";
                 	 
         	 trackThresholdValue(true);
 
         	 console.log("displayThresholdImageElements()...exit.");
-         }
-         
-         function displayThresholdImage_BLOB(imageByteArray) {
-        	 /*
-        	 //var imgSrcURL = URL.createObjectURL(imageBlob);
-        	 img_threshold = document.getElementById("img_threshold");
-        	 //img_threshold.src =imgSrcURL;
-        	 //window.URL.revokeObjectURL(imgSrcURL);
-             var imageBlob = new Blob([imageByteArray], {type: "image/png"});
-             alert(imageBlob);
-             alert(imageBlob.size);
-             alert(imageBlob.type);
-        	 var imgSrcURL = URL.createObjectURL(imageBlob);
-        	 img_threshold.src =imgSrcURL;
-        	 div_thresholdImage = document.getElementById("div_thresholdImage");
-        	 div_thresholdImage.style.display = "block";
-        	 window.URL.revokeObjectURL(imgSrcURL);
-			 */
          }
          
          function displayThresholdRangeSlider() {
@@ -475,8 +605,9 @@
         	 range_thresholdSlider.value = range_thresholdSlider.min;
         	 number_RangeThresholdValue.value = range_thresholdSlider.value;
 
-
-        	 range_thresholdSlider.focus();
+        	 if(!adminLoginFocusPending) {
+        		 range_thresholdSlider.focus();
+        	 }
         	 console.log("displayThresholdRangeSlider()...exit.");
          }
          
@@ -564,6 +695,14 @@
         	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadFilePathAndName;
         	 anchor_downloadFile.click();
         	 console.log("downloadFile()...exit.");
+         }
+         
+         function downloadSampleFiles() {
+        	 console.log("downloadSampleFiles()...invoked.");
+        	 var anchor_downloadSampleFiles = document.getElementById("anchor_downloadSampleFiles");
+        	 anchor_downloadSampleFiles.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + "/midb/sample_files.zip";
+        	 anchor_downloadSampleFiles.click();
+        	 console.log("downloadSampleFiles()...exit.");
          }
          
          function downloadFileViaAjax(fileName) {
@@ -656,6 +795,8 @@
          function getMenuData() {
          	console.log("getMenuData()...invoked...");
          	
+         	var nowDate = new Date();
+         	lastTokenActionTime = nowDate.getTime();
          	ajaxRequest_startTime = performance.now();
 
            	//var paramString = "&selectedStudy=" + selectedStudy;
@@ -690,9 +831,11 @@
  
                     var responseArray = ajaxRequest.responseText.split("&&&");
                     token = responseArray[0];
-               	    buildStudyMenu(responseArray[1]);
-               	    continueStartup();
-               	    //buldNeuralNetworkDropdownList(responseArray[1]);
+                    buildStudySummaryMap(responseArray[1]);
+               	    buildStudyMenu(responseArray[2]);
+               	    getNetworkFolderNamesConfig();
+      
+               	    //buildNeuralNetworkDropdownList(responseArray[1]);
                     //processThresholdImagesResponse(responseArray[2]);
                 }
                 if (ajaxRequest.readyState==4 && ajaxRequest.status==503) {
@@ -703,6 +846,55 @@
          	}
           	ajaxRequest.send();
          	console.log("getMenuData()...exit...");
+         }
+         
+         function getNetworkFolderNamesConfig() {
+        	 
+          	console.log("getNetworkFolderNamesConfig()...invoked...");
+          	
+          	ajaxRequest_startTime = performance.now();
+
+          	var ajaxRequest = getAjaxRequest();
+           	var paramString = "&selectedStudy=" + selectedStudy;
+           	paramString += "&selectedDataType=" + selectedDataType;
+          	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getNetworkFolderNamesConfig"
+          		    + paramString;
+          	var encodedUrl = encodeURI(url);
+          	ajaxRequest.open('get', encodedUrl, true);
+          	
+              ajaxRequest.onreadystatechange=function() {
+                  
+                  if (ajaxRequest.readyState==4 && ajaxRequest.status==200) {
+                      //console.log(ajaxRequest.responseText);
+                      if(ajaxRequest.responseText.includes("Unexpected Error")) {
+                      	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+                   		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+                   		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+                       	var errorArray = errorData.split("&");
+                      	var msg1 = errorArray[0];
+                      	var msg2 = errorArray[1];
+                      	stackTraceData = errorArray[2];
+                      	doErrorAlert(msg1, msg2, errorAlertOK);
+                      	return;
+                      }
+                      //var responseArray = ajaxRequest.responseText.split("!@!");
+                      var div_submitNotification = document.getElementById("div_submitNotification");
+                 	  div_submitNotification.style.display = "none";
+                      buildNetworkFolderNamesMap(ajaxRequest.responseText);
+                      continueStartup();
+                      //buildNetworkFolderNamesMap(responseArray[0]);
+                      //processThresholdImagesResponse(responseArray[1]);
+                 	  //buildNeuralNetworkDropdownList(responseArray[0]);
+                  }
+                  if (ajaxRequest.readyState==4 && ajaxRequest.status==503) {
+                  	alert("The server is not responding.")
+                  	return;
+                  }
+                  
+          	}
+           	ajaxRequest.send();
+           	console.log("getNetworkFolderNamesConfig()...exit...");
+        	 
          }
          
          /* getNeuralNetworkNames() returns the list of neural network names that display
@@ -748,11 +940,7 @@
                    	 var div_submitNotification = document.getElementById("div_submitNotification");
                 	 div_submitNotification.style.display = "none";
            
-                	 console.log(responseArray[0]);
-                	 console.log(responseArray[1]);
-
-                	 //buildStudyMenu(responseArray[0]);
-                	 buldNeuralNetworkDropdownList(responseArray[0]);
+                	 buildNeuralNetworkDropdownList(responseArray[0]);
                      processThresholdImagesResponse(responseArray[1]);
                  }
                  if (ajaxRequest.readyState==4 && ajaxRequest.status==503) {
@@ -808,15 +996,38 @@
          }
          
          function getThresholdImages() {
-        	 
+        	//alert("getThresholdImages...invoked");
            	console.log("getThresholdImages()...invoked...");
            	
          	ajaxRequest_startTime = performance.now();
-    
+         	    
            	//var alertMsg = "Retrieving image data for " + selectedNeuralNetworkName;
            	//doAlert(alertMsg, alertOK);
+         	var span_submitNotification = document.getElementById("span_submitNotification");
+         	
+         	if(selectedStudy != priorSelectedStudy) {
+         		var radioSurface = document.getElementById("radio_surface");
+         		radioSurface.checked = true;
+         		selectedDataType = "surface";
+         	}
+         	
+         	 priorSelectedStudy = selectedStudy;
+
+         	 var div_download = document.getElementById("div_download");
+         	 div_download.style.display = "none";
+         	 
+         	 readyToDisplayDownloadDiv = false;
+
            	
+         	 if(selectedDataType == "volume") {
+         		span_submitNotification.innerHTML = "Retrieving volume data...";
+         	 }
+         	 else {
+         		span_submitNotification.innerHTML = "Retrieving surface data...";
+         	 }
+         	 
         	 var div_submitNotification = document.getElementById("div_submitNotification");
+        	 
         	 div_submitNotification.style.display = "block";
         	 
           	 var div_selectNeuralNetwork = document.getElementById("div_selectNeuralNetworkName");
@@ -839,8 +1050,10 @@
 
                    if (ajaxRequest.readyState==4 && ajaxRequest.status==200) {
                        //console.log(ajaxRequest.responseText);
-                	   
+                	   //alert("images response");
                        if(ajaxRequest.responseText.includes("Unexpected Error")) {
+                    	   //alert("images response error");
+
                        	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
                     		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
                     		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
@@ -848,18 +1061,22 @@
                        	var msg1 = errorArray[0];
                        	var msg2 = errorArray[1];
                        	stackTraceData = errorArray[2];
+                       	
+                       	var incidentIdIndex = ajaxRequest.responseText.indexOf("INCIDENT_ID");
+                       	var incidentId = ajaxRequest.responseText.substring(incidentIdIndex, incidentIdIndex+54);
+                       	var headerElement = document.getElementById("stackTraceHeader");
+                       	headerElement.innerHTML = incidentId;
                        	doErrorAlert(msg1, msg2, errorAlertOK);
                        	return;
                        }
-                       
-                       var responseArray = ajaxRequest.responseText.split("!@!");
-                       
+                       //alert("images response");
+                       //var responseArray = ajaxRequest.responseText.split("!@!");
                        if(selectedSubmenuAnchor.id.includes("combined")) {
-                            processThresholdImagesResponse(responseArray[1]);
+                            processThresholdImagesResponse(ajaxRequest.responseText);
                        }
                        else {
                     	   priorSelectedDataType = selectedDataType;
-                    	   var combinedDataArray = responseArray[1].split(DELIMITER_NETWORK_MAP_DATA);
+                    	   var combinedDataArray = ajaxRequest.responseText.split(DELIMITER_NETWORK_MAP_DATA);
                     	   /* first, process the image data for the Network Probabilistic Map  */
                     	   processNetworkProbabilityMapData(combinedDataArray[0]);
                     	   /* now process all image files for the TEMPLATE MATCHNG PROBABILISTIC image panel */
@@ -877,32 +1094,37 @@
             	console.log("getThresholdImages()...exit...");
           }
          
-        
          
-         function handleContactUsClicked() {
-             console.log("handleContactUsClicked()...invoked.");
-             
-             var div_overview = document.getElementById("div_overview");
-             var div_download = document.getElementById("div_download");
-             var div_resources = document.getElementById("div_resources");
-             var div_midbAtlas = document.getElementById("div_midbAtlas");
-             var div_contactUs = document.getElementById("div_contactUs");
-             
-             div_overview.style.display = "none";
-             div_resources.style.display = "none";
-             div_download.style.display = "none";
-             div_midbAtlas.style.display = "none";
-             div_contactUs.style.display = "block";
-             
-             console.log("handleContactUsClicked()...exit.");
-
-         }
-         
-         function handleFileUploadResponse(responseText) {
-             console.log("handleFileUploadResponse()...invoked.");
+         function handleAddStudyResponse(responseText) {
+             console.log("handleAddStudyResponse()()...invoked.");
+                          
+             if(responseText.includes("success")) {
+            	 console.log("adding new study to studyMenuIDArray:" + newStudy.folderName);
+            	 studyMenuIDArray.push(newStudy.studyFolder);
+            	 buildMenuIdDropdown();
+            	 console.log("studyMenuIDArray=" + studyMenuIDArray);
+                 resetAddStudyForm();
+            	 //getMenuData();
+             }
+            	 
+        	 var button_removeStudy = document.getElementById("button_remove_study");
+        	 button_removeStudy.disabled = false;
+        	 
+    	   	 var button_addNetworkEntry = document.getElementById("button_addTableRow");
+    	   	 button_addNetworkEntry.disabled = false;
+    	   	 
+    	   	 var button_deleteNetworkEntry = document.getElementById("button_deleteTableRow");
+    	   	 button_deleteNetworkEntry.disabled = false;
+    	   	 
+    	   	 var button_createStudy = document.getElementById("button_createStudy");
+    	   	 button_createStudy.disabled = false;
+    	   	 
+    	   	 var div_dropZone = document.getElementById("div_dropZone");
+    	   	 div_dropZone.style.display = "block";
+    	  
              doAdminAlert(responseText);
              
-             console.log("handleFileUploadResponse()...exit.");
+             console.log("handleAddStudyResponse()...exit.");
 
          }
          
@@ -917,8 +1139,7 @@
         	 var tab_download = document.getElementById("tab_download");
         	 var tab_contactUs = document.getElementById("tab_contactUs");
         	 var tab_midbAtlas = document.getElementById("tab_midbAtlas");
-        	 
-
+        	         	 
         	 tab_home.checked = false;
         	 tab_overview.checked = false;
         	 tab_download.checked = false;
@@ -927,21 +1148,24 @@
         	 tab_contactUs.checked = false;
 
 
-
              var div_home = document.getElementById("div_home");
              var div_overview = document.getElementById("div_overview");
              var div_download = document.getElementById("div_download");
+             var div_downloadWrapper = document.getElementById("div_downloadWrapper");
              var div_resources = document.getElementById("div_resources");
              var div_midbAtlas = document.getElementById("div_midbAtlas");
              var div_contactUs = document.getElementById("div_contactUs");
              var heading_sitename = document.getElementById("sitename");
              var div_admin = document.getElementById("div_admin");
              var div_addStudy = document.getElementById("div_addStudy");
+             var div_mobileDownload = document.getElementById("div_mobileDownload");
+
              
              div_home.style.display = "none";
              div_overview.style.display = "none";
              div_resources.style.display = "none";
              div_download.style.display = "none";
+             div_downloadWrapper.style.display = "none";
              div_midbAtlas.style.display = "none";
              div_contactUs.style.display = "block";
 
@@ -953,6 +1177,7 @@
             	 div_home.style.display = "block";
                  div_overview.style.display = "none";
                  div_download.style.display = "none";
+                 div_downloadWrapper.style.display = "none";
                  div_resources.style.display = "none";
                  div_midbAtlas.style.display = "none";
                  div_contactUs.style.display = "none"; 
@@ -962,9 +1187,11 @@
                tab_overview.checked = true;
                div_overview.style.display = "block";
                div_download.style.display = "none";
+               div_downloadWrapper.style.display = "none";
                div_resources.style.display = "none";
                div_midbAtlas.style.display = "none";
                div_contactUs.style.display = "none";
+          	   div_home.style.display = "none";
                div_admin.style.display = "none";
                //heading_sitename.scrollIntoView();
              }
@@ -973,44 +1200,62 @@
                div_overview.style.display = "none";
                div_resources.style.display = "none";
                mouseOutInstructions();
-               div_download.style.display = "block";
+               if(!mobileDeviceActive) {
+	               div_downloadWrapper.style.display = "block";
+	               if(readyToDisplayDownloadDiv) {
+	            	   div_download.style.display = "block";
+	               }
+               }
+               else {
+            	   div_mobileDownload.style.display = "block";
+               }
                div_midbAtlas.style.display = "none";
                div_contactUs.style.display = "none";
                div_admin.style.display = "none";
+          	   div_home.style.display = "none";
              }
              else if(id.includes("tab_resources")) {
             	 tab_resources.checked = true;
                  div_overview.style.display = "none";
                  div_resources.style.display = "block";
+                 div_downloadWrapper.style.display = "none";
                  div_download.style.display = "none";
                  div_midbAtlas.style.display = "none";
                  div_contactUs.style.display = "none";
                  div_admin.style.display = "none";
+            	 div_home.style.display = "none";
+
              }
              else if(id.includes("tab_midbAtlas")) {
             	 tab_midbAtlas.checked = true;
                  div_overview.style.display = "none";
                  div_resources.style.display = "none";
+                 div_downloadWrapper.style.display = "none";
                  div_download.style.display = "none";
                  div_midbAtlas.style.display = "block";
                  div_contactUs.style.display = "none";
                  div_admin.style.display = "none";
+            	 div_home.style.display = "none";
              }
              else if(id.includes("tab_contactUs")) {
             	 tab_contactUs.checked = true;
                  div_overview.style.display = "none";
                  div_resources.style.display = "none";
+                 div_downloadWrapper.style.display = "none";
                  div_download.style.display = "none";
                  div_midbAtlas.style.display = "none";
                  div_admin.style.display = "none";
+            	 div_home.style.display = "none";
                  div_contactUs.style.display = "block";
              }
              else if(id.includes("div_admin")) {
                  div_overview.style.display = "none";
                  div_resources.style.display = "none";
+                 div_downloadWrapper.style.display = "none";
                  div_download.style.display = "none";
                  div_midbAtlas.style.display = "none";
                  div_contactUs.style.display = "none";
+            	 div_home.style.display = "none";
           	     var anchor_addStudy = document.getElementById("a_addStudy");
           	     anchor_addStudy.style.color = "#FFC300";
                  //div_dropZone.style.display = "block";
@@ -1105,10 +1350,11 @@
           * 
           */
          function processFileDownloadResponse(ajaxRequest) {
-        	 
+      	  	 console.log("processFileDownloadResponse()...invoked.")
         	 var fileAsBase64String = ajaxRequest.responseText;
         	 var imageSrcURLPrefix = "data:image/jpg;base64,";
         	 var hrefURL = imageSrcURLPrefix + aBase64String;
+      	  	 console.log("processFileDownloadResponse()...exit.")
          }
          
          function processNetworkProbabilityMapData(responseData) {
@@ -1193,14 +1439,18 @@
         		  }
         		  anImageFileAndPath = imageFilePathsArray[i].trim();
         		  if(i==0) {
-        			  var zipPathIndex = anImageFileAndPath.lastIndexOf("/");
-        			  var downloadZIP_root = anImageFileAndPath.substring(0, zipPathIndex+1);
-        			  var downloadZIP_fileName = downloadZIP_root.substring(0, zipPathIndex);
-        			  var fileName = anImageFileAndPath.substring(0, zipPathIndex);
-        			  var fileNameIndex = fileName.lastIndexOf("/");
-        			  fileName = fileName.substring(fileNameIndex+1);
-        			  fileName = fileName + ".zip";
-        			  downloadZIP_path = downloadZIP_root + fileName;
+        			  var zipPathIndex = 0;
+        			  var fileNameIndex = 0;
+        			  if(selectedDataType=="surface") {
+        				  zipPathIndex = anImageFileAndPath.indexOf("surface")+8; 
+        			  }
+        			  else if(selectedDataType=="volume") {
+        				  zipPathIndex = anImageFileAndPath.indexOf("volume")+7; 
+        			  }
+        			  var downloadZIP_root = anImageFileAndPath.substring(0, zipPathIndex);
+        			  downloadZIP_root += "zips/";
+        			  var downloadZIP_fileName = selectedNeuralNetworkName + ".zip";
+        			  downloadZIP_path = downloadZIP_root + downloadZIP_fileName;
         			  console.log("downloadZIP_path=" + downloadZIP_path);
         			  console.log("imageFileAndPath for min=" + anImageFileAndPath);
         			  setRangeValue(anImageFileAndPath, "min");
@@ -1263,6 +1513,51 @@
 
         	 handleTabSelected(tab_home.id);
         	 console.log("resetSelectedTab()...exit");
+         }
+         
+         function resetAddStudyForm() {
+       	    console.log("resetAddStudyForm()...invoked.");
+  			var table = document.getElementById("adminTable");
+  			var rowCount = table.rows.length;
+  			var networkDisplayNameRows = document.getElementsByClassName("networkDisplayNameRow");
+ 			var numberToDelete = networkDisplayNameRows.length - 1;
+ 			
+ 			while(numberToDelete > 0) {
+ 				table.deleteRow(rowCount-1);
+ 				rowCount = table.rows.length;
+ 				numberToDelete--;
+         	}
+            
+   	   	 	var text_studyDisplayName = document.getElementById("input_studyDisplayName");
+   	   	 	text_studyDisplayName.value = "";
+	   	 
+   	   	 	var text_studyFolderName = document.getElementById("input_studyFolderName");;
+   	   	 	text_studyFolderName.value = "";
+
+ 		    var selectElement = document.getElementById("select_dataType");
+		    selectElement.selectedIndex = 0; 
+		    
+		    selectElement = document.getElementById("select_networkType");
+		    selectElement.selectedIndex = 0; 
+
+		    var div_dropZone = document.getElementById("div_dropZone");
+		    
+		    resetDropZone();
+		    div_dropZone.style.display = "block";
+		    
+       	    console.log("resetAddStudyForm()...exit.");
+         }
+         
+         function resetDropZone() {
+        	console.log("resetDropZone()...invoked.");
+        	var ul_droppedFilesList = document.getElementById("ul_zipList");
+        	ul_droppedFilesList.innerHTML = "";
+        	
+        	droppedFileNamesArray = new Array();
+        	uploadFilesArray = new Array();
+
+        	console.log("resetDropZone()...exit.");
+
          }
          
          function scrollToInstructions() {
@@ -1442,10 +1737,12 @@
            	    number_RangeThresholdValue.value = range_thresholdSlider.value; 
         	 }
 
-        	 range_thresholdSlider.focus({preventScroll: true});
-        	 range_thresholdSlider.disabled = false; 
-        	 range_thresholdSlider.focus({preventScroll: false});
-        	 
+        	 if(!adminLoginFocusPending) {
+	        	 range_thresholdSlider.focus({preventScroll: true});
+	        	 range_thresholdSlider.disabled = false; 
+	        	 range_thresholdSlider.focus({preventScroll: false});
+        	 }
+	        	 
         	 /*
         	 if(autoScrollHelpPending) {
            	     //setTimeout(function(){ showSnackbar(autoScrollHelpMsg, 6000); }, 1000);
@@ -1498,25 +1795,52 @@
         	 downloadDisabled = !downloadDisabled;
         	 console.log("toggleDownloadLock()...exit.");
          }
-         
-         function uploadMenuFiles(studyFolderName, availableDataTypes, menuEntry) {
-        	 console.log("uploadFiles()...invoked.");
+                  
+         function uploadStudyFile(zipFormData, fileName, fileSize) {
+
+        	console.log("uploadStudyFile()...invoked.");
         	 
           	var ajaxRequest = getAjaxRequest();
          	//var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getNeuralNetworkNames";
          	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=uploadStudyFiles";
          	
-         	var paramString = "&studyFolderName=" + studyFolderName;
-         	paramString += "&menuEntry=" + menuEntry;
-         	paramString += "&availableDataTypes=" + availableDataTypes;
+         	var paramString = "&studyFolderName=" + newStudy.studyFolder;
+         	paramString += "&menuEntry=" + newStudy.menuEntry;
+         	paramString += "&availableDataTypes=" + newStudy.selectedDataTypes;
+         	paramString += "&currentFileNumber=" + newStudy.currentFileNumber;
+         	paramString += "&totalFileNumber=" + newStudy.totalFileNumber;
+         	paramString += "&fileSize=" + fileSize;
 
          	
          	url += paramString;
 
          	var encodedUrl = encodeURI(url);
          	ajaxRequest.open('post', encodedUrl, true);
-         	ajaxRequest.timeout = 600000*2;
-   
+         	ajaxRequest.timeout = 600000*4;
+         	
+         	
+     		newStudy.span_progress_0.style.display = "none";
+     		newStudy.span_progress_1.style.display = "none";
+   	
+         	var remainder =  newStudy.totalFileNumber % newStudy.currentFileNumber;
+         	console.log("remainder=" + remainder);
+         	if(remainder == 0) {
+         		console.log("in remainder=0 code");
+         		newStudy.span_progress_0.innerHTML = "Uploading File:  " + fileName + "...";
+         		newStudy.span_progress_1.style.display = "none";
+         		newStudy.span_progress_0.style.display = "block";
+         	}
+         	else {
+         		console.log("in remainder=1 code");
+         		newStudy.span_progress_1.innerHTML = "Uploading File:  " + fileName + "...";
+         		newStudy.span_progress_0.style.display = "none";
+         		newStudy.span_progress_1.style.display = "block";
+         	}
+         	
+         	if(newStudy.currentFileNumber == 1) {
+				div_uploadProgress.style.display = "block";
+			}
+       
          	ajaxRequest.onreadystatechange=function() {
          		console.log("onreadystatechange, responseText=" + ajaxRequest.responseText);
          		console.log("onreadystatechange, readyState=" + ajaxRequest.readyState);
@@ -1533,6 +1857,10 @@
                 	stackTraceData = errorArray[2];
                 	var divSubmitNotification = document.getElementById("div_submitNotification");
                 	divSubmitNotification.style.display = "none";
+                   	var incidentIdIndex = ajaxRequest.responseText.indexOf("INCIDENT_ID");
+                   	var incidentId = ajaxRequest.responseText.substring(incidentIdIndex, incidentIdIndex+54);
+                   	var headerElement = document.getElementById("stackTraceHeader");
+                   	headerElement.innerHTML = incidentId;
                 	doErrorAlert(msg1, msg2, errorAlertOK);
                 	console.log("uploadMenuFiles()...onreadystatechange...error");
                 	console.log("msg1=" + msg1);
@@ -1541,9 +1869,25 @@
                 	return;
                 }
                 if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+                	var lastFile = false;
+                	if(newStudy.currentIndex == newStudy.totalFileNumber) {
+                		lastFile = true;
+                	}
+                    if(lastFile) {
+                    	div_uploadProgress.style.display = "none";
+                    	div_unzipProgress.style.display = "none";
+                    	handleAddStudyResponse(ajaxRequest.responseText);
+                    }
+                    else {
+                    	manageFileUploads();
+                    }
+         	    }
+                //handle nginx hiccup from server
+                if (ajaxRequest.readyState == 4 && ajaxRequest.status == 404) {
                 	div_uploadProgress.style.display = "none";
                 	div_unzipProgress.style.display = "none";
-                    handleFileUploadResponse(ajaxRequest.responseText);
+                	var inferredResponse = "Study created, please refresh page to view new menu";
+                    handleAddStudyResponse(inferredResponse);
          	    }
 
          	}
@@ -1554,13 +1898,16 @@
                 //div_uploadProgress.style.display = "block";
 				// if the file upload length is known, then show progress bar
 				if (e.lengthComputable) {
-	                div_uploadProgress.style.display = "block";
 					//uploadProgress.classList.remove("hide-me");
 					// total number of bytes being uploaded
 					progress_upload.setAttribute("max", e.total);
 					// total number of bytes that have been uploaded
 					progress_upload.setAttribute("value", e.loaded);
-					if(e.total == e.loaded) {
+					var done = false;
+					if(newStudy.currentIndex==newStudy.totalFileNumber) {
+						done = true;
+					}
+					if((e.total == e.loaded) && done) {
 		                div_uploadProgress.style.display = "none";
 		                div_unzipProgress.style.display = "block";
 					}
@@ -1568,23 +1915,12 @@
 				}
 
 			};
-						
-			// this does not work on firefox so using comparison of e.loaded == e.value -> see above
-         	/*
-			ajaxRequest.onloadend = function(e) {
-         		console.log("onloadend");
-         		// https://stackoverflow.com/questions/32045093/xmlhttprequest-upload-addeventlistenerprogress-not-working
-                //div_uploadProgress.style.display = "block";
-				// if the file upload length is known, then show progress bar
-                div_uploadProgress.style.display = "none";
-                div_unzipProgress.style.display = "block";
-                
-			};
-			*/
-         	
-         	
+			
+			newStudy.currentFileNumber++;
+			newStudy.currentIndex++;
           	ajaxRequest.send(zipFormData);
-          	console.log("uploadFiles()...exit.");
+          	console.log("uploadStudyFile()...exit.");
          }
+
             
          

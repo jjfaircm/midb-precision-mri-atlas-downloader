@@ -3,6 +3,7 @@ package edu.umn.midb.population.response.handlers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Hashtable;
@@ -18,10 +19,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 import edu.umn.midb.population.atlas.base.ApplicationContext;
+import edu.umn.midb.population.atlas.security.TokenManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import edu.umn.midb.population.atlas.utils.AtlasDataCacheManager;
 import edu.umn.midb.population.atlas.utils.NetworkMapData;
-import edu.umn.midb.population.atlas.utils.TokenManager;
 import edu.umn.midb.population.atlas.utils.Utils;
 import logs.ThreadLocalLogTracker;
 
@@ -47,21 +48,31 @@ public class WebResponder {
 
 	private static final Logger LOGGER = LogManager.getLogger(WebResponder.class);
 	
-	public static void sendCreateMenuResponse(ApplicationContext appContext, HttpServletResponse response) {
+	public static void sendAddStudyResponse(ApplicationContext appContext, HttpServletResponse response) {
 		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "sendCreateMenuResponse()...invoked.");
+		LOGGER.trace(loggerId + "sendAddStudyResponse()...invoked.");
+		String studyName = appContext.getCreateStudyHandler().getStudyName();
+		String responseString = "Study successfully created:<br>";
+		responseString += studyName;
+		responseString += "<br>Please refresh page<br>to view new menu.";
+			
+		if(appContext.createStudyHasError() || appContext.isFolderConfigurationError()
+		   || appContext.isZipFileUnpackError() || appContext.isZipFormatError()) {
+				responseString = appContext.getCreateStudyErrorMessage();
+		}
 
 		try {
 		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
-			  response.getWriter().println("Study created, please refresh page to view new menu");
+			  LOGGER.trace(loggerId + "sendCreateStudyResponse()...response=" + responseString);
+
+			  response.getWriter().println(responseString);
 		      Thread.sleep(1000);
 		}
 	    catch(Exception e) {
 	    	  LOGGER.error(e.getMessage(), e);
 	     }
-
 		
-		LOGGER.trace(loggerId + "sendCreateMenuResponse()...exit.");
+		LOGGER.trace(loggerId + "sendAddStudyResponse()...exit.");
 
 	}
 	
@@ -73,14 +84,17 @@ public class WebResponder {
 
 		
 		String menuResponse = "";
+		String summaryData = "";
+		
+		summaryData = buildSummaryData();
+		
+		menuResponse = summaryData + "&&&";
 		
         ArrayList<String> menuStudyNames = AtlasDataCacheManager.getInstance().getMenuStudyNames();
         Hashtable<String, ArrayList<String>> menuSubOptionsMap = AtlasDataCacheManager.getInstance().getMenuOptionsMap();
-		menuResponse = buildMenuResponse(menuStudyNames, menuSubOptionsMap);
+		menuResponse += buildMenuResponse(menuStudyNames, menuSubOptionsMap);
 		
-		TokenManager tokenManager = new TokenManager();
-		String token = tokenManager.getToken();
-		appContext.setTokenManager(tokenManager);
+		String token = appContext.getTokenManager().getToken();
 		
 		try {
 		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
@@ -93,6 +107,37 @@ public class WebResponder {
 
 		LOGGER.trace(loggerId + "sendMenuDataResponse()...exit.");
 
+	}
+	
+	
+	public static void sendNetworkFolderNamesConfigResponse(HttpServletResponse response) {
+		
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendNetworkFolderNamesConfigResponse()...invoked.");
+
+		ArrayList<String> configLines = AtlasDataCacheManager.getInstance().getNeuralNetworkFolderNamesConfig();
+		String responseString = buildNetworkFoldersConfigResponse(configLines);
+	
+		if(responseString.endsWith("\n")) {
+			int endIndex = responseString.lastIndexOf("\n");
+			responseString = responseString.substring(0, endIndex);
+		}
+		
+		if(responseString.endsWith("&&")) {
+			int endIndex = responseString.lastIndexOf("&&");
+			responseString = responseString.substring(0, endIndex);
+		}
+
+		try {
+		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
+			  response.getWriter().println(responseString);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+
+		LOGGER.trace(loggerId + "sendNetworkFolderNamesConfigResponse()...exit.");
 	}
 
 	
@@ -162,7 +207,7 @@ public class WebResponder {
 		    return menuJsonArray;
 	}
 	
-	public static String buildMenuResponse(ArrayList<String> menuStudyNames, Hashtable<String, ArrayList<String>> menuSubOptionsMap) {
+	protected static String buildMenuResponse(ArrayList<String> menuStudyNames, Hashtable<String, ArrayList<String>> menuSubOptionsMap) {
 		   String loggerId = ThreadLocalLogTracker.get();
 		   LOGGER.trace(loggerId + "buildMenuResponse()...invoked.");
 
@@ -201,22 +246,70 @@ public class WebResponder {
 			return responseString;
 	}
 	
-	/**
-	 * Builds a JsonArray representing a list of the different neural network types.
-	 * 
-	 * @param networkTypes ArrayList of the different neural network types
-	 * 
-	 * @return JsonArray A json representation of the neural network types
-	 */
-	public static JsonArray buildNeuralNetworkNamesResponse(ArrayList<String> networkTypes) {
+	protected static String buildNetworkFoldersConfigResponse(ArrayList<String> configLines) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "buildNetworkFoldersConfigResponse()...invoked.");
 		
-		  String loggerId = ThreadLocalLogTracker.get();
-		  LOGGER.trace(loggerId + "sendNeuralNetworkNamesResponse()...invoked.");
+		String response = "";
+		String aLine = null;
+		boolean isEntryEnding = false;
+		
+		Iterator<String> configIt = configLines.iterator();
+		
+		while(configIt.hasNext()) {
+			aLine = configIt.next();
+			if(!aLine.contains("END NETWORK FOLDERS ENTRY") && configIt.hasNext()) {
+				aLine += ",";
+			}
+			response += aLine;
+		}
+		//LOGGER.trace(response);
+		LOGGER.trace(loggerId + "buildNetworkFoldersConfigResponse()...exit.");
+		return response;
+	}
+	
+	protected static String buildSummaryData() {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "buildSummaryData()...invoked.");
+		
+		String doubleQuestionMark = "??";
+		String comma = ",";
+		String summaryData = "";
+		String doubleColon = "::";
 
-	      JsonArray jsonArray1 = new Gson().toJsonTree(networkTypes).getAsJsonArray();
-		  LOGGER.trace(loggerId + "sendNeuralNetworkNamesResponse()...exit.");
-
-	      return jsonArray1;
+		
+		ArrayList<String> studyNames = AtlasDataCacheManager.getInstance().getSummaryStudyNames();
+		Hashtable<String, ArrayList<String>> summarySubEntriesMap = AtlasDataCacheManager.getInstance().getSummaryEntriesMap();
+		
+		Iterator<String> studyNamesIt = studyNames.iterator();
+		String studyName = null;
+		ArrayList<String> summarySubEntries = null;
+		Iterator<String> summaryEntriesIt = null;
+		String summaryEntry = null;
+		
+		while(studyNamesIt.hasNext()) {
+			studyName = studyNamesIt.next();
+			summaryData += studyName;
+			summaryData += doubleQuestionMark;
+			
+			summarySubEntries = summarySubEntriesMap.get(studyName);
+			summaryEntriesIt = summarySubEntries.iterator();
+			
+			while(summaryEntriesIt.hasNext()) {
+				summaryEntry = summaryEntriesIt.next();
+				summaryData += summaryEntry;
+				if(summaryEntriesIt.hasNext()) {
+					summaryData += comma;
+				}
+			}
+			
+			if(studyNamesIt.hasNext()) {
+				summaryData += doubleColon;
+			}			
+			
+		}
+		LOGGER.trace(loggerId + "buildSummaryData()...exit.");
+		return summaryData;
 	}
 	
 	/**
@@ -229,25 +322,11 @@ public class WebResponder {
 	 * @param neuralNetworkNames ArrayList of the neural network names
 	 */
 	public static void sendThresholdImagesResponse(HttpServletResponse response, ArrayList<String> filePaths, ArrayList<String> imageBase64Strings,
-			                                       ArrayList<String> neuralNetworkNames, NetworkMapData networkMapData) {
+			                                       NetworkMapData networkMapData) {
 		
 		 String loggerId = ThreadLocalLogTracker.get();
 		 LOGGER.trace(loggerId + "sendThresholdImagesResponse()...invoked.");
 		 
-		 //LOGGER.trace(filePaths);
-		 
-		 JsonArray jsonArrayNetworkNames = null;
-		 //String menuResponse = null;
-		 
-		 if(neuralNetworkNames != null) {
-			 jsonArrayNetworkNames = buildNeuralNetworkNamesResponse(neuralNetworkNames);
-             ArrayList<String> menuStudyNames = AtlasDataCacheManager.getInstance().getMenuStudyNames();
-             Hashtable<String, ArrayList<String>> menuSubOptionsMap = AtlasDataCacheManager.getInstance().getMenuOptionsMap();
-			 //menuResponse = buildMenuResponse(menuStudyNames, menuSubOptionsMap);
-			 //LOGGER.trace(loggerId + "jsonArray follows");
-			 //LOGGER.trace(jsonArray);
-		 }
-
 		String base64ImageStringsCleaned = imageBase64Strings.toString();
 		long preClean = System.currentTimeMillis();
 		int b64StringSize = base64ImageStringsCleaned.length();
@@ -265,12 +344,12 @@ public class WebResponder {
 		String responseString = null; 
 		
 		if(networkMapData == null) {
-			responseString = jsonArrayNetworkNames + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
+			responseString = base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
 		}
 		else {
 			String networkMapImagePNG = networkMapData.getNetworkMapImage_Base64_String();
 			String networkMapImageNIIPath = networkMapData.getCorrespondingNiftiFilePathName();
-			responseString = jsonArrayNetworkNames + DELIMITER_NEURAL_NAMES + networkMapImagePNG + 
+			responseString = networkMapImagePNG + 
 					         DELIMITER_NETWORK_MAP_ITEMS +  networkMapImageNIIPath + DELIMITER_NETWORK_MAP_DATA +
 					         base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
 		}
@@ -283,11 +362,15 @@ public class WebResponder {
 	    catch(Exception e) {
 	    	  LOGGER.error(e.getMessage(), e);
 	     }
-		 LOGGER.trace(loggerId + "sendThresholdImagesResponse()...exit.");
+		 
+		 double responseLengthMeg = responseString.length()/(1024*1000d);
+		 DecimalFormat df = new DecimalFormat("0.00");
+		 String resultMeg = df.format(responseLengthMeg);
+		 LOGGER.trace(loggerId + "sendThresholdImagesResponse()...exit, response length meg=" + resultMeg);
 	}
 	
 	/**
-	 * Utilitarian method for testing the download functionality.
+	 * Utility method for testing the download functionality.
 	 * 
 	 * @param resp The current HttpServletResponse object
 	 * @param req The current HttpServletRequest object
@@ -314,11 +397,36 @@ public class WebResponder {
 	
 	public static void sendAdminValidationResponse(HttpServletResponse response, ApplicationContext appContext, String token, String password, String ipAddress) {
 		
-		TokenManager tokenManager = appContext.getTokenManager();
-		boolean isValid = tokenManager.validateToken(token, password, ipAddress);
+		boolean isValid = false;
+		boolean isExpired = false;
+		boolean isAccessDenied = false;
+		TokenManager tokenManager = null;
+		tokenManager = appContext.getTokenManager();
+		
+		if(tokenManager != null) {
+			isValid = tokenManager.validateToken(token, password, ipAddress);
+			if(!isValid) {
+				if(tokenManager.isTokenExpired()) {
+					isExpired = true;
+				}
+				if(tokenManager.isAccessDenied()) {
+					isAccessDenied = true;
+				}
+			}
+		}
 		appContext.setAdminActionValidated(isValid);
+		//for test
+		//isValid = false;
+		//isAccessDenied = true;
 		
 		String responseString = (isValid) ? "true":"false";
+		if(isExpired) {
+			responseString += ":expired";
+		}
+		else if(isAccessDenied) {
+			responseString += ":access_denied";
+		}
+		
 		
 		try {
 		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
@@ -331,13 +439,34 @@ public class WebResponder {
 		
 	}
 	
+	public static void sendAdminValidationStatus(ApplicationContext appContext, HttpServletResponse response) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendAdminValidationStatus()...invoked.");
+		
+		boolean isValid = false;
+		
+		isValid = appContext.isAdminActionValidated();
+		
+		String responseString = (isValid) ? "true":"false";
+
+		try {
+		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
+			  response.getWriter().println(responseString);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		LOGGER.trace(loggerId + "sendAdminValidationStatus()...exit.");
+	}
+	
 	public static void sendRemoveStudyResponse(HttpServletResponse response, String studyFolder) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendRemoveStudyResponse()...invoked.");
 		
-		String responseString = "Study successfully removed: " + studyFolder
-				              + "<br>Please refresh page to see current menu";
+		String responseString = "Study successfully removed:<br> " + studyFolder
+				              + "<br>Please refresh page<br>to see current menu";
 
 		try {
 		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
@@ -348,5 +477,22 @@ public class WebResponder {
 	    	  LOGGER.error(e.getMessage(), e);
 	     }
 		 
+	}
+	
+	public static void sendUploadFileResponse(HttpServletResponse response, String fileName) {
+
+		String loggerId = ThreadLocalLogTracker.get();
+		String responseString = "File successfully uploaded: " + fileName;
+		LOGGER.trace(loggerId + "sendUploadFileResponse()...invoked, response=" + responseString);
+
+		try {
+			  response.getWriter().println(responseString);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+
+		LOGGER.trace(loggerId + "sendUploadFileResponse()...exit.");
 	}
 }

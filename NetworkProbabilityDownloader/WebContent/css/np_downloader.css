@@ -243,6 +243,10 @@ textarea { font-size: 10px;
 	cursor: pointer;
 }
 
+.tabLabel:hover {
+	background:#f9f7f6;
+}
+
 
 #select_neuralNetworkName {
 	display:inline;
@@ -495,6 +499,12 @@ input.tabs_input ~ .tab {
   margin-top: 9px;
 }
 
+#div_downloadWrapper {
+  border-top: 1px solid #999;
+  padding: 12px;  /* was 12px */
+  margin-top: 9px;
+}
+
 a:visited {
 	color:LightBlue;
 }
@@ -707,7 +717,8 @@ hr.footer {
     /* background-color: #241f20;*/
     background-color: #644B26;
     border-radius: 5px;
-    border: 3px solid white;
+    border: 2px solid white;
+    outline: 2px solid black;
     position: fixed;
     width: 300px;
     left: 50%;
@@ -809,6 +820,16 @@ select.admin {
 	margin-bottom: 0px;
 	padding : 1px;
     font-size: 16px;
+}
+
+#div_rightSpacer {
+	height: 140px;
+}
+
+#div_midbAtlas, #midb_footer, #div_contactUs, #div_resources, #div_overview {
+	margin-left: 10px;
+    margin-right: 10px;
+	
 }
 
 

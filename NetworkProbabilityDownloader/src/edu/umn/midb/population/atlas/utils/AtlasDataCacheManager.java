@@ -14,6 +14,7 @@ import java.util.Iterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import edu.umn.midb.population.atlas.data.access.DirectoryAccessor;
+import edu.umn.midb.population.atlas.security.TokenManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import logs.ThreadLocalLogTracker;
 
@@ -35,20 +36,31 @@ public class AtlasDataCacheManager {
 	private static Logger LOGGER = null;
 	//contains collection of base64NetworkImageStrings keyed by the different 
 	//neural network types
-	private ArrayList<String> neuralNetworkNames = new ArrayList<String>();
 	private Hashtable<String, ArrayList<String>> base64NetworkImageStrings = new Hashtable<String, ArrayList<String>>();
 	//private Hashtable<String, ArrayList<byte[]>> binaryNetworkImageBuffers = new Hashtable<String, ArrayList<byte[]>>();
 	private Hashtable<String, ArrayList<String>> imagePathNames = new Hashtable<String, ArrayList<String>>();
-	private Hashtable<String, String> neuralNetworkNamesMap = new Hashtable<String, String>();
 	private Hashtable<String, NetworkMapData> networkMapDataCache = new Hashtable<String, NetworkMapData>();
 	private byte[] allDataZipBuffer = null;
 	private ArrayList<String> menuStudyNames = new ArrayList<String>();
 	private Hashtable<String, ArrayList<String>> menuChoicesMap = new Hashtable<String, ArrayList<String>>();
-	private static final String MENU_FILE_PATH = "/midb/menu.conf";
-	private static final String ACL_FILE_PATH = "/midb/acl.conf";
+	private ArrayList<String> summaryStudyNames = new ArrayList<String>();
+	private Hashtable<String, ArrayList<String>> summaryEntriesMap = new Hashtable<String, ArrayList<String>>();
+	private ArrayList<String> networkFolderNamesConfig = new ArrayList<String>();
+
+	private static final String MENU_CONFIG_PATH = "/midb/menu.conf";
+	private static final String ACL_CONFIG_PATH = "/midb/acl.conf";
+	private static final String SETTINGS_CONFIG_PATH = "/midb/settings.conf";
+	private static final String KEY_CONFIG_PATH = "/midb/key.conf";
+	private static final String SUMMARY_CONFIG_PATH = "/midb/summary.conf";
+	private static final String NETWORK_FOLDERS_CONFIG_PATH = "/midb/network_folder_names.conf";
+	private static final String NEW_LINE = "\n";
+	private String localHostName = null;
+
+
 	private ArrayList<String> privilegedIPs = new ArrayList<String>();
 
 	private final Object menuLock = new Object();
+	private final Object configLock = new Object();
 
 	
 	static {
@@ -65,9 +77,11 @@ public class AtlasDataCacheManager {
 		if(instance==null) {
 			instance = new AtlasDataCacheManager();
 			instance.loadDefaultGlobalData(NetworkProbabilityDownloader.DEFAULT_ROOT_PATH);
-			instance.loadNeuralNetworkNamesMap();
 			instance.loadMenuConfig();
 			instance.loadACL();
+			instance.loadSummaryConfig();
+			instance.loadNetworkFolderNamesConfig();
+			//instance.loadSettingsConfig();
 		}
 		return instance;
 	}
@@ -98,7 +112,7 @@ public class AtlasDataCacheManager {
 		LOGGER.trace(loggerId + "loadACL()...invoked.");
 
 		String ipAddress = null;
-		File file = new File(ACL_FILE_PATH);
+		File file = new File(ACL_CONFIG_PATH);
 		
 		if(!file.exists()) {
 			return;
@@ -128,7 +142,7 @@ public class AtlasDataCacheManager {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "loadMenuConfig()...invoked.");
 
-		File file = new File(MENU_FILE_PATH);
+		File file = new File(MENU_CONFIG_PATH);
 		boolean menuEntryNamePending = true;
 		boolean menuSubEntriesPending = false;
 		String menuStudyName = null;
@@ -138,6 +152,7 @@ public class AtlasDataCacheManager {
 		
 		
 		if(!file.exists()) {
+			LOGGER.fatal("Config file not found:" + MENU_CONFIG_PATH);
 			return;
 		}
 		
@@ -188,54 +203,44 @@ public class AtlasDataCacheManager {
 		LOGGER.trace(loggerId + "loadMenuConfig()...exit.");
 	}
 	
-	private void loadNeuralNetworkNamesMap() {
-		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "loadNeuralNetworkNamesMap()...invoked.");
+	
+	private void loadNetworkFolderNamesConfig() {
 
-		// this is a map that associates the names in the browser dropdown to the
-		// actual names of the directories that contain the threshold files of the
-		// different networks.
-		// The neuralNetworkNames arrayList are the names that appear in the dropdown
-		// selection in the browser
-		this.neuralNetworkNamesMap.put("Auditory Network", "Aud");
-		this.neuralNetworkNames.add("Auditory Network");
-		this.neuralNetworkNamesMap.put("Cingulo-Opercular Network", "CO");
-		this.neuralNetworkNames.add("Cingulo-Opercular Network");
-		this.neuralNetworkNamesMap.put("Dorsal Attention Network", "DAN");
-		this.neuralNetworkNames.add("Dorsal Attention Network");
-		this.neuralNetworkNamesMap.put("Default Mode Network", "DMN");
-		this.neuralNetworkNames.add("Default Mode Network");
-		this.neuralNetworkNamesMap.put("Frontoparietal Network", "FP");
-		this.neuralNetworkNames.add("Frontoparietal Network");
-		this.neuralNetworkNamesMap.put("Medial Temporal Network", "MTL");
-		this.neuralNetworkNames.add("Medial Temporal Network");
-		this.neuralNetworkNamesMap.put("Parietal Medial Network", "PMN");
-		this.neuralNetworkNames.add("Parietal Medial Network");
-		this.neuralNetworkNamesMap.put("Parietal Occipital Network", "PON");
-		this.neuralNetworkNames.add("Parietal Occipital Network");
-		this.neuralNetworkNamesMap.put("Salience Network", "Sal");
-		this.neuralNetworkNames.add("Salience Network");
-		this.neuralNetworkNamesMap.put("Dorsal Sensorimotor Network", "SMd");
-		this.neuralNetworkNames.add("Dorsal Sensorimotor Network");
-		this.neuralNetworkNamesMap.put("Lateral Sensorimotor Network", "SMl");
-		this.neuralNetworkNames.add("Lateral Sensorimotor Network");
-		this.neuralNetworkNamesMap.put("Temporal Pole Network", "Tpole");
-		this.neuralNetworkNames.add("Temporal Pole Network");
-		this.neuralNetworkNamesMap.put("Ventral Attention Network", "VAN");
-		this.neuralNetworkNames.add("Ventral Attention Network");
-		this.neuralNetworkNamesMap.put("Visual Network", "Vis");
-		this.neuralNetworkNames.add("Visual Network");
+
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "loadNetworkFolderNamesConfig()...invoked.");
+
+		String ipAddress = null;
+		File file = new File(NETWORK_FOLDERS_CONFIG_PATH);
 		
-		LOGGER.info(this.neuralNetworkNames);
+		if(!file.exists()) {
+			return;
+		}
+		
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String outputLine = null;
 			
-		//we now add 2 more names that are not included in the neuralNetworkNames because
-		//they are not 'Single' network names, however they still have directories that 
-		//contain threshold image files that may be selected for display in the browser
-		this.neuralNetworkNamesMap.put("combined_clusters", "combined_clusters");
-		//overlapping maps to integration-zone in browser menu nomenclature
-		this.neuralNetworkNamesMap.put("overlapping", "overlapping_networks");
-		
-		LOGGER.trace(loggerId + "loadNeuralNetworkNamesMap()...exit."); 
+			while ((outputLine = br.readLine()) != null) {
+				if(outputLine.trim().length() < 3) {
+					continue;
+				}
+				if(outputLine.startsWith("#")) {
+					continue;
+				}
+				if(outputLine.contains("END NETWORK FOLDERS ENTRY")) {
+					outputLine += "&&";
+				}
+				this.networkFolderNamesConfig.add(outputLine.trim() + NEW_LINE);
+			}
+			br.close();
+		}
+		catch(Exception e) {
+			LOGGER.error(e.getMessage(), e);
+		}
+		LOGGER.trace(loggerId + "loadNetworkFolderNamesConfig()...exit.");
+	
+	
 	}
 	
 	/**
@@ -276,14 +281,13 @@ public class AtlasDataCacheManager {
 			encodedString = Base64.getEncoder().encodeToString(imageBuffer);
 			base64ImageStrings.add(encodedString);
 		}
-		LOGGER.info(loggerId + "loadBase64ImagePathStrings()...adding base564ImageStrings array to cache, key=" + networkNamePath);
-		LOGGER.trace(loggerId + "loadBase64ImagePathStrings()...exit.");
 		// we only cache abcd template matching study data
 		if(networkNamePath.contains("abcd_template_matching")) {
+			LOGGER.info(loggerId + "loadBase64ImagePathStrings()...adding base564ImageStrings array to cache, key=" + networkNamePath);
 			this.base64NetworkImageStrings.put(networkNamePath, base64ImageStrings);
 			//this.binaryNetworkImageBuffers.put(networkNamePath, imageByteBuffers);
 		}
-		
+		LOGGER.trace(loggerId + "loadBase64ImagePathStrings()...exit.");
 		return base64ImageStrings;
 	}
 	
@@ -339,9 +343,11 @@ public class AtlasDataCacheManager {
 			}
 			LOGGER.info(loggerId + " adding imagePathNames to cache, key=" + networkNamePath);
 			LOGGER.trace(loggerId + "DirectoryAccessor.getThresholdImagePaths()...count=" + imagePathNames.size());
-			LOGGER.trace(loggerId + imagePathNames);
+			//LOGGER.trace(loggerId + imagePathNames);
 			this.imagePathNames.put(networkNamePath, imagePathNames);
-			this.loadBase64ImagePathStrings(networkNamePath);
+			if(networkNamePath.contains("abcd_template_matching")) {
+				this.loadBase64ImagePathStrings(networkNamePath);
+			}
 		}
 		
 		LOGGER.trace(loggerId + "getImagePathNames()...exit.");
@@ -349,51 +355,58 @@ public class AtlasDataCacheManager {
 	}
 	
 	public ArrayList<String> getMenuStudyNames() {
-		synchronized(menuLock) {
+		synchronized(configLock) {
 			return this.menuStudyNames;
 		}
 	}
 	
 	public Hashtable<String, ArrayList<String>> getMenuOptionsMap() {
-		synchronized(menuLock) {
+		synchronized(configLock) {
 			return this.menuChoicesMap;
 		}
 	}
 	
-	/**
-	 * Returns an ArrayList of Strings for the available neural network types.
-	 * 
-	 * @return ArrayList containing the neural network types.
-	 * 
-	 */
-	public ArrayList<String> getNeuralNetworkNames() {
+	public ArrayList<String> getNeuralNetworkFolderNamesConfig() {
 		
-		return this.neuralNetworkNames;
+		return this.networkFolderNamesConfig;
 	}
 	
+
 	public ArrayList<String> getPrivilegedList() {
 		return this.privilegedIPs;
 	}
 	
-	public String getNetworkPathName(String networkName) {
-		return this.neuralNetworkNamesMap.get(networkName);
-	}
-	
-
 	private void addNetworkMapImage(String networkPath, ArrayList<String> imagePathNames) {
 		
 		String probabilityMapImagePath = imagePathNames.remove(0);
 		byte[] fileBytes = DirectoryAccessor.getFileBytes(probabilityMapImagePath);
 		String base64EncodedString = Base64.getEncoder().encodeToString(fileBytes);
 		String networkMapNifiFilePath = DirectoryAccessor.getNetworkMapNiiFilePath(networkPath);
-		int index = networkPath.lastIndexOf("/");
-		String networkName = networkPath.substring(index+1);
-		NetworkMapData nmd = new NetworkMapData(networkName, base64EncodedString, networkMapNifiFilePath);
-        this.networkMapDataCache.put(networkName, nmd);
+		NetworkMapData nmd = new NetworkMapData(networkPath, base64EncodedString, networkMapNifiFilePath);
+        this.networkMapDataCache.put(networkPath, nmd);
 	}
 	
 	public NetworkMapData getNetworkMapData(String networkName) {
 		return this.networkMapDataCache.get(networkName);
+	}
+	
+	public void reloadNetworkFoldersConfig() {
+		synchronized(menuLock) {
+			String loggerId = ThreadLocalLogTracker.get();
+			LOGGER.trace(loggerId + "reloadNetworkFoldersConfig()...invoked.");
+		
+			this.networkFolderNamesConfig = new ArrayList<String>();
+			loadNetworkFolderNamesConfig();
+			LOGGER.trace(loggerId + "reloadNetworkFoldersConfig()...exit.");
+		}
+	}
+	
+	public void reloadConfigs() {
+		synchronized(configLock) {
+			this.reloadMenuConfig();
+			this.reloadSummaryConfig();
+			this.reloadNetworkFoldersConfig();
+		}
 	}
 	
 	public void reloadMenuConfig() {
@@ -402,9 +415,220 @@ public class AtlasDataCacheManager {
 			LOGGER.trace(loggerId + "reloadMenuConfig()...invoked.");
 		
 			this.menuStudyNames = new ArrayList<String>();
-			menuChoicesMap = new Hashtable<String, ArrayList<String>>();
+			this.menuChoicesMap = new Hashtable<String, ArrayList<String>>();
 			loadMenuConfig();
-			LOGGER.trace(loggerId + "reloadMenuConfig()...invoked.");
+			LOGGER.trace(loggerId + "reloadMenuConfig()...exit.");
 		}
 	}
+	
+	public void reloadSummaryConfig() {
+		synchronized(menuLock) {
+			String loggerId = ThreadLocalLogTracker.get();
+			LOGGER.trace(loggerId + "reloadSummaryConfig()...invoked.");
+		
+			this.summaryStudyNames = new ArrayList<String>();
+			this.summaryEntriesMap = new Hashtable<String, ArrayList<String>>();
+			loadSummaryConfig();
+			LOGGER.trace(loggerId + "reloadSummaryConfig()...exit.");
+		}
+	}
+	
+	public void loadSummaryConfig() {
+
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "loadSummaryConfig()...invoked.");
+
+		File file = new File(SUMMARY_CONFIG_PATH);
+		boolean summaryEntryNamePending = true;
+		boolean summarySubEntriesPending = false;
+		String summaryStudyName = null;
+		String summarySubEntry = null;
+		ArrayList<String> summarySubEntries = null;
+		int beginIndex = 0;
+		int endIndex = 0;
+		
+		
+		if(!file.exists()) {
+			LOGGER.fatal("Config file not found:" + SUMMARY_CONFIG_PATH);
+			return;
+		}
+		
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String outputLine = null;
+			
+			while ((outputLine = br.readLine()) != null) {
+				if(outputLine.trim().length() == 0) {
+					continue;
+				}
+				if(outputLine.contains("BEGIN SUMMARY")) {
+					summaryEntryNamePending = true;
+				}
+				if(outputLine.contains("END SUMMARY")) {
+					summarySubEntriesPending = false;
+					continue;
+				}
+				
+				if(summaryEntryNamePending) {
+					beginIndex = outputLine.indexOf("=");
+					endIndex = outputLine.indexOf(")");
+					summaryStudyName = outputLine.substring(beginIndex+1, endIndex);
+					this.summaryStudyNames.add(summaryStudyName);
+					summaryEntryNamePending = false;
+					summarySubEntriesPending = true;
+					summarySubEntries = new ArrayList<String>();
+					this.summaryEntriesMap.put(summaryStudyName, summarySubEntries);
+					continue;
+				}
+				else if(summarySubEntriesPending) {
+					summarySubEntry = outputLine;
+					summarySubEntries.add(summarySubEntry);
+				}
+				else if(outputLine.contains("END SUMMARY")) {
+					summarySubEntriesPending = false;
+				}
+			}
+			
+			Enumeration<String> keys = this.summaryEntriesMap.keys();
+			String currentKey = null;
+			ArrayList<String> summarySubChoices = null;
+			
+			while(keys.hasMoreElements()) {
+				currentKey = keys.nextElement();
+				summarySubChoices = this.summaryEntriesMap.get(currentKey);
+				//LOGGER.trace(loggerId + "summaryDetails->>" + currentKey + ":" + summarySubChoices);
+			}
+			br.close();
+		}
+		catch(Exception e) {
+			LOGGER.error(e.getMessage(), e);
+		}
+		LOGGER.trace(loggerId + "loadSummaryConfig()...exit.");
+	}
+	
+	public ArrayList<String> getSummaryStudyNames() {
+		return this.summaryStudyNames;
+	}
+	
+	public Hashtable<String, ArrayList<String>> getSummaryEntriesMap() {
+		return this.summaryEntriesMap;
+	}
+
+	public String getLocalHostName() {
+		return localHostName;
+	}
+
+	public void setLocalHostName(String localHostName) {
+		this.localHostName = localHostName;
+	}
+	
+	public void loadKeyFromFile() {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "loadKeyFromFile()...invoked.");
+
+		boolean shouldContinue = true;
+		String key = null;
+		String[] keyArray = null;
+		
+		File file = new File(KEY_CONFIG_PATH);
+		
+		if(!file.exists()) {
+			return;
+		}
+		
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String outputLine = null;
+			
+			while ((outputLine = br.readLine()) != null && shouldContinue) {
+				
+				if(outputLine.trim().length() == 0) {
+					continue;
+				}
+				if(outputLine.startsWith("#")) {
+					continue;
+				}
+				if(outputLine.contains("key")) {
+					keyArray = outputLine.split("=");
+					key = keyArray[1];
+					shouldContinue = false;
+				}
+			}
+			br.close();
+		}
+		catch(Exception e) {
+			LOGGER.error(e.getMessage(), e);
+		}
+		
+		EmailNotifier.setKey(key);
+		
+		LOGGER.trace(loggerId + "loadKeyFromFile()...exit.");
+	
+	}
+	
+	public void loadSettingsConfig() {
+
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "loadSettingsConfig()...invoked.");
+
+		String concatenatedUP = null;
+		String[] upArray = null;
+		boolean shouldContinue = true;
+		
+		int count = 0;
+		File file = new File(SETTINGS_CONFIG_PATH);
+		
+		if(!file.exists()) {
+			return;
+		}
+		
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String outputLine = null;
+			
+			while ((outputLine = br.readLine()) != null && shouldContinue) {
+				
+				if(outputLine.trim().length() == 0) {
+					continue;
+				}
+				if(outputLine.startsWith("#")) {
+					continue;
+				}
+
+				if(outputLine.contains("MIDB_SERIALIZATION")) {
+					String[] rawArray = outputLine.trim().split("=");
+					concatenatedUP = rawArray[1];
+					upArray = concatenatedUP.split("::");
+					String sender = upArray[0];
+					String password = upArray[1];
+					EmailNotifier.setPassword(password);
+					EmailNotifier.setSender(sender);
+				}
+				else if(outputLine.contains("MIDB_ROOT")) {
+					String[] rawArray = outputLine.trim().split("=");
+					String key = rawArray[1];
+					EmailNotifier.setKey(key);
+					TokenManager.setKey(key);
+				}
+				else if(outputLine.contains("MIDB_VERSION")) {
+					String[] rawArray = outputLine.trim().split("=");
+					String recipient = rawArray[1];
+					EmailNotifier.setRecipient(recipient);
+				}
+				else if(outputLine.contains("MIDB_MRI")) {
+					String[] rawArray = outputLine.trim().split("=");
+					String password = rawArray[1];
+					TokenManager.setPassword(password);
+				}
+				
+			}
+			br.close();
+		}
+		catch(Exception e) {
+			LOGGER.error("Unable to process settings.conf");
+			LOGGER.error(e.getMessage(), e);
+		}
+		LOGGER.trace(loggerId + "loadSettingsConfig()...exit.");
+	}
+	
 }

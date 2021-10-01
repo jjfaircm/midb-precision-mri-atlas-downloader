@@ -9,7 +9,7 @@
     */
    var menuHasBeenClicked = false;
    var lastSelectedMenu = null;
-   var selectedStudy = "abcd";
+   var selectedStudy = "abcd_template_matching";
    var selectedSubmenu = null;
    var selectedNeuralNetworkName = null;
    var selectElement = null;
@@ -19,25 +19,34 @@
    var priorSelectedDataType = "surface";
    var zipFormData = new FormData();
    var div_dropZone = null;
+   var droppedFileRemovalPending = false;
    var networkFolderNamesMap = new Map();
    var ul_zipList = null;
-   var droppedFilesArray = new Array();
+   var droppedFileNamesArray = new Array();
+   var uploadFilesArray = new Array();
    var menuCreationDisabled = false;
    var unmaskedText = "";
    var global_studyToRemove = null;
+   var adminLoginFocusPending = false;
+   var newStudy = {
+		   studyFolder: null,
+		   selectedDataTypes: null,
+		   menuEntry: null,
+		   currentIndex: 0,
+		   currentFileNumber: 1,
+		   totalFileNumber: 0,
+		   span_progress_0: null,
+		   span_progress_1: null
    
-   /*
-   var filesArray = new Array();
-   var fileNamesArray = new Array();
-   var chunkArray = new Array();
-   var chunkNamesArray = new Array();
-   */
+       }
 
 
    function startupMenu() {
        console.log("startUpMenu()...invoked.");
-       
-       //hideDataTypeSelection();
+              
+       newStudy.span_progress_0 = document.getElementById("span_progress_0");;
+       newStudy.span_progress_1 = document.getElementById("span_progress_1");;
+
        
        networkFolderNamesMap.set("Combined Networks", "combined_clusters");
        networkFolderNamesMap.set("Integration Zone", "overlapping");
@@ -88,87 +97,188 @@
 	    window.onscroll = function() {};
 	}
 	
-    function createStudyEntry(createButton) {
-   	 
-   	 // https://www.theserverside.com/blog/Coffee-Talk-Java-News-Stories-and-Opinions/Java-File-Upload-Servlet-Ajax-Example
-   	 // https://www.codejava.net/java-ee/servlet/eclipse-file-upload-servlet-with-apache-common-file-upload
-   	 
-   	 console.log("createMenuEntry()...invoked.");
-   	 
-   	 if(droppedFilesArray.length==0){
-   		 doAdminAlert("surface.zip and/or volume.zip must be added");
-   		 return;
-   	 }
-   	 
-   	 var isValidFormData = validateCreateStudyFormData();
-   	 if(!isValidFormData) {
-   		 return;
-   	 }
-   	 
-   	 createButton.disabled = true;
-   	 div_dropZone.style.display = "none"
-   		 
-   	 var button_addNetworkEntry = document.getElementById("button_addTableRow");
-   	 button_addNetworkEntry.disabled = true;
-   	 
-   	 var button_deleteNetworkEntry = document.getElementById("button_deleteTableRow");
-   	 button_deleteNetworkEntry.disabled = true;
-   	 
-   	 if(menuCreationDisabled) {
-   		 return;
-   	 }
-   	 
-   	 var text_studyDisplayName = document.getElementById("input_studyDisplayName");
-   	 var studyDisplayName = text_studyDisplayName.value;
-   	 
-   	 var text_studyFolderName = document.getElementById("input_studyFolderName");;
-   	 var studyFolderName = text_studyFolderName.value;
-   	 var menuEntry = template_beginMenuEntry;
-     menuEntry = menuEntry.replace(menuIdReplacementMarker, studyFolderName);
-   	 
-   	 var select_DataTypeElement = document.getElementById("select_dataType");
-   	 var selectedDataTypes = select_DataTypeElement.options[select_DataTypeElement.selectedIndex].value;
-   	 
-   	 var studyEntry = template_studyNameEntry;
-   	 studyEntry = studyEntry.replace(studyDisplayReplacementMarker, studyDisplayName);
-   	 studyEntry = studyEntry.replace(studyFolderReplacementMarker, studyFolderName);
-   	 studyEntry = studyEntry.replace(dataTypesReplacementMarker, selectedDataTypes);
-   	 
-   	 menuEntry += studyEntry;
-    	 
-   	 var networkTypes = document.getElementsByClassName("select_networkType");
-   	 var select_NetworkTypeElement = null;
-   	 var networkTypesArray = new Array();
-   	 var aSelectedNetworkType = null;
-   	 var networkEntry = null;
-   	 var networkFolderName = null;
-   	 
-   	 for(var i=0; i<networkTypes.length; i++) {
-   		 select_NetworkTypeElement = networkTypes[i];
-   		 aSelectedNetworkType = select_NetworkTypeElement.options[select_NetworkTypeElement.selectedIndex].value;
-   		 //networkTypesArray.push(aSelectedNetworkType);
-   		 networkEntry = template_networkEntry;
-   		 networkEntry = networkEntry.replace(networkDisplayNameReplacementMarker, aSelectedNetworkType);
-   		 networkFolderName = networkFolderNamesMap.get(aSelectedNetworkType);
-   		 networkEntry = networkEntry.replace(networkFolderNameReplacementMarker, networkFolderName);
-       	 menuEntry += networkEntry;
-   	 }
-   	 menuEntry += template_endMenuEntry;
 
-   	 console.log(menuEntry); 
-   	 
-   	 /*
-   	 for(var i=0; i<filesArray.length; i++) {
-   		 sliceFile(filesArray[i]);
-   	 }
-   	 //uploadFileChunks();
-   	 //processFileChunks();
-   	 */
-   	 uploadMenuFiles(studyFolderName, selectedDataTypes, menuEntry);
+	function createStudyEntry(createButton) {
+	   	 
+	   	 // https://www.theserverside.com/blog/Coffee-Talk-Java-News-Stories-and-Opinions/Java-File-Upload-Servlet-Ajax-Example
+	   	 // https://www.codejava.net/java-ee/servlet/eclipse-file-upload-servlet-with-apache-common-file-upload
+	   	 
+		//var message = "Study was created with possible zip file upload corruption: volume.zip";
+		
+	   	 console.log("createStudyEntry()...invoked.");
+	   	 	   	 	   	 
+	   	 var select_DataTypeElement = document.getElementById("select_dataType");
+	   	 var selectedDataTypes = select_DataTypeElement.options[select_DataTypeElement.selectedIndex].value;
 
-   	 console.log("createMenuEntry()...exit.");
-    }
-   
+	   	 if(selectedDataTypes == "unselected") {
+	   		 createButton.disabled = false;
+	   		 doAdminAlert("Please select Available Data Type");
+	   		 return;
+	   	 }
+	   	 
+	   	 if(selectedDataTypes == "surface_volume") {
+		   	 if(droppedFileNamesArray.length<4){
+		   		 if(!droppedFileNamesArray.includes("summary.txt")) {
+			   		 createButton.disabled = false;
+		   			 doAdminAlert("summary.txt file must be added");
+		   			 return;
+		   		 }
+		   		 else if(!droppedFileNamesArray.includes("folders.txt")) {
+			   		 createButton.disabled = false;
+		   			 doAdminAlert("folders.txt file must be added");
+		   			 return;
+		   		 }
+		   		 else if(!droppedFileNamesArray.includes("surface.zip")) {
+			   		 createButton.disabled = false;
+		   			 doAdminAlert("surface.zip file must be added");
+		   			 return;
+		   		 }
+		   		 else if(!droppedFileNamesArray.includes("volume.zip")) {
+			   		 createButton.disabled = false;
+		   			 doAdminAlert("volume.zip file must be added");
+		   			 return;
+		   		 }
+		   	 }
+	   	 }
+	   	 
+	   	 if(selectedDataTypes == "surface") {
+		   	 if(droppedFileNamesArray.length<3){
+		   		 if(!droppedFileNamesArray.includes("summary.txt")) {
+			   		 createButton.disabled = false;
+		   			 doAdminAlert("summary.txt file must be added");
+		   			 return;
+		   		 }
+		   		 else if(!droppedFileNamesArray.includes("folders.txt")) {
+		 	   		 button_createStudy.disabled = false;
+		   			 doAdminAlert("folders.txt file must be added");
+		   			 return;
+		   		 }
+		   		 else if(!droppedFileNamesArray.includes("surface.zip")) {
+			   		 createButton.disabled = false;
+		   			 doAdminAlert("surface.zip file must be added");
+		   			 return;
+		   		 }
+		   	 }
+	   	 }
+	   	 
+	   	 if(selectedDataTypes == "volume") {
+		   	 if(droppedFileNamesArray.length<3){
+		   		 if(!droppedFileNamesArray.includes("summary.txt")) {
+			   		 createButton.disabled = false;
+		   			 doAdminAlert("summary.txt file must be added");
+		   			 return;
+		   		 }
+		   		 else if(!droppedFileNamesArray.includes("folders.txt")) {
+			   		 createButton.disabled = false;
+		   			 doAdminAlert("folders.txt file must be added");
+		   			 return;
+		   		 }
+		   		 else if(!droppedFileNamesArray.includes("volume.zip")) {
+			   		 createButton.disabled = false;
+		   			 doAdminAlert("volume.zip file must be added");
+		   			 return;
+		   		 }
+		   	 }
+	   	 }
+
+	   	 
+	   	 var isValidFormData = validateCreateStudyFormData();
+	   	 if(!isValidFormData) {
+	   		 createButton.disabled = false;
+	   		 return;
+	   	 }
+	   	 
+	   	 //disable the remove entry button to prevent someone from trying this
+	   	 //simultaneously
+	   	 var removeButton = document.getElementById("button_remove_study");
+	   	 removeButton.disabled = true;
+	   	 
+	   	 createButton.disabled = true;
+	   	 div_dropZone.style.display = "none"
+	   		 
+	   	 var button_addNetworkEntry = document.getElementById("button_addTableRow");
+	   	 button_addNetworkEntry.disabled = true;
+	   	 
+	   	 var button_deleteNetworkEntry = document.getElementById("button_deleteTableRow");
+	   	 button_deleteNetworkEntry.disabled = true;
+	   	 
+	   	 if(menuCreationDisabled) {
+	   		 return;
+	   	 }
+	   	 
+	   	 var text_studyDisplayName = document.getElementById("input_studyDisplayName");
+	   	 var studyDisplayName = text_studyDisplayName.value;
+	   	 
+	   	 var text_studyFolderName = document.getElementById("input_studyFolderName");;
+	   	 var studyFolderName = text_studyFolderName.value;
+	   	 var menuEntry = template_beginMenuEntry;
+	     menuEntry = menuEntry.replace(menuIdReplacementMarker, studyFolderName);
+	   	    	 
+	   	 var studyEntry = template_studyNameEntry;
+	   	 studyEntry = studyEntry.replace(studyDisplayReplacementMarker, studyDisplayName);
+	   	 studyEntry = studyEntry.replace(studyFolderReplacementMarker, studyFolderName);
+	   	 studyEntry = studyEntry.replace(dataTypesReplacementMarker, selectedDataTypes);
+	   	 
+	   	 menuEntry += studyEntry;
+	    	 
+	   	 var networkTypes = document.getElementsByClassName("select_networkType");
+	   	 var select_NetworkTypeElement = null;
+	   	 var networkTypesArray = new Array();
+	   	 var aSelectedNetworkType = null;
+	   	 var networkEntry = null;
+	   	 var networkFolderName = null;
+	   	 
+	   	 for(var i=0; i<networkTypes.length; i++) {
+	   		 select_NetworkTypeElement = networkTypes[i];
+	   		 aSelectedNetworkType = select_NetworkTypeElement.options[select_NetworkTypeElement.selectedIndex].value;
+	   		 //networkTypesArray.push(aSelectedNetworkType);
+	   		 networkEntry = template_networkEntry;
+	   		 networkEntry = networkEntry.replace(networkDisplayNameReplacementMarker, aSelectedNetworkType);
+	   		 networkFolderName = networkFolderNamesMap.get(aSelectedNetworkType);
+	   		 networkEntry = networkEntry.replace(networkFolderNameReplacementMarker, networkFolderName);
+	       	 menuEntry += networkEntry;
+	   	 }
+	   	 menuEntry += template_endMenuEntry;
+
+	   	 console.log(menuEntry); 
+	   	 
+	   	 /*
+	   	 for(var i=0; i<filesArray.length; i++) {
+	   		 sliceFile(filesArray[i]);
+	   	 }
+	   	 //uploadFileChunks();
+	   	 //processFileChunks();
+	   	 */
+	   	 
+	   	 //var currentFile = null;
+	   	 //var currentFileName = null;
+	   	 //var currentFileNumber = 1;
+	   	 //var totalFileNumber = droppedFileNamesArray.length;
+	   	 
+	   	 //uploadMenuFiles(studyFolderName, selectedDataTypes, menuEntry);
+	   	 /*
+	   	newStudy = {
+	 		   studyFolder: null,
+	 		   selectedDataTypes: null,
+	 		   menuEntry: null,
+	 		   currentFileNumber: 0,
+	 		   totalFileNumber: 0
+	        }
+         */
+	   	 
+	   	 newStudy.studyFolder = studyFolderName;
+	   	 newStudy.selectedDataTypes = selectedDataTypes;
+	   	 newStudy.menuEntry = menuEntry;
+	   	 newStudy.totalFileNumber = droppedFileNamesArray.length;
+	   	 newStudy.currentIndex = 0;
+	   	 newStudy.currentFileNumber = 1;
+	   	 
+	   	 manageFileUploads();
+	   	 
+	   	 console.log("createStudyEntry()...exit.");
+		
+	}
+	   
 
    function displaySelectedMenu() {
         console.log("displaySelectedMenu()...invoked.");
@@ -211,12 +321,21 @@
         console.log("resetMenuColors()...exit.");
    }
    
+  	function handleAdminPasswordEnterKey(event) {
+    	//console.log("handleSSHPasswordEnterKey(), keyCode=" + event.keyCode);
+    	if (event.keyCode === 13) {
+			document.getElementById("adminOKButton").click();
+		}
+    }
+   
    function handleAdminLogin() {
   	 
   	 //  https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
        console.log("handleAdminLogin()...invoked.");
        var promptAdminPasswordBox = document.getElementById("div_promptAdminPasswordBox");
    	   promptAdminPasswordBox.style.display = "none";
+   	   
+   	   adminLoginFocusPending = false;
    	
    	   var adminPasswordMessageDiv = document.getElementById("adminPasswordMessage");
    	   adminPasswordMessageDiv.style.display = "none";
@@ -240,8 +359,10 @@
       	adminPasswordMessageDiv.innerHTML = msg;
       	adminPasswordMessageDiv.style.display = "block";
       	
+      	adminLoginFocusPending = true;
   	
       	var passwordInputField = document.getElementById("pwd_adminPasswordPrompt");
+      	unmaskedText = "";
       	passwordInputField.value = "";
       	passwordInputField.focus();
       	
@@ -254,6 +375,16 @@
 	   
 	   if(responseText.includes("true")) {
 		   handleTabSelected("div_admin");
+	   }
+	   else if(responseText.includes("false") && responseText.includes("expired")) {
+		   return;
+	   }
+	   else if(responseText.includes("false") && responseText.includes("access_denied")) {
+		   doAdminAlert("Access denied");
+		   return;
+	   }
+	   else if(responseText.includes("false") && !responseText.includes("expired")) {
+		   handleAdminRequest();
 	   }
 	   console.log("handleAdminValidationResponse()...exit");
 
@@ -279,42 +410,65 @@
 	   
 	   var div_addStudy = document.getElementById("div_addStudy");
 	   var div_removeStudy = document.getElementById("div_removeStudy");
+	   var div_updateStudy = document.getElementById("div_updateStudy");
+	   var div_downloadSamples = document.getElementById("div_downloadSamples");
+
+
 	   
 	   var anchor_addStudy = document.getElementById("a_addStudy");
 	   var anchor_removeStudy = document.getElementById("a_removeStudy");
+	   var anchor_updateStudy = document.getElementById("a_updateStudy");
+	   var anchor_downloadSamples = document.getElementById("a_downloadSamples");
 
 	   
 	   if(anchor.id=="a_addStudy") {
 		   div_addStudy.style.display = "block";
 		   div_removeStudy.style.display = "none";
+		   div_updateStudy.style.display = "none";
+		   div_downloadSamples.style.display = "none";
+
+
 		   anchor_removeStudy.style.color = "white";
+		   anchor_updateStudy.style.color = "white";
+		   anchor_downloadSamples.style.color = "white";
+
+
 	   }
 	   
 	   else if(anchor.id=="a_removeStudy") {
 		   div_removeStudy.style.display = "block";
 		   div_addStudy.style.display = "none";
+		   div_updateStudy.style.display = "none";
+		   div_downloadSamples.style.display = "none";
+
 		   anchor_addStudy.style.color = "white";
+		   anchor_updateStudy.style.color = "white";
+		   anchor_downloadSamples.style.color = "white";
 	   }
+	   else if(anchor.id=="a_updateStudy") {
+		   div_updateStudy.style.display = "block";
+		   div_addStudy.style.display = "none";
+		   div_removeStudy.style.display = "none";
+		   div_downloadSamples.style.display = "none";
+
+		   anchor_addStudy.style.color = "white";
+		   anchor_removeStudy.style.color = "white";
+		   anchor_downloadSamples.style.color = "white";
+	   }
+	   else if(anchor.id=="a_downloadSamples") {
+		   div_downloadSamples.style.display = "block";
+		   div_updateStudy.style.display = "none";
+		   div_addStudy.style.display = "none";
+		   div_removeStudy.style.display = "none";
+
+		   anchor_addStudy.style.color = "white";
+		   anchor_removeStudy.style.color = "white";
+		   anchor_updateStudy.style.color = "white";
+	   }
+	   
 	   console.log("handleStudyMenuClicked()...exit");
    }
    
-   function hideDataTypeSelection() {
-           console.log("hideDataTypeSelection()...invoked.");
-	   var labelDataType = document.getElementById("label_dataType");
-	   labelDataType.style.display = "none";
-	   var labelSurface = document.getElementById("label_surface");
-	   labelSurface.style.display = "none";
-	   var radioSurface = document.getElementById("radio_surface");
-	   radioSurface.style.display = "none";
-	   var labelVolume = document.getElementById("label_volume");
-	   labelVolume.style.display = "none";
-	   var radioVolume = document.getElementById("radio_volume");
-	   radioVolume.style.display = "none";
-           console.log("hideDataTypeSelection()...exit.");
-  
-   }
-
-
    function hideMenuAll() {
 
        console.log("hideMenuAll()...invoked");
@@ -346,7 +500,7 @@
        var select_MenuId = document.getElementById("select_menuId");
        var studyToRemove = select_MenuId.options[select_MenuId.selectedIndex].value;
        
-       if(studyToRemove.includes("abcd")) {
+       if(studyToRemove.includes("abcd_template_matching")) {
        	doAdminAlert("Sorry " + studyToRemove + " is not eligible for removal");
        	return;
        }
@@ -438,10 +592,132 @@
        console.log("hideSubmenu_All()...exit");
    }
    
-   
    function initializeDragDrop() {
+	  	 //alert("drag and drop init...");
+	  	 console.log("initializeDragDrop()...invoked.");
+	  	 
+	  	ul_zipList.addEventListener("dblclick", function(e) {
+	  		console.log("ul_zipList event handler");
+	  		event.preventDefault();
+	  		event.stopPropagation();
+	  		return false;
+	  	});
+	  	 
+	  	div_dropZone.addEventListener("dragenter", function(e) {
+	  		 this.classList.add("active");
+	  	});
+
+	  	div_dropZone.addEventListener("dragleave", function(e) {
+			  this.classList.remove("active");
+			});
+
+	  	div_dropZone.addEventListener("dragover", function(e) {
+			    e.preventDefault();
+			});
+			
+	  	div_dropZone.addEventListener("drop", function(e) {
+				e.preventDefault();
+				this.classList.remove("active");
+				var fileName = null;
+				var keyName = null;
+				var additionalHTML = null;
+				
+			   	 var select_DataTypeElement = document.getElementById("select_dataType");
+			   	 var selectedDataTypes = select_DataTypeElement.options[select_DataTypeElement.selectedIndex].value;
+
+			   	 if(selectedDataTypes == "unselected") {
+			   		 doAdminAlert("Please select Available Data Type first");
+			   		 return;
+			   	 }
+				
+				for (var x=0; x < e.dataTransfer.files.length; x++) {
+					fileName = e.dataTransfer.files[x].name;
+					
+					if(selectedDataTypes == "volume") {
+						if(fileName.includes("surface.zip")) {
+							doAdminAlert("surface.zip not allowed for Available Data Type of volume");
+							return;
+						}
+					}
+					else if(selectedDataTypes == "surface") {
+						if(fileName.includes("volume.zip")) {
+							doAdminAlert("volume.zip not allowed for Available Data Type of surface");
+							return;
+						}
+					}
+					
+					if(droppedFileNamesArray.includes(fileName)) {
+						doAdminAlert("duplicate file name");
+						return;
+					}
+					
+					if(fileName != "surface.zip" && fileName != "volume.zip" 
+					   && fileName != "summary.txt" && fileName != "folders.txt") {
+						doAlert("file name must be surface.zip, volume.zip, summary.txt, or folders.txt");
+						return;
+					}
+
+					/*
+					if(fileName.includes("surface")) {
+						keyName = "surfaceFile";
+					}
+					else if(fileName.includes("volume")) {
+						keyName = "volumeFile";
+					}
+					else if(fileName.includes("summary")) {
+						keyName = "summaryFile";
+					}
+					*/
+					
+					console.log("fileName=" + fileName);
+					droppedFileNamesArray.push(fileName);
+					//zipFormData.append(fileName, e.dataTransfer.files[x]);
+					uploadFilesArray.push(e.dataTransfer.files[x]);
+					//fileNamesArray.push(fileName);
+				}
+				if(fileName.includes("surface.zip")){
+					var innerHTML = ul_zipList.innerHTML;
+					additionalHTML = template_li_surfaceZipImage;
+					additionalHTML = additionalHTML.replace(fileNameReplacementMarker, fileName);
+					additionalHTML = additionalHTML.replace(formKeyReplacementMarker, fileName);
+					var newInnerHTML = innerHTML + additionalHTML;
+					ul_zipList.innerHTML = newInnerHTML
+				}
+				if(fileName.includes("volume.zip")){
+					var innerHTML = ul_zipList.innerHTML;
+					additionalHTML = template_li_volumeZipImage;
+					additionalHTML = additionalHTML.replace(fileNameReplacementMarker, fileName);
+					additionalHTML = additionalHTML.replace(formKeyReplacementMarker, fileName);
+					var newInnerHTML = innerHTML + additionalHTML;
+					ul_zipList.innerHTML = newInnerHTML
+				}
+				if(fileName.includes("txt")){
+					var innerHTML = ul_zipList.innerHTML;
+					additionalHTML = template_li_textImage;
+					additionalHTML = additionalHTML.replace(fileNameReplacementMarker, fileName);
+					additionalHTML = additionalHTML.replace(formKeyReplacementMarker, fileName);
+					var newInnerHTML = innerHTML + additionalHTML;
+					ul_zipList.innerHTML = newInnerHTML
+				}
+											
+			});
+			
+	 	    console.log("initializeDragDrop()...exit.");
+	   
+	   
+   }
+   
+   
+   function initializeDragDropOld() {
   	 //alert("drag and drop init...");
   	 console.log("initializeDragDrop()...invoked.");
+  	 
+  	ul_zipList.addEventListener("dblclick", function(e) {
+  		console.log("ul_zipList event handler");
+  		event.preventDefault();
+  		event.stopPropagation();
+  		return false;
+  	});
   	 
   	div_dropZone.addEventListener("dragenter", function(e) {
   		 this.classList.add("active");
@@ -460,46 +736,107 @@
 			this.classList.remove("active");
 			var fileName = null;
 			var keyName = null;
+			var additionalHTML = null;
 			
-			
+		   	 var select_DataTypeElement = document.getElementById("select_dataType");
+		   	 var selectedDataTypes = select_DataTypeElement.options[select_DataTypeElement.selectedIndex].value;
+
+		   	 if(selectedDataTypes == "unselected") {
+		   		 doAdminAlert("Please select Available Data Type first");
+		   		 return;
+		   	 }
 			
 			for (var x=0; x < e.dataTransfer.files.length; x++) {
-				
 				fileName = e.dataTransfer.files[x].name;
 				
-				if(droppedFilesArray.includes(fileName)) {
-					doAlert("duplicate file name", alertOK);
+				if(selectedDataTypes == "volume") {
+					if(fileName.includes("surface.zip")) {
+						doAdminAlert("surface.zip not allowed for Available Data Type of volume");
+						return;
+					}
+				}
+				else if(selectedDataTypes == "surface") {
+					if(fileName.includes("volume.zip")) {
+						doAdminAlert("volume.zip not allowed for Available Data Type of surface");
+						return;
+					}
+				}
+				
+				if(droppedFileNamesArray.includes(fileName)) {
+					doAdminAlert("duplicate file name");
 					return;
 				}
 				
-				if(fileName != "surface.zip" && fileName != "volume.zip") {
-					doAlert("file name must be surface.zip or volume.zip");
+				if(fileName != "surface.zip" && fileName != "volume.zip" && fileName != "summary.txt") {
+					doAlert("file name must be surface.zip, volume.zip, or summary.txt");
 					return;
 				}
 
+				/*
 				if(fileName.includes("surface")) {
 					keyName = "surfaceFile";
 				}
 				else if(fileName.includes("volume")) {
 					keyName = "volumeFile";
 				}
+				else if(fileName.includes("summary")) {
+					keyName = "summaryFile";
+				}
+				*/
 				
 				console.log("fileName=" + fileName);
-				droppedFilesArray.push(fileName);
-				zipFormData.append(keyName, e.dataTransfer.files[x]);
+				droppedFileNamesArray.push(fileName);
+				zipFormData.append(fileName, e.dataTransfer.files[x]);
 				//filesArray.push(e.dataTransfer.files[x]);
 				//fileNamesArray.push(fileName);
 			}
-			
-			var innerHTML = ul_zipList.innerHTML;
-			var additionalHTML = template_li_zipImage;
-			additionalHTML = additionalHTML.replace(fileNameReplacementMarker, fileName);
-			var newInnerHTML = innerHTML + additionalHTML;
-			ul_zipList.innerHTML = newInnerHTML;
-									
+			if(fileName.includes("surface.zip")){
+				var innerHTML = ul_zipList.innerHTML;
+				additionalHTML = template_li_surfaceZipImage;
+				additionalHTML = additionalHTML.replace(fileNameReplacementMarker, fileName);
+				additionalHTML = additionalHTML.replace(formKeyReplacementMarker, fileName);
+				var newInnerHTML = innerHTML + additionalHTML;
+				ul_zipList.innerHTML = newInnerHTML
+			}
+			if(fileName.includes("volume.zip")){
+				var innerHTML = ul_zipList.innerHTML;
+				additionalHTML = template_li_volumeZipImage;
+				additionalHTML = additionalHTML.replace(fileNameReplacementMarker, fileName);
+				additionalHTML = additionalHTML.replace(formKeyReplacementMarker, fileName);
+				var newInnerHTML = innerHTML + additionalHTML;
+				ul_zipList.innerHTML = newInnerHTML
+			}
+			if(fileName.includes("txt")){
+				var innerHTML = ul_zipList.innerHTML;
+				additionalHTML = template_li_textImage;
+				additionalHTML = additionalHTML.replace(fileNameReplacementMarker, fileName);
+				additionalHTML = additionalHTML.replace(formKeyReplacementMarker, fileName);
+				var newInnerHTML = innerHTML + additionalHTML;
+				ul_zipList.innerHTML = newInnerHTML
+			}
+										
 		});
 		
  	    console.log("initializeDragDrop()...exit.");
+   }
+   
+   function loadStudySummaryList() {
+	    console.log("loadStudySummaryList()...invoked.");
+	    
+	    var summaryEntriesData = studySummaryMap.get(selectedStudy);
+	    var summaryEntriesArray = summaryEntriesData.split(",");
+	    //console.log("loadStudySummaryList()...summaryEntriesArray=" + summaryEntriesArray);
+	    
+	    var ul_summary = document.getElementById("ul_atlasSummary");
+	    var ul_innerHTML = "";
+	    var currentLI = null;
+	    
+	    for(i=0; i<summaryEntriesArray.length; i++) {
+	    	currentLI = template_summary_li.replace(summaryEntryReplacementMarker,summaryEntriesArray[i]);
+	    	ul_innerHTML += currentLI;
+	    }
+	    ul_summary.innerHTML = ul_innerHTML;
+	    console.log("loadStudySummaryList()...exit.");
    }
    
    function maskInput(inputElement) {
@@ -531,9 +868,22 @@
 
    
    function menuClicked(element, startupTrigger, actionRequired) {
-	      console.log("menuClicked()...invoked, id=" + element.id);
+	          console.log("menuClicked()...invoked, id=" + element.id);
+	          console.log("menuClicked()...invoked, actionRequired=" + actionRequired);
+	          /*
+	          var surfaceVolumeType = element.getAttribute("data-surfaceVolumeType");
+	          var studyDisplayName = element.getAttribute("data-studyDisplayName");
+
+	          if(selectedDataType=="volume") {
+	        	  if(surfaceVolumeType=="surface") {
+	        		  //console.log(studyName);
+	        		  doAlert("volume data not available for " + studyDisplayName);
+	        		  return;
+	        	  }
+	          }
+	      	  */
               var study = element.getAttribute("data-study");
-              selectedStudy = study;
+              selectedStudy = study; //ie: abcd_template_matching
               console.log("menuClicked()...invoked, study=" + study);
 	      
 	      if(lastSelectedMenu != null) {
@@ -594,9 +944,6 @@
 
        console.log("menuClickedAction()...invoked.");
        
-      
-       var parent = element.parentElement;
-       var grandParent = parent.parentElement;
        var networkTypeId = element.getAttribute("data-networkId");
        //alert("clicked:id=" + parent.id);
        //hideMenu(); 
@@ -608,6 +955,10 @@
        var volumeDataAvailable = surfaceVolumeType.includes("volume");
        var radio_VolumeControl = radio_VolumeControl = document.getElementById("radio_volume"); 
        var label_volume = document.getElementById("label_volume");
+       var radio_SurfaceControl = document.getElementById("radio_surface"); 
+       var label_surface = document.getElementById("label_surface");
+	   label_surface.style.backgroundColor = "#FFC300";
+
        
        if(!volumeDataAvailable) {
     	   radio_VolumeControl.disabled = true;
@@ -615,12 +966,14 @@
        }
        else {
     	   radio_VolumeControl.disabled = false;
-    	   label_volume.style.backgroundColor = "#F0EAD6";
+    	   //label_volume.style.backgroundColor = "#F0EAD6";
+    	   label_volume.style.backgroundColor = "#f0efee";    	   
        }
        
        console.log("networkTypeId=" + networkTypeId);
        
-       
+       loadStudySummaryList();
+      
        if(networkTypeId.includes("single")) {
       	 /*
       	 var div_thresholdImagePanel = document.getElementById("div_thresholdImage");
@@ -628,10 +981,14 @@
       	 var div_selectNeuralNetwork = document.getElementById("div_selectNeuralNetworkName");
       	 div_selectNeuralNetwork.style.display = "block";
       	 */
+    	 buildNeuralNetworkDropdownList();
+    	 if(selectedStudy != priorSelectedStudy) {
+    		 firstTimeSelectingSingle = true;
+    	 }
       	 var select_neuralNetworkName = document.getElementById("select_neuralNetworkName");
       	 if(firstTimeSelectingSingle) {
-      		 select_neuralNetworkName.selectedIndex = 3;
-      		 selectedNeuralNetworkName = selectElement.options[selectElement.selectedIndex].value;
+      		 //select_neuralNetworkName.selectedIndex = 3;
+      		 //selectedNeuralNetworkName = selectElement.options[selectElement.selectedIndex].value;
       		 firstTimeSelectingSingle = false;
       	 }
       	 else {
@@ -640,14 +997,18 @@
       	 preProcessGetThresholdImages();
        }
        else if(startupTrigger) {
-      	 getNeuralNetworkNames();
+        	 selectedNeuralNetworkName = "combined_clusters";
+        	 preProcessGetThresholdImages();
+
+      	 //getNeuralNetworkNames();
+    	   //getNetworkFolderNamesConfig();
        }
        else if(networkTypeId.includes("combined_clusters")) {
       	 selectedNeuralNetworkName = "combined_clusters";
       	 preProcessGetThresholdImages();
        }
        else if(networkTypeId.includes("overlapping")) {
-      	 selectedNeuralNetworkName = "overlapping";
+      	 selectedNeuralNetworkName = "overlapping_networks";
       	 preProcessGetThresholdImages();
        }
 
@@ -742,6 +1103,62 @@
 	        console.log("showSubmenuLevel_1()...exit.");
 	   }
 	   
+	   function manageFileUploads(totalCount, currentCount) {
+		   	 
+		   	 /*
+		   	 for(var i=0; i<droppedFileNamesArray.length; i++) {
+		   		 currentFileName = droppedFileNamesArray[i];
+		   		 currentFile = uploadFilesArray[i];
+		   		 currentFileNumber += i;
+		   		 zipFormData = new FormData();
+		   		 zipFormData.append(currentFileName, currentFile);
+		   		 uploadMenuFiles(studyFolderName, selectedDataTypes, menuEntry, currentFileNumber, totalFileNumber);
+		   	 }
+			 */
+		   
+           /*
+		   newStudy = {
+				   studyFolder: null,
+				   selectedDataTypes: null,
+				   menuEntry: null,
+				   currentFileNumber: 0,
+				   totalFileNumber: 0
+		       }
+		   */
+		   
+		   zipFormData = new FormData();
+		   var index = newStudy.currentIndex;
+		   var currentFile = uploadFilesArray[index];
+		   var currentFileSize = currentFile.size;
+		   var currentFileName = droppedFileNamesArray[index];
+		   zipFormData.append(currentFileName, currentFile);
+		   uploadStudyFile(zipFormData, currentFileName, currentFileSize);
+		   
+	   }
+	   
+		function preProcessCreateStudyEntry(button_createStudy) {
+		   	 console.log("preProcessCreateStudyEntry()...invoked.");
+		   	 
+		   	 button_createStudy.disabled = true;
+	     	 var nowDate = new Date();
+	    	 var currentTimeSec = nowDate.getTime()/1000;
+	    	 var lastTokenActionTimeSec = lastTokenActionTime/1000;
+	  
+	    	 var timeDifference = currentTimeSec - lastTokenActionTimeSec;
+	    	
+	    	 if(timeDifference > 1800) {
+	    		var message = "Session timeout<br>Please refresh browser page";
+	    		doAdminAlert(message);
+	    		return;
+	    	 }
+	    	 
+	    	 validateAdminAccessStatus();
+	    	 
+		   	 console.log("preProcessCreateStudyEntry()...exit.");
+		}
+		
+	   
+	   
 	   function processDataModeChoice(element) {
 	        console.log("processDataModeChoice()...invoked.");
             
@@ -751,14 +1168,15 @@
 	        
 	        if(id.includes("surface")) {
 	        	surfaceLabel.style.background = "#FFC300";
-	        	volumeLabel.style.background = "#F0EAD6";
+	        	volumeLabel.style.background = "#f0efee";
 	        	selectedDataType = "surface";
 	        }
 	        else {
 	        	volumeLabel.style.background = "#FFC300";
-		        surfaceLabel.style.background = "#F0EAD6";
+		        surfaceLabel.style.background = "#f0efee";
 	        	selectedDataType = "volume";
 	        }
+	        preProcessGetThresholdImages();
 	        console.log("processDataModeChoice()...eit.");
 	   }
 	   
@@ -783,6 +1201,47 @@
 	       console.log("processFileChunks()...exit.");
 
        }
+	   
+	   function removeDroppedFile(liElement) {
+		   console.log("removeDroppedFile()...invoked, event=" + event);
+		   		   
+		   console.log("before array=" + droppedFileNamesArray);
+
+		   event.stopPropagation();
+		   if(droppedFileRemovalPending) {
+			   console.log("removeDroppedFile()...aborting, array=" + droppedFileNamesArray);
+			   return;
+		   }
+		   var fileName = liElement.getAttribute("data-formKey");
+		   var index = droppedFileNamesArray.indexOf(fileName);
+		   
+		   droppedFileRemovalPending = true;
+		   
+		   droppedFileNamesArray.splice(index, 1);
+		   uploadFilesArray.splice(index, 1);
+		   //zipFormData.delete(fileName);
+		   var parent = liElement.parentElement;
+		   parent.removeChild(liElement);
+		   //setTimeout(removeChild, 500, parent, liElement);
+		   console.log("after array=" + droppedFileNamesArray);
+
+		   
+		   console.log("keys follow:");
+		   for (var key of zipFormData.keys()) {
+			   console.log(key);
+			}
+		   droppedFileRemovalPending = false;
+		   console.log("array=" + droppedFileNamesArray);
+		   console.log("removeDroppedFile()...exit.");
+	   }
+	   
+	   function removeChild(parent, child) {
+		   console.log("removeChild()...invoked.");
+		   console.log("parentID=" + parent.id);
+		   parent.removeChild(child);
+		   droppedFileRemovalPending = false;
+		   console.log("removeChild()...exit, array=" + droppedFileNamesArray);
+	   }
 	   
 	   function sendRemoveStudyRequest(study_folder) {
 	        console.log("sendRemoveStudyRequest()...invoked.");
@@ -985,10 +1444,74 @@
 	        console.log("validateAdminAccess()...exit.");
 	   }
 	   
+	   function validateAdminAccessStatus() {
+		    console.log("validateAdminAccessStatus()...invoked.");
+	
+	       	var ajaxRequest = getAjaxRequest();
+	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=validateAdminAccessStatus";
+	
+	       	var encodedUrl = encodeURI(url);
+	       	ajaxRequest.open('get', encodedUrl, true);
+	       	//ajaxRequest.setRequestHeader("enctype","multipart/form-data");
+	       	
+	       	ajaxRequest.onreadystatechange=function() {
+	
+	              //console.log(ajaxRequest.responseText);
+	              if(ajaxRequest.responseText.includes("Unexpected Error")) {
+	              	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+	           		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+	           		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+	               	var errorArray = errorData.split("&");
+	              	var msg1 = errorArray[0];
+	              	var msg2 = errorArray[1];
+	              	stackTraceData = errorArray[2];
+	              	var divSubmitNotification = document.getElementById("div_submitNotification");
+	              	divSubmitNotification.style.display = "none";
+	              	doErrorAlert(msg1, msg2, errorAlertOK);
+	              	console.log("uploadMenuFiles()...onreadystatechange...error");
+	              	console.log("msg1=" + msg1);
+	              	console.log("msg2=" + msg2);
+	              	console.log(stackTraceData);
+	              	return;
+	              }
+	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+	      	            console.log("validateAdminAccessStatus()...ajaxRequest.responseText=" + ajaxRequest.responseText);
+			           	if(ajaxRequest.responseText.includes("true")) {
+			           		var button_createStudy = document.getElementById("button_createStudy");
+			           		createStudyEntry(button_createStudy);
+			           		return;
+			           	}
+			           	else {
+			           		doAdminAlert("Admin access not validated");
+			           		return;
+			           	}
+	   	       }
+	       	}
+	       	
+	        ajaxRequest.send();
+			console.log("validateAdminAccessStatus()...exit.");
+	   }
+	   
 	   function validateCreateStudyFormData() {
 		   
 		   var selectElement = document.getElementById("select_dataType");
 		   var selectedDataType = selectElement.options[selectElement.selectedIndex].value; 
+		   
+		   var input_studyDisplayName = document.getElementById("input_studyDisplayName");
+		   var studyName = input_studyDisplayName.value;
+		   
+		   if(studyName.length==null || studyName.length==0) {
+			   doAdminAlert("Please enter a value for Displayed Study Name");
+			   return false;
+		   }
+		   
+		   var text_studyFolderName = document.getElementById("input_studyFolderName");;
+		   var studyFolderName = text_studyFolderName.value;
+		   
+		   if(studyMenuIDArray.includes(studyFolderName)) {
+			   doAdminAlert("Duplicate Study name");
+			   return false;
+		   }
 		   
 		   if(selectedDataType == "unselected") {
 			   doAdminAlert("Please select valid Available Data Type");
@@ -998,6 +1521,7 @@
 		   var select_networkTypeArray = document.getElementsByClassName("select_networkType");
 		   var networkTypeSelectElement = null;
 		   var selectedNetworkType = null;
+		   var selectedNetworkTypeArray = new Array();
 		   
 		   for(var i=0; i<select_networkTypeArray.length; i++) {
 			   networkTypeSelectElement = select_networkTypeArray[i];
@@ -1006,9 +1530,55 @@
 				   doAdminAlert("One or more Network Display Name entries is unselected");
 				   return false;
 			   }
+			   if(selectedNetworkTypeArray.includes(selectedNetworkType)) {
+				   doAdminAlert("Duplicate Network Display Name");
+				   return false;
+			   }
+			   selectedNetworkTypeArray.push(selectedNetworkType);
 		   }
 		   return true;
 		   
+	   }
+	   
+	   function validateDroppedFiles(select_DataTypeElement) {
+		   console.log("validateDroppedFiles()...invoked.");
+		   
+		   var selectedDataTypes = select_DataTypeElement.options[select_DataTypeElement.selectedIndex].value;
+		   var arrayIndex = 0;
+		   var ul_zipList = document.getElementById("ul_zipList");
+		   
+		   console.log("before: array=" + droppedFileNamesArray);
+		   
+		   if(selectedDataTypes == "surface") {
+			   if(droppedFileNamesArray.includes("volume.zip")) {
+				   console.log("validateDroppedFiles()...removing volume.zip");
+				   zipFormData.delete("volume.zip");
+				   arrayIndex = droppedFileNamesArray.indexOf("volume.zip");
+				   droppedFileNamesArray.splice(arrayIndex,1);
+				   var targetLI = document.getElementById("volume.zip");
+				   ul_zipList.removeChild(targetLI);
+			   }
+		   }
+		   else if(selectedDataTypes == "volume") {
+			   if(droppedFileNamesArray.includes("surface.zip")) {
+				   console.log("validateDroppedFiles()...removing surface.zip");
+				   zipFormData.delete("surface.zip");
+				   arrayIndex = droppedFileNamesArray.indexOf("surface.zip");
+				   droppedFileNamesArray.splice(arrayIndex,1);
+				   var targetLI = document.getElementById("surface.zip");
+				   ul_zipList.removeChild(targetLI);
+			   }
+		   }
+		   
+		   console.log("after: array=" + droppedFileNamesArray);
+		   console.log("zipFormData keys follow...");
+		   for (var key of zipFormData.keys()) {
+			   console.log(key);
+			}
+
+		   
+		   console.log("validateDroppedFiles()...invoked.");
+
 	   }
 	   
    
