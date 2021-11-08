@@ -144,9 +144,11 @@ public class ApplicationContext {
 	
 	public void clearErrors() {
 		this.createStudyErrorMessage = null;
+		this.zipFormatErrorMessage = null;
 		this.createStudyHasError = false;
 		this.folderConfigurationError = false;
 		this.zipFileUnpackError = false;
+		this.zipFormatError = false;
 	}
 
 	public boolean isZipFormatError() {

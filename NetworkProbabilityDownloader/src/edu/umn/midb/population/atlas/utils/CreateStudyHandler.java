@@ -140,9 +140,57 @@ public class CreateStudyHandler {
 		updateMenuConfig();
 		updateSummaryConfig();
 		updateNetworkFolderNamesConfig();
+		createConfigBackup();
 		
 		AtlasDataCacheManager.getInstance().reloadConfigs();
 		return true;
+	}
+	
+	private void createConfigBackup() {
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "createConfigBackup()...invoked.");
+
+		String commandToExecute = "cp /midb/*.conf /midb/conf_backup";
+		
+    	Process process = null;
+    	BufferedReader brStdIn = null;
+    	BufferedReader brStdErr = null;
+    	String stdInLine = null;
+    	String stdErrLine = null;
+    	String errorDetails = "";
+    	int returnCode = 999;
+    	ProcessBuilder pBuilder = new ProcessBuilder("bash", "-c", commandToExecute);
+
+    	
+    	try {
+			LOGGER.trace(loggerId + "command=" + commandToExecute);
+			process = pBuilder.start();    		
+		
+			brStdIn = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			
+			while ((stdInLine = brStdIn.readLine()) != null) {
+				LOGGER.trace(loggerId + stdInLine);
+			}
+			
+    		returnCode = process.waitFor();
+    		LOGGER.trace(loggerId + "returnCode=" + returnCode);
+    		
+    		if(returnCode != 0) {
+	    		brStdErr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+				
+				while ((stdErrLine = brStdErr.readLine()) != null) {
+					LOGGER.error(stdErrLine);
+					errorDetails += stdErrLine + "\n";
+	    		}
+				brStdIn.close();
+    		}
+    	}
+    	catch(Exception e) {
+    		LOGGER.trace(loggerId + "Error trying to copy conf files to /midb/conf_backup");
+    		LOGGER.trace(e.getMessage(), e);
+    	}
+    	
+		LOGGER.trace(loggerId + "createConfigBackup()...exit.");
 	}
 	
 	private void createNetworkFolderConfigEntry() {
@@ -714,7 +762,7 @@ public class CreateStudyHandler {
 			while ((stdInLine = brStdIn.readLine()) != null) {
 				lineCount++;
 				if(lineCount < 4) {
-					LOGGER.trace(stdInLine);
+					LOGGER.trace(loggerId + stdInLine);
 					//completeOutput += stdInLine;
 				}
 
@@ -830,6 +878,7 @@ public class CreateStudyHandler {
     	String stdInLine = null;
     	String stdErrLine = null;
     	String errorDetails = "";
+    	String errorMessage = null;
 
     	int lineCount = 0;
     	
@@ -856,20 +905,20 @@ public class CreateStudyHandler {
 						LOGGER.trace(loggerId + "setZipFormatError=" + true);
 						zipFormatErrorExists = true;
 						success = false;
-						String message = "surface.zip: top level directory is not surface/";
-						this.appContext.setZipFormatErrorMessage(message);
-						this.appContext.setCreateStudyErrorMessage(message);
+						errorMessage = "surface.zip format error: top level directory is not surface/";
+						this.appContext.setZipFormatErrorMessage(errorMessage);
+						this.appContext.setCreateStudyErrorMessage(errorMessage);
 					}
 				}
 				if(lineCount==2 && isVolume) {
 					if(!stdInLine.trim().contentEquals("creating: volume/")) {
 						this.appContext.setZipFormatError(true);
-						String message = "volume.zip: top level directory is not volume/";
+						errorMessage = "volume.zip format error: top level directory is not volume/";
 						LOGGER.trace(loggerId + "setZipFormatError=" + true);
 						success = false;
 						zipFormatErrorExists = true;
-						this.appContext.setZipFormatErrorMessage(message);
-						this.appContext.setCreateStudyErrorMessage(message);
+						this.appContext.setZipFormatErrorMessage(errorMessage);
+						this.appContext.setCreateStudyErrorMessage(errorMessage);
 					}
 				}
 				if(stdInLine.contains("DS_")) {
@@ -929,7 +978,7 @@ public class CreateStudyHandler {
 					fileName = "volume.zip";
 				}
 				String message = this.studyFolder + ": bad unzip return code for fileName=" + fileName;
-				EmailNotifier.sendEmailNotification(message + "\n" + errorDetails);
+				EmailNotifier.sendEmailNotification(errorMessage + "\n" + errorDetails);
 			}
     	}
     	catch(IOException ioE) {

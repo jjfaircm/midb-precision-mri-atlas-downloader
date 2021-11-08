@@ -301,7 +301,20 @@
         grandParent.style.display = "block";  
         selectedSubmenu = parent;   
         parent.style.display = "block";
-	console.log("displaySelectedMenu()...exit.");
+        
+        //jjf
+        var thresholdImagePanel = document.getElementById("img_threshold");
+        thresholdImagePanel.style.visibility = "visible";
+        
+        var header = document.getElementById("roi_image_slides_header");
+        header.style.visibility = "visible";
+        
+        var div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
+        div_selectNeuralNetworkName.style.visibility = "visible";
+
+
+        
+	    console.log("displaySelectedMenu()...exit.");
    }
 
    function resetMenuColors() {
@@ -496,6 +509,18 @@
    function handleRemoveStudyConfirmation() {
 
        console.log("handleRemoveStudyConfirmation()...invoked.");
+       
+       var nowDate = new Date();
+  	   var currentTimeSec = nowDate.getTime()/1000;
+	   var lastTokenActionTimeSec = lastTokenActionTime/1000;
+
+	   var timeDifference = currentTimeSec - lastTokenActionTimeSec;
+	
+	   if(timeDifference > 1800) {
+		  var message = "Session timeout<br>Please refresh browser page";
+		  doAdminAlert(message);
+		  return;
+	   }
        
        var select_MenuId = document.getElementById("select_menuId");
        var studyToRemove = select_MenuId.options[select_MenuId.selectedIndex].value;
@@ -820,6 +845,15 @@
  	    console.log("initializeDragDrop()...exit.");
    }
    
+   function loadStudyROIImageHeader() {
+	   console.log("loadStudyROIImageHeader()...invoked");
+	   var studyDisplayName = studyDisplayNameMap.get(selectedStudy);
+	   var headerText = studyDisplayName + " PROBABILISTIC ROIS";
+	   var headerElement = document.getElementById("roi_image_slides_header");
+	   headerElement.innerHTML = headerText;
+	   console.log("loadStudyROIImageHeader()...exit, innerHTML=" + headerElement.innerHTML);
+   }
+   
    function loadStudySummaryList() {
 	    console.log("loadStudySummaryList()...invoked.");
 	    
@@ -973,6 +1007,7 @@
        console.log("networkTypeId=" + networkTypeId);
        
        loadStudySummaryList();
+       loadStudyROIImageHeader();
       
        if(networkTypeId.includes("single")) {
       	 /*
@@ -1089,6 +1124,19 @@
    
 	   function showSubmenuLevel_1() {
 	        console.log("showSubmenuLevel_1()...invoked.");
+	        
+	        
+	        // jjf
+	        var thresholdImagePanel = document.getElementById("img_threshold");
+	        thresholdImagePanel.style.visibility = "hidden";
+	        
+	        var header = document.getElementById("roi_image_slides_header");
+	        header.style.visibility = "hidden";
+	        
+	        var div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
+	        div_selectNeuralNetworkName.style.visibility = "hidden";
+
+	        
 
 	        hideSubmenu_All();
 

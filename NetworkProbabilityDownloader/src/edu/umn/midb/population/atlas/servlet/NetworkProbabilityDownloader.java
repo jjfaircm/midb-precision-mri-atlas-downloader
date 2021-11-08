@@ -127,7 +127,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	private static final long VERSION_NUMBER = 0;
-	public static final String BUILD_DATE = "Version beta_20.0  0930_2021:00:00__war=NPDownloader_0930.war"; 
+	public static final String BUILD_DATE = "Version beta_25.0  1107_2021:00:00__war=NPDownloader_1107.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";
@@ -322,6 +322,16 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		String loggerId = appContext.getLoggerId();
 		ThreadLocalLogTracker.set(appContext.getLoggerId());
 		
+		String ipAddress = null;
+		
+		ipAddress = request.getRemoteAddr();
+		if(ipAddress.contains("127.0.0.1")) {
+			String originalIP = request.getHeader("X-Forwarded-For");
+			if(originalIP != null) {
+				ipAddress = originalIP;
+			}
+		}
+		
 		String queryString = request.getQueryString();
 		appContext.addQueryStringToHistoryChain(queryString);
 
@@ -330,6 +340,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			switch (action) {
 			case "uploadStudyFiles":
 				LOGGER.trace(loggerId + "doPost()...action=" + action);
+				updateAdminAccessFile(request, ipAddress, action);
 				response.setContentType(CONTENT_TEXT_PLAIN);
 				response.setCharacterEncoding(CHARACTER_ENCODING_UTF8);
 				handleAjaxAddStudyRequest(appContext, request, response);

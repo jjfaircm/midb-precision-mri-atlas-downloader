@@ -832,5 +832,17 @@ select.admin {
 	
 }
 
+/*
+#hr_header {
+	content: '';
+	display: block;
+	position: absolute;
+	left: -50vw;
+	bottom: 0;
+	width: 200vw;
+	height: 10px;
+	background: #336165;
+}
+*/
 
 /*  original button start color #0073ceff, new color #a49561ff */

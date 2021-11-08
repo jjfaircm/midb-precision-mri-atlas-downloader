@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import edu.umn.midb.population.atlas.utils.AtlasDataCacheManager;
+import edu.umn.midb.population.atlas.utils.EmailNotifier;
 import edu.umn.midb.population.atlas.utils.Utils;
 import logs.ThreadLocalLogTracker;
 
@@ -68,6 +69,7 @@ public class TokenManager {
 		
 		else if(!this.privilegedList.contains(ipAddress)) {
 			LOGGER.trace(loggerId + "validateToken()...ipAddress not in acl.conf.");
+			EmailNotifier.sendEmailNotification("Illegal access warning, ip address=" + ipAddress);
 			this.accessDenied = true;
 			return false;
 		}

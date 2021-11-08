@@ -40,6 +40,7 @@
          var div_unzipProgress = null;
          var token = null;
          var studySummaryMap = new Map();
+         var studyDisplayNameMap = new Map();
          var studyMenuIDArray = new Array();
          var priorSelectedStudy = "none";
          var readyToDisplayDownloadDiv = false;
@@ -227,6 +228,8 @@
          }
          
          function buildMenuIdDropdown() {
+        	 /*
+        	 alert("buildMenuIdDropdown()");
         	 console.log("buildMenuIdDropdown()...invoked...");
         	 var dropdown_menuIDs = document.getElementById("select_menuId");
         	 //dropdown_menuIDs.length = 0;
@@ -252,6 +255,7 @@
         	 	 dropdown_menuIDs.add(option);
          	 }
         	 console.log("buildMenuIdDropdown()...exit...");
+        	 */
          }
          
          function buildNetworkFolderNamesMap(responseText) {
@@ -385,6 +389,8 @@
         	 console.log("buildStudyMenu()...invoked...");
         	 //console.log(responseData);
         	 
+        	 studyDisplayNameMap = new Map();
+        	 
         	 var menuArray = responseData.split("::");
         	 var menuEntry = null;
         	 var studyEntry = null;
@@ -392,6 +398,7 @@
         	 var submenuOptionsArray = null;
         	 var menuInnerHTML = "";
         	 var surfaceVolumeType = null;
+        	 var studyDisplayName = null;
         	 
         	 for(var i=0; i<menuArray.length; i++) {
         		 menuEntry = menuArray[i];
@@ -400,9 +407,12 @@
         		 
             	 var openParenIndex = menuEntry.indexOf("(");
             	 var closeParenIndex = menuEntry.indexOf(")");
-            	 var studyName = menuEntry.substring(openParenIndex+1, closeParenIndex);
+            	 var studyName = menuEntry.substring(openParenIndex+1, closeParenIndex).trim();
             	 var dashIndex = menuEntry.indexOf("-");
             	 var shortId = menuEntry.substring(0, dashIndex).trim();
+
+            	 studyDisplayName = menuEntry.substring(0, openParenIndex).trim();
+            	 studyDisplayNameMap.set(studyName, studyDisplayName);
             	 
             	 openParenIndex = studyEntry.lastIndexOf("(");
             	 closeParenIndex = studyEntry.lastIndexOf(")");
@@ -1816,7 +1826,7 @@
 
          	var encodedUrl = encodeURI(url);
          	ajaxRequest.open('post', encodedUrl, true);
-         	ajaxRequest.timeout = 600000*4;
+         	ajaxRequest.timeout = 600000*10;
          	
          	
      		newStudy.span_progress_0.style.display = "none";

@@ -211,7 +211,10 @@ public class DirectoryAccessor {
 		int beginIndex = thresholdName.indexOf(".") + 1;
 		int endIndex = thresholdName.lastIndexOf(".");
 		
+		System.out.println(thresholdName);
+		
 		String fractionPortion = thresholdName.substring(beginIndex, endIndex);
+		
 		
 		if(fractionPortion.length()>=3) {
 			is_GTE_3_DEC = true;
