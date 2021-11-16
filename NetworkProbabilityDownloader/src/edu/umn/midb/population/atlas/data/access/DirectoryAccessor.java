@@ -211,7 +211,9 @@ public class DirectoryAccessor {
 		int beginIndex = thresholdName.indexOf(".") + 1;
 		int endIndex = thresholdName.lastIndexOf(".");
 		
-		System.out.println(thresholdName);
+		if(endIndex < beginIndex) {
+			LOGGER.error("Error for fraction_GTE_3_DEC()...fileName=" + thresholdName);
+		}
 		
 		String fractionPortion = thresholdName.substring(beginIndex, endIndex);
 		

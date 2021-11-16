@@ -1110,6 +1110,7 @@
                   showSubmenuLevel_1();
                   var subSubLIArray2 = parentUL.getElementsByTagName("li");
                   var currentLI = null;
+                  //console.log("subSubLIArray2.length=" + subSubLIArray2.length);
 
                   for(var i=0; i<subSubLIArray2.length; i++) {
                       currentLI = subSubLIArray2[i];

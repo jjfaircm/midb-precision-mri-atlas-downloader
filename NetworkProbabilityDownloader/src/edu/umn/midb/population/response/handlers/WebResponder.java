@@ -242,7 +242,6 @@ public class WebResponder {
 		        	}
 		    	}
 		    }
-			LOGGER.trace(loggerId + "buildMenuResponse()...responseString=" + responseString);
 			return responseString;
 	}
 	

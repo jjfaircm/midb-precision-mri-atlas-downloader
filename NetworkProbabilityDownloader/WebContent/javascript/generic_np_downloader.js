@@ -228,8 +228,6 @@
          }
          
          function buildMenuIdDropdown() {
-        	 /*
-        	 alert("buildMenuIdDropdown()");
         	 console.log("buildMenuIdDropdown()...invoked...");
         	 var dropdown_menuIDs = document.getElementById("select_menuId");
         	 //dropdown_menuIDs.length = 0;
@@ -255,7 +253,7 @@
         	 	 dropdown_menuIDs.add(option);
          	 }
         	 console.log("buildMenuIdDropdown()...exit...");
-        	 */
+        	
          }
          
          function buildNetworkFolderNamesMap(responseText) {
