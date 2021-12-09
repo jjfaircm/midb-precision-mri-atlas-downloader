@@ -49,6 +49,7 @@ public class CreateStudyHandler {
 	private static final String TEMPLATE_FOLDERS_ERROR_MESSAGE = "folder.txt error: folder ${folderName} not found in zip file. Study not created.";
 	private static final String TEMPLATE_FOLDERS_SPACE_ERROR_MESSAGE = "folder.txt error: folder ${folderName} contains spaces in the name." 
 			                            + " Folders with spaces in name not allowed. Study not created.";
+	private static final String TEMPLATE_LINK = "<a href=\"${url}/\" target=\"_blank\" style=\"font-style: italic; color:DarkBlue;\">${linkText}</a>";
 	private static final String REPLACE_FOLDER_NAME = "${folderName}";
 	private static final String TEMPLATE_ZIP_COMMAND = "/usr/bin/zip -r zips/${folderName}.zip ${folderName} -x \"*.DS_Store\" -x \"__MACOSX\" -x \"*.png\"";
     private static final int BUFFER_SIZE = 4096;
@@ -63,7 +64,12 @@ public class CreateStudyHandler {
 	private String zipFile_volume = null;
 	private String summaryTextFile = null;
 	private String foldersTextFile = null;
+	private boolean combinedClustersFolderExists = false;
+	private boolean overlappingNetworksFolderExists = false;
+	//foldersList represents the folders listed in the uploaded folders.txt file
 	private ArrayList<String> foldersList = new ArrayList<String>();
+	//allFoldersList is the list of folders under the surface folder
+	//NOTE: the list of folders under volume should match those under the surface folder
 	private ArrayList<String> allFoldersList = new ArrayList<String>();
 
 
@@ -191,6 +197,27 @@ public class CreateStudyHandler {
     	}
     	
 		LOGGER.trace(loggerId + "createConfigBackup()...exit.");
+	}
+	
+	private String createLinkEntry(String summaryLine) {
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "createLinkEntry()...invoked.");
+
+		String linkEntry = null;
+		if(!summaryLine.endsWith("]")) {
+			int endIndex = summaryLine.indexOf("]");
+			summaryLine = summaryLine.substring(0, endIndex);
+		}
+		summaryLine = summaryLine.replace("[", "");
+		summaryLine = summaryLine.replace("]", "");
+
+		String[] entryArray = summaryLine.split("@");
+		linkEntry = TEMPLATE_LINK;
+		linkEntry = linkEntry.replace("${linkText}", entryArray[0]);
+		linkEntry = linkEntry.replace("${url}", entryArray[1]);
+		
+		return linkEntry;
+		
 	}
 	
 	private void createNetworkFolderConfigEntry() {
@@ -603,6 +630,9 @@ public class CreateStudyHandler {
 			BufferedReader br = new BufferedReader(new FileReader(file));
 			
 			while ((entryLine = br.readLine()) != null) {
+				if(entryLine.contains("[") && entryLine.contains("]")) {
+					entryLine = createLinkEntry(entryLine);
+				}
 				this.summaryEntryLines.add(entryLine);
 			}
 			this.summaryEntryLines.add(TEMPLATE_END_SUMMARY);
@@ -698,9 +728,56 @@ public class CreateStudyHandler {
     	    }
     	});
     	
-    	
+    	String currentFolderName = null;
     	for(int i=0; i<directories.length; i++) {
+    		//we're creating a list of the single network names so we
+    		//exclude combined_clusters and overlapping_networks
+    		currentFolderName = directories[i].getName();
+    		if(currentFolderName.contentEquals("combined_clusters")) {
+    			this.combinedClustersFolderExists = true;
+    			continue;
+    		}
+    		if(currentFolderName.contentEquals("overlapping_networks")) {
+    			this.overlappingNetworksFolderExists = true;
+    			continue;
+    		}
     		this.allFoldersList.add(directories[i].getName());
+    	}
+    	
+    	if(this.menuEntry.contains("combined_clusters")) {
+    		if(!this.combinedClustersFolderExists) {
+    			isValid = false;
+    			String errorMessage = "Combined Networks was selected as an available network type, " +
+    		           "but the 'combined_clusters' folder does not exist in the uploaded zip file." +
+    				   "<br>Study not created";
+    			this.appContext.setFolderConfigurationError(true);
+    			this.appContext.setCreateStudyErrorMessage(errorMessage);
+    			return isValid;
+    		}
+    	}
+    	
+    	if(this.menuEntry.contains("overlapping")) {
+    		if(!this.overlappingNetworksFolderExists) {
+    			isValid = false;
+    			String errorMessage = "Integration Zone was selected as an available network type, " +
+    		           "but the 'overlapping_networks' folder does not exist in the uploaded zip file." +
+    					"<br>Study not created";
+    			this.appContext.setFolderConfigurationError(true);
+    			this.appContext.setCreateStudyErrorMessage(errorMessage);
+    			return isValid;
+    		}
+    	}
+    	
+    	if(this.allFoldersList.size() != this.foldersList.size()) {
+    		isValid = false;
+    		String errorMessage = "Folder config error: " +
+    	           "there is a mismatch between folders contained in the " +
+    			   "zip file versus files listed in folders.txt.  It is possible " +
+    	           "that the zip file contains an extraneous folder such as 'New folder' " +
+    			   " or some other extraneous folder. <br>Study not created";
+			this.appContext.setFolderConfigurationError(true);
+			this.appContext.setCreateStudyErrorMessage(errorMessage);
+			return isValid;
     	}
     	
     	Iterator<String> configFolderNamesIt = this.foldersList.iterator();
@@ -785,7 +862,7 @@ public class CreateStudyHandler {
 	    		}
 				brStdIn.close();
 				
-				String message = this.studyFolder + ": unable to create zip files";
+				String message = this.studyFolder + ": unable to create zip file for folder=" + folderName;
 				EmailNotifier.sendEmailNotification(message + "\n" + errorDetails);
 			}
     	}

@@ -127,7 +127,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	private static final long VERSION_NUMBER = 0;
-	public static final String BUILD_DATE = "Version beta_26.0  1116_2021:00:00__war=NPDownloader_1107.war"; 
+	public static final String BUILD_DATE = "Version beta_28.0  1206_2021:00:00__war=NPDownloader_1203.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";

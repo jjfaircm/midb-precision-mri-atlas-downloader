@@ -28,6 +28,7 @@
    var unmaskedText = "";
    var global_studyToRemove = null;
    var adminLoginFocusPending = false;
+   var global_networkTypeId = "combined_clusters";
    var newStudy = {
 		   studyFolder: null,
 		   selectedDataTypes: null,
@@ -99,12 +100,7 @@
 	
 
 	function createStudyEntry(createButton) {
-	   	 
-	   	 // https://www.theserverside.com/blog/Coffee-Talk-Java-News-Stories-and-Opinions/Java-File-Upload-Servlet-Ajax-Example
-	   	 // https://www.codejava.net/java-ee/servlet/eclipse-file-upload-servlet-with-apache-common-file-upload
-	   	 
-		//var message = "Study was created with possible zip file upload corruption: volume.zip";
-		
+	   	 		
 	   	 console.log("createStudyEntry()...invoked.");
 	   	 	   	 	   	 
 	   	 var select_DataTypeElement = document.getElementById("select_dataType");
@@ -303,15 +299,31 @@
         parent.style.display = "block";
         
         //jjf
-        var thresholdImagePanel = document.getElementById("img_threshold");
-        thresholdImagePanel.style.visibility = "visible";
+        //var thresholdImagePanel = document.getElementById("img_threshold");
+        //thresholdImagePanel.style.visibility = "visible";
+        //thresholdImagePanel.style.opacity = "1.0";
         
-        var header = document.getElementById("roi_image_slides_header");
-        header.style.visibility = "visible";
+        //var header = document.getElementById("roi_image_slides_header");
+        //header.style.visibility = "visible";
+        //header.style.opacity = "1.0";
         
-        var div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
-        div_selectNeuralNetworkName.style.visibility = "visible";
+        //var div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
+        //div_selectNeuralNetworkName.style.visibility = "visible";
+        //div_selectNeuralNetworkName.style.opacity = "1.0";
 
+        var div_thresholdImageWrapper = document.getElementById("thresholdImageWrapper");
+        div_thresholdImageWrapper.style.display = "none";
+        
+        
+        if(global_networkTypeId.includes("single")) {
+        	var div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
+        	div_selectNeuralNetworkName.style.visibility = "visible";
+        	/*
+        	var div_select_neuralNetworkNameWrapper = document.getElementById("select_neuralNetworkNameWrapper");
+        	div_select_neuralNetworkNameWrapper.style.display = block;
+        	*/
+        }
+  	   
 
         
 	    console.log("displaySelectedMenu()...exit.");
@@ -857,10 +869,7 @@
    function loadStudySummaryList() {
 	    console.log("loadStudySummaryList()...invoked.");
 	    
-	    var summaryEntriesData = studySummaryMap.get(selectedStudy);
-	    var summaryEntriesArray = summaryEntriesData.split(",");
-	    //console.log("loadStudySummaryList()...summaryEntriesArray=" + summaryEntriesArray);
-	    
+	    var summaryEntriesArray = studySummaryMap.get(selectedStudy);	    
 	    var ul_summary = document.getElementById("ul_atlasSummary");
 	    var ul_innerHTML = "";
 	    var currentLI = null;
@@ -1008,8 +1017,12 @@
        
        loadStudySummaryList();
        loadStudyROIImageHeader();
+       
+       global_networkTypeId = "unselected";
+
       
        if(networkTypeId.includes("single")) {
+    	 global_networkTypeId = "single";
       	 /*
       	 var div_thresholdImagePanel = document.getElementById("div_thresholdImage");
       	 div_thresholdImagePanel.style.display = "none";
@@ -1041,10 +1054,12 @@
        else if(networkTypeId.includes("combined_clusters")) {
       	 selectedNeuralNetworkName = "combined_clusters";
       	 preProcessGetThresholdImages();
+      	 global_networkTypeId = "combined_clusters";
        }
        else if(networkTypeId.includes("overlapping")) {
       	 selectedNeuralNetworkName = "overlapping_networks";
       	 preProcessGetThresholdImages();
+      	 global_networkTypeId = "overlapping_networks";
        }
 
        
@@ -1126,17 +1141,27 @@
 	   function showSubmenuLevel_1() {
 	        console.log("showSubmenuLevel_1()...invoked.");
 	        
-	        
 	        // jjf
-	        var thresholdImagePanel = document.getElementById("img_threshold");
-	        thresholdImagePanel.style.visibility = "hidden";
+	        // https://stackoverflow.com/questions/9040768/getting-coordinates-of-objects-in-js
+	        //var thresholdImagePanel = document.getElementById("img_threshold");
+	        //thresholdImagePanel.style.visibility = "hidden";
+	        //thresholdImagePanel.style.opacity = "0.1";
 	        
-	        var header = document.getElementById("roi_image_slides_header");
-	        header.style.visibility = "hidden";
+	        //var header = document.getElementById("roi_image_slides_header");
+	        //header.style.visibility = "hidden";
+	        //header.style.opacity = "0.1";
 	        
-	        var div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
-	        div_selectNeuralNetworkName.style.visibility = "hidden";
+	        //var div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
+	        //div_selectNeuralNetworkName.style.visibility = "hidden";
+	        //div_selectNeuralNetworkName.style.opacity = "0.1";
 
+	        var div_thresholdImageWrapper = document.getElementById("thresholdImageWrapper");
+	        div_thresholdImageWrapper.style.display = "block";
+	        
+	        if(global_networkTypeId.includes("single")) {
+	           	var div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
+	        	div_selectNeuralNetworkName.style.visibility = "hidden";
+	        }
 	        
 
 	        hideSubmenu_All();

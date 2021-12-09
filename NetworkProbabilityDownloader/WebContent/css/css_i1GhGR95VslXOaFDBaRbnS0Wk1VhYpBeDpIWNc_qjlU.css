@@ -4273,19 +4273,19 @@ ul.sf-menu.rtl.sf-accordion.sf-expanded,ul.sf-menu.rtl.sf-accordion li.sf-expand
 
 @media only screen and (-webkit-min-device-pixel-ratio: 1.25),(-webkit-min-device-pixel-ratio:2),(min-resolution:192dpi) {
     .umnhf-background-gold #umnhf-h-ql #umnhf-h-myu span {
-        background:transparent url(/themes/custom/folwell/images/branding/sprites/lock-search-gold%402x.png) 0 0 no-repeat;
+        background:transparent url(/NetworkProbabilityDownloader/images/lock-search-gold%402x.png) 0 0 no-repeat;
         background-position: 0 0;
         background-size: 22px 34px;
     }
 }
 
 .umnhf-background-maroon #umnhf-h-ql #umnhf-h-myu span {
-    background: transparent url(/themes/custom/folwell/images/branding/sprites/lock-search-maroon.png) 0 0 no-repeat;
+    background: transparent url(/NetworkProbabilityDownloader/images/lock-search-maroon.png) 0 0 no-repeat;
 }
 
 @media only screen and (-webkit-min-device-pixel-ratio: 1.25),(-webkit-min-device-pixel-ratio:2),(min-resolution:192dpi) {
     .umnhf-background-maroon #umnhf-h-ql #umnhf-h-myu span {
-        background:transparent url(/themes/custom/folwell/images/branding/sprites/lock-search-maroon%402x.png) 0 0 no-repeat;
+        background:transparent url(/NetworkProbabilityDownloader/images/lock-search-maroon%402x.png) 0 0 no-repeat;
         background-position: 0 0;
         background-size: 22px 34px;
     }

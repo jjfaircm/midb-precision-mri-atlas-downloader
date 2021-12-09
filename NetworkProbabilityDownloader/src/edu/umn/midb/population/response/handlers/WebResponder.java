@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -19,12 +20,18 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 import edu.umn.midb.population.atlas.base.ApplicationContext;
+import edu.umn.midb.population.atlas.menu.Menu;
+import edu.umn.midb.population.atlas.menu.MenuEntry;
+import edu.umn.midb.population.atlas.menu.SingleNetworkFoldersConfig;
+import edu.umn.midb.population.atlas.menu.StudySummary;
 import edu.umn.midb.population.atlas.security.TokenManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import edu.umn.midb.population.atlas.utils.AtlasDataCacheManager;
 import edu.umn.midb.population.atlas.utils.NetworkMapData;
 import edu.umn.midb.population.atlas.utils.Utils;
 import logs.ThreadLocalLogTracker;
+
+//import javax.json.*;
 
 
 /**
@@ -86,13 +93,15 @@ public class WebResponder {
 		String menuResponse = "";
 		String summaryData = "";
 		
-		summaryData = buildSummaryData();
+		summaryData = buildSummaryResponse();
 		
 		menuResponse = summaryData + "&&&";
 		
         ArrayList<String> menuStudyNames = AtlasDataCacheManager.getInstance().getMenuStudyNames();
         Hashtable<String, ArrayList<String>> menuSubOptionsMap = AtlasDataCacheManager.getInstance().getMenuOptionsMap();
-		menuResponse += buildMenuResponse(menuStudyNames, menuSubOptionsMap);
+		
+        //buildMenuData(menuStudyNames, menuSubOptionsMap);
+        menuResponse += buildMenuResponse(menuStudyNames, menuSubOptionsMap);
 		
 		String token = appContext.getTokenManager().getToken();
 		
@@ -170,8 +179,9 @@ public class WebResponder {
 
 	}
 	
+	/*
 	public static JsonArray buildMenuResponseOld(ArrayList<String> menuStudyNames, Hashtable<String, ArrayList<String>> menuSubOptionsMap) {
-		   String loggerId = ThreadLocalLogTracker.get();
+		String loggerId = ThreadLocalLogTracker.get();
 		   LOGGER.trace(loggerId + "buildMenuResponse()...invoked.");
 
 		   JsonArray menuJsonArray = new JsonArray();
@@ -207,76 +217,98 @@ public class WebResponder {
 		    return menuJsonArray;
 	}
 	
+	*/
+	
 	protected static String buildMenuResponse(ArrayList<String> menuStudyNames, Hashtable<String, ArrayList<String>> menuSubOptionsMap) {
 		   String loggerId = ThreadLocalLogTracker.get();
 		   LOGGER.trace(loggerId + "buildMenuResponse()...invoked.");
-
-		   String responseString = "";
-		   String colon = ":";
-		   String doubleColon = "::";
-		   String comma = ",";
+		   	   
+		   Gson gson = new Gson();
+		   Menu menu = new Menu();
 		   
 		   ArrayList<String> subMenuOptions = null;
 		   Iterator<String> studyNamesIt = menuStudyNames.iterator();
 		   String currentStudyName = null;
-
-		    while(studyNamesIt.hasNext()) {
+		   MenuEntry menuEntry = null;
+		   String id = null;
+		   String displayName = null;
+		   String dataType= null;
+		   
+		   int openParenIndex = -1;
+		   int closeParenIndex = -1;
+		   
+		   
+		   while(studyNamesIt.hasNext()) {
+		    	
 		    	currentStudyName = studyNamesIt.next();
-		    	responseString += currentStudyName;
-		    	responseString += colon;
+		    	
+		    	openParenIndex = currentStudyName.indexOf("(");
+		    	closeParenIndex = currentStudyName.indexOf(")");
+		    	displayName = currentStudyName.substring(0, openParenIndex).trim();
+		    	id = currentStudyName.substring(openParenIndex+1, closeParenIndex);
+		    	
+		    	openParenIndex = currentStudyName.lastIndexOf("(");
+		    	closeParenIndex = currentStudyName.lastIndexOf(")");
+		    	dataType = currentStudyName.substring(openParenIndex+1, closeParenIndex);
+
+		    	
+		    	menuEntry = new MenuEntry();
+		    	
+		    	menuEntry.setDisplayName(displayName);
+		    	menuEntry.setId(id);
+		    	menuEntry.setDataType(dataType);
 		    	
 		    	subMenuOptions = menuSubOptionsMap.get(currentStudyName);
-		    	Iterator<String> subMenuOptionsIt = subMenuOptions.iterator();
-		    	String anOption = null;
-
-		        
-		    	while(subMenuOptionsIt.hasNext()) {
-		        	anOption = subMenuOptionsIt.next();
-			    	responseString += anOption;
-
-		        	if(subMenuOptionsIt.hasNext()) {
-				    	responseString += comma;
-		        	}
-		        	else if(studyNamesIt.hasNext()) {
-				    	responseString += doubleColon;
-		        	}
-		    	}
+		    	String[] subOptionsArray = new String[subMenuOptions.size()];
+		    	subOptionsArray = subMenuOptions.toArray(subOptionsArray);
+		    	menuEntry.setSubOptions(subOptionsArray);
+		    	menu.addMenuEntry(menuEntry);
 		    }
-			return responseString;
+		   
+		    String jsonString = gson.toJson(menu);
+			LOGGER.trace(loggerId + "buildMenuResponse()...exit.");
+		    return jsonString;
 	}
 	
 	protected static String buildNetworkFoldersConfigResponse(ArrayList<String> configLines) {
+
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "buildNetworkFoldersConfigResponse()...invoked.");
 		
-		String response = "";
-		String aLine = null;
-		boolean isEntryEnding = false;
+		String folderNamesConfigJSON = null;
+		ArrayList<SingleNetworkFoldersConfig> folderNamesConfigList = new ArrayList<SingleNetworkFoldersConfig>();
+		ArrayList<String> studyNames = AtlasDataCacheManager.getInstance().getSummaryStudyNames();
 		
-		Iterator<String> configIt = configLines.iterator();
+		Iterator<String> studyNamesIt = studyNames.iterator();
+		String studyName = null;
+		SingleNetworkFoldersConfig foldersConfig = null;
+		ArrayList<String> folderNamesList = null;
 		
-		while(configIt.hasNext()) {
-			aLine = configIt.next();
-			if(!aLine.contains("END NETWORK FOLDERS ENTRY") && configIt.hasNext()) {
-				aLine += ",";
-			}
-			response += aLine;
+		while(studyNamesIt.hasNext()) {
+			//object representing folder names config for a specific study
+			foldersConfig = new SingleNetworkFoldersConfig();
+			studyName = studyNamesIt.next();
+			foldersConfig.setId(studyName);
+			//folderNamesList contains config for the current study name
+			folderNamesList = AtlasDataCacheManager.getInstance().getNeuralNetworkFolderNamesConfig(studyName);
+			foldersConfig.setFolderNamesConfig(folderNamesList);
+			//folderNamesConfigList contains 1 folders config for each study
+			folderNamesConfigList.add(foldersConfig);
 		}
-		//LOGGER.trace(response);
+		
+		Gson gson = new Gson();
+		folderNamesConfigJSON = gson.toJson(folderNamesConfigList);
 		LOGGER.trace(loggerId + "buildNetworkFoldersConfigResponse()...exit.");
-		return response;
+		
+		return folderNamesConfigJSON;
 	}
 	
-	protected static String buildSummaryData() {
+	protected static String buildSummaryResponse() {
 		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "buildSummaryData()...invoked.");
+		LOGGER.trace(loggerId + "buildSummaryResponse()...invoked.");
 		
-		String doubleQuestionMark = "??";
-		String comma = ",";
-		String summaryData = "";
-		String doubleColon = "::";
-
-		
+		String summaryJSON = null;
+		ArrayList<StudySummary> summaryList = new ArrayList<StudySummary>();
 		ArrayList<String> studyNames = AtlasDataCacheManager.getInstance().getSummaryStudyNames();
 		Hashtable<String, ArrayList<String>> summarySubEntriesMap = AtlasDataCacheManager.getInstance().getSummaryEntriesMap();
 		
@@ -285,30 +317,21 @@ public class WebResponder {
 		ArrayList<String> summarySubEntries = null;
 		Iterator<String> summaryEntriesIt = null;
 		String summaryEntry = null;
+		StudySummary studySummary = null;
 		
 		while(studyNamesIt.hasNext()) {
+			studySummary = new StudySummary();
 			studyName = studyNamesIt.next();
-			summaryData += studyName;
-			summaryData += doubleQuestionMark;
-			
+			studySummary.setId(studyName);
 			summarySubEntries = summarySubEntriesMap.get(studyName);
-			summaryEntriesIt = summarySubEntries.iterator();
-			
-			while(summaryEntriesIt.hasNext()) {
-				summaryEntry = summaryEntriesIt.next();
-				summaryData += summaryEntry;
-				if(summaryEntriesIt.hasNext()) {
-					summaryData += comma;
-				}
-			}
-			
-			if(studyNamesIt.hasNext()) {
-				summaryData += doubleColon;
-			}			
-			
+			studySummary.setSummaryEntries(summarySubEntries);
+			summaryList.add(studySummary);
 		}
-		LOGGER.trace(loggerId + "buildSummaryData()...exit.");
-		return summaryData;
+		
+		Gson gson = new Gson();
+	    summaryJSON = gson.toJson(summaryList);
+		LOGGER.trace(loggerId + "buildSummaryResponse()...exit.");		
+		return summaryJSON;
 	}
 	
 	/**

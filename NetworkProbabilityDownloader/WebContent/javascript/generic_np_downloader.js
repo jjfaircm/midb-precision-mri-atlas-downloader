@@ -1,4 +1,4 @@
-		 var version_buildString = "Version beta_18.0  0918_2021:00:00__war=NPDownloader_0918.war"; 
+		 var version_buildString = "Version beta_28.0  1206_2021:00:00__war=NPDownloader_1203.war"; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;
@@ -101,7 +101,7 @@
         	 selectElement = document.getElementById("select_neuralNetworkName");
            	 var div_submitNotification = document.getElementById("div_submitNotification");
         	 div_submitNotification.style.display = "block";
-        	 var anchor_ABCD_combined = document.getElementById("a_ABCD_combined_clusters");
+        	 var anchor_ABCD_combined = document.getElementById("a_abcd_template_matching_combined_clusters");
         	 //alert("ready to auto click menu");
         	 menuClicked(anchor_ABCD_combined, true, true);
         	 number_RangeThresholdValue = document.getElementById("number_thresholdValue");
@@ -139,7 +139,7 @@
        	     //registerScrollEventListener();
         	 resetAddStudyForm()
         	 console.log("continueStartup()...exit.");
-        	 //toggleLogging();
+        	 toggleLogging();
          }
          
          function registerScrollEventListener() {
@@ -256,68 +256,23 @@
         	
          }
          
-         function buildNetworkFolderNamesMap(responseText) {
+         function buildNetworkFolderNamesMap(singleNetworksConfigJSON) {
         	 console.log("buildNetworkFolderNamesMap()...invoked...");
-        	 //alert("receiving networkFolderNames config");
-        	 //console.log(responseText);
-        	 var endIndex = 0;
-        	 
-        	 while(responseText.endsWith("\n")) {
-        		 //console.log("removing trailing new line");
-        		 endIndex = responseText.lastIndexOf("\n");
-        		 responseText = responseText.substring(0, endIndex);
-        		 responseText = responseText.trim();
-        	 }
-        	 var configArray = responseText.split("&&");
-        	 //console.log("arrayLength=" + configArray.length);
-        	 var arrayForSpecificStudy = null;
-        	 
-        	 
-        	 for(var i=0; i<configArray.length; i++) {
-        		 if(configArray[i].length == 0) {
-        			 return;
-        		 }
-        		 //console.log("array element " + i + "follows");
-        		 //console.log(configArray[i]);
-        		 arrayForSpecificStudy = configArray[i].split(",");
-        		 buildNetworkFolderNameConfigEntry(arrayForSpecificStudy);
+        	 var singleNetworksAllConfigsArray = JSON.parse(singleNetworksConfigJSON);
+        	 var currentConfig = null;
+        	 var currentConfigId = null;
+        	 var currentConfigEntriesArray = null;
+        	         	 
+        	 for(var i=0; i<singleNetworksAllConfigsArray.length; i++) {
+        		 currentConfig = singleNetworksAllConfigsArray[i];
+        		 currentConfigId = currentConfig.id;
+        		 currentConfigEntriesArray = singleNetworksAllConfigsArray[i].folderNamesConfig;
+            	 networkFolderNamesMap.set(currentConfigId, currentConfigEntriesArray);
         	 }
         	 
         	 console.log("buildNetworkFolderNamesMap()...exit...");
-        	 //toggleLogging();
-
          }
-         
-         function buildNetworkFolderNameConfigEntry(folderNamesArray) {
-        	 console.log("buildNetworkFolderNameConfigEntry()...invoked...");
-        	 //alert("buildNetworkFolderNameConfigEntry");
-
-        	 var length = folderNamesArray.length;
-        	 var headerLine = folderNamesArray[0];
-        	 var startIndex = headerLine.indexOf("=");
-        	 var endIndex = headerLine.indexOf(")");
-        	 var studyNameKey = headerLine.substring(startIndex+1, endIndex);
-        	 
-        	 //now remove header and closing lines to end up with folderNames
-        	 folderNamesArray.splice(0, 1);
-        	 length = folderNamesArray.length;
-        	 folderNamesArray.splice(length-1, 1);
-        	 //console.log(folderNamesArray);
-        	 var currentEntry = null;
-        	 
-        	 //now remove new line characters
-        	 
-        	 for(var i=0; i<folderNamesArray.length; i++) {
-        		 currentEntry = folderNamesArray[i];
-        		 currentEntry = currentEntry.replaceAll("\n", "");
-        		 folderNamesArray[i] = currentEntry;
-        		 //console.log(folderNamesArray[i]);
-        	 }
-        	 //console.log("setting entry key=" + studyNameKey);
-        	 networkFolderNamesMap.set(studyNameKey, folderNamesArray);
-        	 console.log("buildNetworkFolderNameConfigEntry()...exit...");
-         }
-         
+                  
          function buildNeuralNetworkDropdownList() {
         	 console.log("buildNeuralNetworkDropdownList()...invoked...");
 
@@ -362,71 +317,46 @@
         	 console.log("buildNeuralNetworkDropdownList()...exit...");
          }
          
-         function buildStudySummaryMap(summaryData) {
+         function buildStudySummaryMap(summaryJSON) {
         	 console.log("buildStudySummaryMap()...invoked.");
+        	 var jsonSummaryList = JSON.parse(summaryJSON);
+        	 var currentSummary = null;
+        	 var summaryId = null;
         	 
-        	 var studySummaryArray = summaryData.split("::");
-        	 var summaryEntriesArray = null;
-        	 var studyName_EntriesArray = null;
-        	 var studyName = null;
-        	 var beginIndex = 0;
-        	 var endIndex = 0;
-
-        	 for(var i=0; i<studySummaryArray.length; i++) {
-        		 studyName_EntriesArray = studySummaryArray[i].split("??");
-        		 studyName = studyName_EntriesArray[0];
-        		 summaryEntriesArray = studyName_EntriesArray[1];
-            	 //console.log("buildStudySummaryMap()...adding mapEntry, key=" + studyName);
-            	 //console.log("buildStudySummaryMap()...adding mapEntry, data=" + summaryEntriesArray);
-
-        		 studySummaryMap.set(studyName, summaryEntriesArray);
+        	 for(var i=0; i<jsonSummaryList.length; i++) {
+        		 currentSummary = jsonSummaryList[i];
+        		 summaryId = currentSummary.id;
+        		 studySummaryMap.set(summaryId, currentSummary.entryList);
         	 }
+
          }
-         
-         function buildStudyMenu(responseData) {
+                  
+         function buildStudyMenu(menuJSON) {
         	 console.log("buildStudyMenu()...invoked...");
-        	 //console.log(responseData);
-        	 
-        	 studyDisplayNameMap = new Map();
-        	 
-        	 var menuArray = responseData.split("::");
+        	         	 
+        	 var menuJSON_Object = JSON.parse(menuJSON);	
+        	 var menuEntryArray = menuJSON_Object.menuEntryList;
         	 var menuEntry = null;
-        	 var studyEntry = null;
-        	 var menuEntryArray = null;
+        	 var studyDisplayName = null;
+        	 var studyId = null;
         	 var submenuOptionsArray = null;
         	 var menuInnerHTML = "";
         	 var surfaceVolumeType = null;
-        	 var studyDisplayName = null;
-        	 
-        	 for(var i=0; i<menuArray.length; i++) {
-        		 menuEntry = menuArray[i];
-        		 menuEntryArray = menuEntry.split(":");
-        		 studyEntry = menuEntryArray[0];
-        		 
-            	 var openParenIndex = menuEntry.indexOf("(");
-            	 var closeParenIndex = menuEntry.indexOf(")");
-            	 var studyName = menuEntry.substring(openParenIndex+1, closeParenIndex).trim();
-            	 var dashIndex = menuEntry.indexOf("-");
-            	 var shortId = menuEntry.substring(0, dashIndex).trim();
 
-            	 studyDisplayName = menuEntry.substring(0, openParenIndex).trim();
-            	 studyDisplayNameMap.set(studyName, studyDisplayName);
-            	 
-            	 openParenIndex = studyEntry.lastIndexOf("(");
-            	 closeParenIndex = studyEntry.lastIndexOf(")");
-            	 surfaceVolumeType = studyEntry.substring(openParenIndex+1, closeParenIndex);
-            	 
-            	 openParenIndex = studyEntry.indexOf("(");
-            	 var studyDisplayName = studyEntry.substring(0, openParenIndex).trim();
-            	 
-            	 submenuOptionsArray = menuEntryArray[1].split(",");
-        		 menuInnerHTML += buildStudyMenuEntry(studyEntry);
-        		 menuInnerHTML += buildSubmenuOptionEntries(submenuOptionsArray, studyName, shortId, surfaceVolumeType, studyDisplayName);
+        	 
+        	 for(var i=0; i<menuEntryArray.length; i++) {
+        		 menuEntry = menuEntryArray[i];
+        		 studyDisplayName = menuEntry.displayName;
+        		 studyId = menuEntry.id;
+        		 //alert("studyId...studyDisplayName=" + studyId + "," + studyDisplayName);
+            	 studyDisplayNameMap.set(studyId, studyDisplayName);
+            	 surfaceVolumeType = menuEntry.dataType;
+            	 submenuOptionsArray = menuEntry.subOptions;
+
+        		 menuInnerHTML += buildStudyMenuEntry(menuEntry);
+        		 menuInnerHTML += buildSubmenuOptionEntries(submenuOptionsArray, studyId, surfaceVolumeType, studyDisplayName);
         	 }
-        	 
-        	//menuInnerHTML += tag_endLI;
-        	//menuInnerHTML += tag_endUL;
-        	 
+
         	buildMenuIdDropdown();
         	
         	var targetMenuParent = document.getElementById("ul_submenu");
@@ -435,74 +365,56 @@
        	    console.log("buildStudyMenu()...exit.");
          }
          
-         function buildSubmenuOptionEntries(optionsArray, studyName, shortId, surfaceVolumeType, studyDisplayName) {
-        	 //<li class=\x22subSubMenu\x22><a class=\x22subSubMenu\x22  data-study=\x22${studyName}\x22 onmouseover=\x22showSubSubMenu(this)\x22" 
-             //+ "onmouseout=\x22mouseOut(this)\x22 onclick=\x22menuClicked(this, false, true )\x22>${displayName} data-networkId=\x22${networkId}</a></li>";
-             //alert("building option");
-        	 console.log("buildSubmenuOptionEntries()...invoked, optionsArray=" + optionsArray);
-
+         
+         function buildSubmenuOptionEntries(submenuOptionsArray, studyId, surfaceVolumeType, studyDisplayName) {
+        	 console.log("buildSubmenuOptionEntries()...invoked.");
+        	 
         	 var optionEntry = null;
         	 var liEntry = null;
-        	 var openParenIndex = null;
-        	 var closeParenIndex = null;
-        	 var displayText = null;
-        	 var networkId = null;
+        	 var subOptionDisplayText = null;
+        	 var subOptionId = null;
         	 var menuHTML = "";
-        	 var id = null;
         	 
-        	 
-        	 for(var i=0; i<optionsArray.length; i++) {
-        		 optionEntry = optionsArray[i];
+        	 for(var i=0; i<submenuOptionsArray.length; i++) {
+        		 optionEntry = submenuOptionsArray[i];
             	 openParenIndex = optionEntry.indexOf("(");
             	 closeParenIndex = optionEntry.indexOf(")");
-            	 displayText = optionEntry.substring(0, openParenIndex).trim();
+            	 subOptionDisplayText = optionEntry.substring(0, openParenIndex).trim();
             	 networkId = optionEntry.substring(openParenIndex+1, closeParenIndex).trim();
-            	 id = "a_" + shortId + "_" + networkId;
+            	 subOptionId = studyId + "_" + networkId;
         		 liEntry = template_li_subSubMenu;
-        		 liEntry = liEntry.replace(idReplacementMarker, id);
+        		 liEntry = liEntry.replaceAll(idReplacementMarker, subOptionId);
         		 liEntry = liEntry.replace(networkIdReplacementMarker, networkId);
-        		 liEntry = liEntry.replace(studyReplacementMarker, studyName);
-        		 liEntry = liEntry.replace(displayNameReplacementMarker, displayText);
+        		 liEntry = liEntry.replace(studyReplacementMarker, studyId);
+        		 liEntry = liEntry.replace(displayNameReplacementMarker, subOptionDisplayText);
         		 liEntry = liEntry.replace(surfaceVolumeTypeReplacementMarker, surfaceVolumeType);
         		 liEntry = liEntry.replace(studyDisplayReplacementMarker, studyDisplayName);
         		 menuHTML += liEntry;
         	 }
+        	 
         	 menuHTML += tag_endUL;
         	 menuHTML += tag_endLI;
 
         	 return menuHTML;
-         }
-         
-         function buildStudyMenuEntry(menuEntry) {
-        	 console.log("buildStudyMenuEntry()...invoked, menuEntry=" + menuEntry);
-        	 // ABCD - Template Matching (abcd_template_matching) (surface, volume)
-        	 var openParenIndex = menuEntry.indexOf("(");
-        	 var closeParenIndex = menuEntry.indexOf(")");
-        	 var studyFolderName = menuEntry.substring(openParenIndex+1, closeParenIndex);
-        	 studyMenuIDArray.push(studyFolderName);
-        	 var dashIndex = menuEntry.indexOf("-");
-        	 var shortId = menuEntry.substring(0, dashIndex).trim();
-        	 var displayText = menuEntry.substring(0, openParenIndex).trim();
-        	 var studyName = menuEntry.substring(openParenIndex+1, closeParenIndex);
-        	 
-        	 openParenIndex = menuEntry.lastIndexOf("(");
-        	 var dataTypes = menuEntry.substring(openParenIndex);
-        	 
-        	 var liTag = template_li_submenu;
-        	 liTag = liTag.replaceAll(idReplacementMarker, shortId);
-        	 liTag = liTag.replace(displayNameReplacementMarker, displayText);
-        	 var ulTag = template_ul_subSubMenu;
-        	 ulTag = ulTag.replace(idReplacementMarker, shortId);
-        	 
-        	 console.log("buildStudyMenuEntry()...invoked, response=" + liTag + "\n" + ulTag);
-        	 return liTag + ulTag;
-        	 
-        	 
-        	 //console.log("buildStudyMenuEntry()...invoked, displayText=" + displayText);
-        	 //console.log("buildStudyMenuEntry()...invoked, studyName=" + studyName);
-        	 //console.log("buildStudyMenuEntry()...invoked, dataTypes=" + dataTypes);
 
          }
+                  
+         function buildStudyMenuEntry(menuEntry) {
+        	 console.log("buildStudyMenuEntry()...invoked, menuEntry.id=" + menuEntry.id + ", displayName=" + menuEntry.displayName);
+
+        	 //the id is also the folder name on the server
+        	 studyMenuIDArray.push(menuEntry.id);
+        	 
+        	 var liTag = template_li_submenu;
+        	 liTag = liTag.replaceAll(idReplacementMarker, menuEntry.id);
+        	 liTag = liTag.replace(displayNameReplacementMarker, menuEntry.displayName);
+        	 var ulTag = template_ul_subSubMenu;
+        	 ulTag = ulTag.replace(idReplacementMarker, menuEntry.id);
+        	 
+        	 console.log("buildStudyMenuEntry()...exit.");
+        	 return liTag + ulTag;
+         }
+         
          
          //function disableScroll() {
         	 //console.log("disableScroll()...invoked.");
@@ -520,8 +432,6 @@
          
          function displayThresholdImageElements() {
         	 console.log("displayThresholdImageElements()...invoked.");
-        	 //alert("displayThresholdImageElements()");
-        	 //alert("displayThresholdImageElements()");
         	 hideAllDivs();
         	 
         	 var div_menu = document.getElementById("div_submenu");
@@ -1207,7 +1117,6 @@
                tab_download.checked = true;
                div_overview.style.display = "none";
                div_resources.style.display = "none";
-               mouseOutInstructions();
                if(!mobileDeviceActive) {
 	               div_downloadWrapper.style.display = "block";
 	               if(readyToDisplayDownloadDiv) {
@@ -1335,18 +1244,6 @@
         	 console.log("loadAllDivNames()...exit.");
          }
          
-         function mouseOverInstructions() {
-        	   console.log("mouseOverInstructions()...invoked.");
-        	   //instructionsSpan = document.getElementById("span_instructions");
-        	   //instructionsSpan.style.display = "block";
-         }
-         
-         function mouseOutInstructions() {
-      	       console.log("mouseOutInstructions()...invoked.");
-        	   //instructionsSpan = document.getElementById("span_instructions");
-        	   //instructionsSpan.style.display = "none";
-         }
-
          function notifyUploadComplete(event) {
         	 console.log("notifyUploadComplete()...invoked, e=" + event);
              div_uploadProgress.style.display = "none";

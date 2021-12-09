@@ -46,6 +46,7 @@ public class AtlasDataCacheManager {
 	private ArrayList<String> summaryStudyNames = new ArrayList<String>();
 	private Hashtable<String, ArrayList<String>> summaryEntriesMap = new Hashtable<String, ArrayList<String>>();
 	private ArrayList<String> networkFolderNamesConfig = new ArrayList<String>();
+	private Hashtable<String, ArrayList<String>> singleNetworkFolderNamesMap = new Hashtable<String, ArrayList<String>>();
 
 	private static final String MENU_CONFIG_PATH = "/midb/menu.conf";
 	private static final String ACL_CONFIG_PATH = "/midb/acl.conf";
@@ -203,14 +204,64 @@ public class AtlasDataCacheManager {
 		LOGGER.trace(loggerId + "loadMenuConfig()...exit.");
 	}
 	
-	
 	private void loadNetworkFolderNamesConfig() {
-
-
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "loadNetworkFolderNamesConfig()...invoked.");
 
-		String ipAddress = null;
+		File file = new File(NETWORK_FOLDERS_CONFIG_PATH);
+		ArrayList<String> currentConfig = null;
+		int equalsIndex = -1;
+		int closeParenIndex = -1;
+		String studyNameKey = null;
+		int i = 0;
+		
+		if(!file.exists()) {
+			return;
+		}
+	
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String outputLine = null;
+			
+			while ((outputLine = br.readLine()) != null) {
+				outputLine = outputLine.trim();
+				if(outputLine.trim().length() < 3) {
+					continue;
+				}
+				if(outputLine.startsWith("#")) {
+					continue;
+				}
+				
+				if(outputLine.contains("id=")) {
+					currentConfig = new ArrayList<String>();
+					equalsIndex = outputLine.indexOf("=");
+					closeParenIndex = outputLine.indexOf(")");
+					studyNameKey = outputLine.substring(equalsIndex+1, closeParenIndex).trim();
+					continue;
+				}
+				
+				if(outputLine.equals("END NETWORK FOLDERS ENTRY")) {
+					this.singleNetworkFolderNamesMap.put(studyNameKey, currentConfig);
+					continue;
+				}
+				currentConfig.add(outputLine.trim());
+			}
+			br.close();
+		}
+		catch(Exception e) {
+			LOGGER.error(e.getMessage(), e);
+		}
+		
+		LOGGER.trace(loggerId + "loadNetworkFolderNamesConfig()...exit.");	
+		
+	}
+	
+	
+	private void loadNetworkFolderNamesConfigOld() {
+		
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "loadNetworkFolderNamesConfig()...invoked.");
+
 		File file = new File(NETWORK_FOLDERS_CONFIG_PATH);
 		
 		if(!file.exists()) {
@@ -629,6 +680,10 @@ public class AtlasDataCacheManager {
 			LOGGER.error(e.getMessage(), e);
 		}
 		LOGGER.trace(loggerId + "loadSettingsConfig()...exit.");
+	}
+	
+	public ArrayList<String> getNeuralNetworkFolderNamesConfig(String studyName) {
+		return this.singleNetworkFolderNamesMap.get(studyName);
 	}
 	
 }

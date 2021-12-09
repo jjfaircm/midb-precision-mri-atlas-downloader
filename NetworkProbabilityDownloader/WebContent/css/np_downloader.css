@@ -823,7 +823,7 @@ select.admin {
 }
 
 #div_rightSpacer {
-	height: 140px;
+	height: 80px;
 }
 
 #div_midbAtlas, #midb_footer, #div_contactUs, #div_resources, #div_overview {
@@ -831,6 +831,75 @@ select.admin {
     margin-right: 10px;
 	
 }
+
+/* jjf for give link */
+/*
+.folwell-identity {
+	flex: 1 0 650px;
+}
+
+.field--name-field-buttons {
+    display: flex;
+    display: -ms-flexbox;
+    flex-direction: row;
+    flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    justify-content: flex-end;
+    -ms-flex-pack: end;
+    align-items: flex-start;
+    -ms-flex-align: start;
+}
+*/
+h1.sitename {
+	display: inline-block;
+}
+
+#give_link {
+	display: inline-block;
+	text-align: center;
+	width: 160px;
+	border-bottom: none;
+	margin-left: 36%;
+	background: #fc3;
+    color: #900021;
+	text-decoration: none !important;
+}
+
+#give_link:hover {
+ color:#900021;
+ background-color:#FFDE7A;
+ border-color:#FFDE7A
+}
+
+#span_myU {
+	background-size: 18px 29px;
+	width: 10px;
+	height: 10px;
+	margin-left: 3px;
+	background-position-x: 0px;
+	background-position-y: 0px;
+	background-image: url("/NetworkProbabilityDownloader/images/lock-search-maroon%402x.png");
+	background-color: transparent;
+	background-repeat: no-repeat;
+	background-attachment: scroll;
+	background-origin: padding-box;
+	background-clip: border-box;
+}
+
+.imageWrapper {
+  width: 80%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  position: absolute;
+  top: 0;
+  left: 10%;
+  z-index: 10;
+}
+
+
+/*   background: #fc3;
+border-color: #fc3;
+*/
 
 /*
 #hr_header {

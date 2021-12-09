@@ -2,6 +2,7 @@
 // <li class="submenu" id="li_ABCD"><a class="submenu" id="a_ABCD"  onmouseout="mouseOut(this)" onmouseover="showSubSubMenu(this)">ABCD - Template Matching</a>
 var template_li_submenu = "<li class=\x22submenu\x22 id=\x22li_${id}\x22><a class=\x22submenu\x22 id=\x22a_${id}\x22  onmouseout=\x22mouseOut(this)\x22 onmouseover=\x22showSubSubMenu(this)\x22>${displayName}</a>";
 var idReplacementMarker = "${id}";
+
 var displayNameReplacementMarker = "${displayName}";
 var studyReplacementMarker = "${studyName}";
 var studyDisplayReplacementMarker = "${studyDisplayName}";
@@ -25,7 +26,7 @@ var template_ul_subSubMenu = "<ul class=\x22subSubMenu\x22 id=\x22ul_${id}\x22>"
 // <li class="subSubMenu" id="li_ABCD_Combined"><a class="subSubMenu" id="a_ABCD_Combined" data-study="abcd" href="#"  onmouseover="showSubSubMenu(this)" 
 //                                                                            onmouseout="mouseOut(this)" onclick="menuClicked(this, false, true )">Combined Networks</a></li> 
                  
-var template_li_subSubMenu = "<li class=\x22subSubMenu\x22><a class=\x22subSubMenu\x22 id=\x22${id}\x22 data-study=\x22${studyName}\x22 onmouseover=\x22showSubSubMenu(this)\x22" 
+var template_li_subSubMenu = "<li class=\x22subSubMenu\x22 id=\x22li_${id}\x22><a class=\x22subSubMenu\x22 id=\x22a_${id}\x22 data-study=\x22${studyName}\x22 onmouseover=\x22showSubSubMenu(this)\x22" 
                                                                            + " onmouseout=\x22mouseOut(this)\x22 onclick=\x22menuClicked(this, false, true)\x22 "
                                                                            + " data-studyDisplayName=\x22${studyDisplayName}\x22 "
                                                                            + "data-surfaceVolumeType=\x22${surface_volume}\x22 data-networkId=\x22${networkId}\x22>${displayName}"
