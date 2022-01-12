@@ -1,4 +1,4 @@
-		 var version_buildString = "Version beta_28.0  1206_2021:00:00__war=NPDownloader_1203.war"; 
+		 var version_buildString = "Version beta_29.0  1211_B_2021:00:00__war=NPDownloader_1211_B.war"; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;
@@ -31,7 +31,11 @@
          var download_target_map_nii = null;
          var downloadZIP_path = null;
          var downloadDisabled = true;
-         var downloadDisabledMessage = "Downloads disabled pending study review";
+         var downloadDisabledMessage = "Downloads disabled pending peer review and paper acceptance. " +
+                                       "Inidvualized maps are avaialble via the " +
+                                       "<a href=\"https://collection3165.readthedocs.io\" target=\"_blank\"" +
+                                       " style=\"font-style: italic; color:yellow;\">ABCC (https://collection3165.readthedocs.io)</a>" +
+                                       "<br>If you'd like to utilize the atlases prior to then please email hermosir@umn.edu";
          var loggingEnabled = true;
          var oldConsoleLog = null;
          var selectElement = null;
@@ -589,7 +593,8 @@
         	 console.log("downloadFile()...invoked.");
         	 
         	 if(downloadDisabled) {
-        		 doAlert(downloadDisabledMessage, alertOK);
+        		 doAdminAlert(downloadDisabledMessage, true);
+        		 //doAlert(downloadDisabledMessage, alertOK);
         		 return;
         	 }
         	 if(choice==1) {

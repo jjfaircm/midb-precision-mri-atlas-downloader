@@ -127,7 +127,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	private static final long VERSION_NUMBER = 0;
-	public static final String BUILD_DATE = "Version beta_28.0  1206_2021:00:00__war=NPDownloader_1203.war"; 
+	public static final String BUILD_DATE = "Version beta_29.0  1211_B_2021:00:00__war=NPDownloader_1211_B.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";
@@ -716,6 +716,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	public void init() {
 		//DO NOT USE LOGGER YET BECAUSE LogConfigurator has not run yet
 		System.out.println("NetworkProbabilityDownloader.init()...invoked...version=" + BUILD_DATE);
+		//System.out.println(System.getProperty("com.sun.jndi.ldap.object.trustURLCodebase"));
 		//we preload PropertyManager because it will invoke the LogConfigurator
 		PropertyManager.getInstance();
 		LOGGER = LogManager.getLogger(NetworkProbabilityDownloader.class);

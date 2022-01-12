@@ -83,15 +83,20 @@
     	console.log("dismissAdminAlert()...exit");
     }
     
-    function doAdminAlert(responseText) {
-    	console.log("dismissAdminAlert()...invoked");
+    function doAdminAlert(responseText, isDownloadAlert) {
+    	console.log("doAdminAlert()...invoked");
     	
     	var div_adminAlertBox = document.getElementById("adminAlertBox");
     	var div_adminAlertBoxMessage = document.getElementById("adminAlertBoxMessage");
     	div_adminAlertBoxMessage.innerHTML = responseText;
     	div_adminAlertBox.style.display = "block";
     	
-    	console.log("dismissAdminAlert()...exit");
+    	if(isDownloadAlert) {
+    		console.log("changing color to blue");
+    		div_adminAlertBox.style.backgroundColor = "#0F52BA";
+    	}
+    	
+    	console.log("doAdminAlert()...exit");
     }
 	  
 	function enableScroll() {
@@ -1005,11 +1010,13 @@
        
        if(!volumeDataAvailable) {
     	   radio_VolumeControl.disabled = true;
+    	   label_volume.innerHTML = "Volume Data - not yet available";
     	   label_volume.style.backgroundColor = "lightgrey";
        }
        else {
     	   radio_VolumeControl.disabled = false;
     	   //label_volume.style.backgroundColor = "#F0EAD6";
+    	   label_volume.innerHTML = "Volume Data";
     	   label_volume.style.backgroundColor = "#f0efee";    	   
        }
        
