@@ -1,0 +1,1433 @@
+  
+ <!DOCTYPE html>
+<html lang="en" dir="ltr" prefix="content: http://purl.org/rss/1.0/modules/content/  dc: http://purl.org/dc/terms/  foaf: http://xmlns.com/foaf/0.1/  og: http://ogp.me/ns#  rdfs: http://www.w3.org/2000/01/rdf-schema#  schema: http://schema.org/  sioc: http://rdfs.org/sioc/ns#  sioct: http://rdfs.org/sioc/types#  skos: http://www.w3.org/2004/02/skos/core#  xsd: http://www.w3.org/2001/XMLSchema# ">
+<head>
+
+  <script src="/NetworkProbabilityDownloader/javascript/jquery.js"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/generic_np_downloader.js?id=.war_0414_A_2022"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/generic_menu.js?id=.war_0414_A_2022"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/menuTemplates.js?id=.war_0414_A_2022"></script>
+  
+
+  <meta charset="utf-8" /><script type="text/javascript">(window.NREUM||(NREUM={})).loader_config={licenseKey:"415912e0c7",applicationID:"643519784"};window.NREUM||(NREUM={}),__nr_require=function(e,t,n){function r(n){if(!t[n]){var i=t[n]={exports:{}};e[n][0].call(i.exports,function(t){var i=e[n][1][t];return r(i||t)},i,i.exports)}return t[n].exports}if("function"==typeof __nr_require)return __nr_require;for(var i=0;i<n.length;i++)r(n[i]);return r}({1:[function(e,t,n){function r(){}function i(e,t,n){return function(){return o(e,[u.now()].concat(c(arguments)),t?null:this,n),t?void 0:this}}var o=e("handle"),a=e(6),c=e(7),f=e("ee").get("tracer"),u=e("loader"),s=NREUM;"undefined"==typeof window.newrelic&&(newrelic=s);var d=["setPageViewName","setCustomAttribute","setErrorHandler","finished","addToTrace","inlineHit","addRelease"],p="api-",l=p+"ixn-";a(d,function(e,t){s[t]=i(p+t,!0,"api")}),s.addPageAction=i(p+"addPageAction",!0),s.setCurrentRouteName=i(p+"routeName",!0),t.exports=newrelic,s.interaction=function(){return(new r).get()};var m=r.prototype={createTracer:function(e,t){var n={},r=this,i="function"==typeof t;return o(l+"tracer",[u.now(),e,n],r),function(){if(f.emit((i?"":"no-")+"fn-start",[u.now(),r,i],n),i)try{return t.apply(this,arguments)}catch(e){throw f.emit("fn-err",[arguments,this,e],n),e}finally{f.emit("fn-end",[u.now()],n)}}}};a("actionText,setName,setAttribute,save,ignore,onEnd,getContext,end,get".split(","),function(e,t){m[t]=i(l+t)}),newrelic.noticeError=function(e,t){"string"==typeof e&&(e=new Error(e)),o("err",[e,u.now(),!1,t])}},{}],2:[function(e,t,n){function r(){return c.exists&&performance.now?Math.round(performance.now()):(o=Math.max((new Date).getTime(),o))-a}function i(){return o}var o=(new Date).getTime(),a=o,c=e(8);t.exports=r,t.exports.offset=a,t.exports.getLastTimestamp=i},{}],3:[function(e,t,n){function r(e,t){var n=e.getEntries();n.forEach(function(e){"first-paint"===e.name?d("timing",["fp",Math.floor(e.startTime)]):"first-contentful-paint"===e.name&&d("timing",["fcp",Math.floor(e.startTime)])})}function i(e,t){var n=e.getEntries();n.length>0&&d("lcp",[n[n.length-1]])}function o(e){e.getEntries().forEach(function(e){e.hadRecentInput||d("cls",[e])})}function a(e){if(e instanceof m&&!g){var t=Math.round(e.timeStamp),n={type:e.type};t<=p.now()?n.fid=p.now()-t:t>p.offset&&t<=Date.now()?(t-=p.offset,n.fid=p.now()-t):t=p.now(),g=!0,d("timing",["fi",t,n])}}function c(e){d("pageHide",[p.now(),e])}if(!("init"in NREUM&&"page_view_timing"in NREUM.init&&"enabled"in NREUM.init.page_view_timing&&NREUM.init.page_view_timing.enabled===!1)){var f,u,s,d=e("handle"),p=e("loader"),l=e(5),m=NREUM.o.EV;if("PerformanceObserver"in window&&"function"==typeof window.PerformanceObserver){f=new PerformanceObserver(r);try{f.observe({entryTypes:["paint"]})}catch(v){}u=new PerformanceObserver(i);try{u.observe({entryTypes:["largest-contentful-paint"]})}catch(v){}s=new PerformanceObserver(o);try{s.observe({type:"layout-shift",buffered:!0})}catch(v){}}if("addEventListener"in document){var g=!1,y=["click","keydown","mousedown","pointerdown","touchstart"];y.forEach(function(e){document.addEventListener(e,a,!1)})}l(c)}},{}],4:[function(e,t,n){function r(e,t){if(!i)return!1;if(e!==i)return!1;if(!t)return!0;if(!o)return!1;for(var n=o.split("."),r=t.split("."),a=0;a<r.length;a++)if(r[a]!==n[a])return!1;return!0}var i=null,o=null,a=/Version\/(\S+)\s+Safari/;if(navigator.userAgent){var c=navigator.userAgent,f=c.match(a);f&&c.indexOf("Chrome")===-1&&c.indexOf("Chromium")===-1&&(i="Safari",o=f[1])}t.exports={agent:i,version:o,match:r}},{}],5:[function(e,t,n){function r(e){function t(){e(a&&document[a]?document[a]:document[i]?"hidden":"visible")}"addEventListener"in document&&o&&document.addEventListener(o,t,!1)}t.exports=r;var i,o,a;"undefined"!=typeof document.hidden?(i="hidden",o="visibilitychange",a="visibilityState"):"undefined"!=typeof document.msHidden?(i="msHidden",o="msvisibilitychange"):"undefined"!=typeof document.webkitHidden&&(i="webkitHidden",o="webkitvisibilitychange",a="webkitVisibilityState")},{}],6:[function(e,t,n){function r(e,t){var n=[],r="",o=0;for(r in e)i.call(e,r)&&(n[o]=t(r,e[r]),o+=1);return n}var i=Object.prototype.hasOwnProperty;t.exports=r},{}],7:[function(e,t,n){function r(e,t,n){t||(t=0),"undefined"==typeof n&&(n=e?e.length:0);for(var r=-1,i=n-t||0,o=Array(i<0?0:i);++r<i;)o[r]=e[t+r];return o}t.exports=r},{}],8:[function(e,t,n){t.exports={exists:"undefined"!=typeof window.performance&&window.performance.timing&&"undefined"!=typeof window.performance.timing.navigationStart}},{}],ee:[function(e,t,n){function r(){}function i(e){function t(e){return e&&e instanceof r?e:e?f(e,c,o):o()}function n(n,r,i,o){if(!p.aborted||o){e&&e(n,r,i);for(var a=t(i),c=v(n),f=c.length,u=0;u<f;u++)c[u].apply(a,r);var d=s[w[n]];return d&&d.push([b,n,r,a]),a}}function l(e,t){h[e]=v(e).concat(t)}function m(e,t){var n=h[e];if(n)for(var r=0;r<n.length;r++)n[r]===t&&n.splice(r,1)}function v(e){return h[e]||[]}function g(e){return d[e]=d[e]||i(n)}function y(e,t){u(e,function(e,n){t=t||"feature",w[n]=t,t in s||(s[t]=[])})}var h={},w={},b={on:l,addEventListener:l,removeEventListener:m,emit:n,get:g,listeners:v,context:t,buffer:y,abort:a,aborted:!1};return b}function o(){return new r}function a(){(s.api||s.feature)&&(p.aborted=!0,s=p.backlog={})}var c="nr@context",f=e("gos"),u=e(6),s={},d={},p=t.exports=i();p.backlog=s},{}],gos:[function(e,t,n){function r(e,t,n){if(i.call(e,t))return e[t];var r=n();if(Object.defineProperty&&Object.keys)try{return Object.defineProperty(e,t,{value:r,writable:!0,enumerable:!1}),r}catch(o){}return e[t]=r,r}var i=Object.prototype.hasOwnProperty;t.exports=r},{}],handle:[function(e,t,n){function r(e,t,n,r){i.buffer([e],r),i.emit(e,t,n)}var i=e("ee").get("handle");t.exports=r,r.ee=i},{}],id:[function(e,t,n){function r(e){var t=typeof e;return!e||"object"!==t&&"function"!==t?-1:e===window?0:a(e,o,function(){return i++})}var i=1,o="nr@id",a=e("gos");t.exports=r},{}],loader:[function(e,t,n){function r(){if(!E++){var e=b.info=NREUM.info,t=p.getElementsByTagName("script")[0];if(setTimeout(u.abort,3e4),!(e&&e.licenseKey&&e.applicationID&&t))return u.abort();f(h,function(t,n){e[t]||(e[t]=n)});var n=a();c("mark",["onload",n+b.offset],null,"api"),c("timing",["load",n]);var r=p.createElement("script");r.src="https://"+e.agent,t.parentNode.insertBefore(r,t)}}function i(){"complete"===p.readyState&&o()}function o(){c("mark",["domContent",a()+b.offset],null,"api")}var a=e(2),c=e("handle"),f=e(6),u=e("ee"),s=e(4),d=window,p=d.document,l="addEventListener",m="attachEvent",v=d.XMLHttpRequest,g=v&&v.prototype;NREUM.o={ST:setTimeout,SI:d.setImmediate,CT:clearTimeout,XHR:v,REQ:d.Request,EV:d.Event,PR:d.Promise,MO:d.MutationObserver};var y=""+location,h={beacon:"bam.nr-data.net",errorBeacon:"bam.nr-data.net",agent:"js-agent.newrelic.com/nr-1184.min.js"},w=v&&g&&g[l]&&!/CriOS/.test(navigator.userAgent),b=t.exports={offset:a.getLastTimestamp(),now:a,origin:y,features:{},xhrWrappable:w,userAgent:s};e(1),e(3),p[l]?(p[l]("DOMContentLoaded",o,!1),d[l]("load",r,!1)):(p[m]("onreadystatechange",i),d[m]("onload",r)),c("mark",["firstbyte",a.getLastTimestamp()],null,"api");var E=0},{}],"wrap-function":[function(e,t,n){function r(e){return!(e&&e instanceof Function&&e.apply&&!e[a])}var i=e("ee"),o=e(7),a="nr@original",c=Object.prototype.hasOwnProperty,f=!1;t.exports=function(e,t){function n(e,t,n,i){function nrWrapper(){var r,a,c,f;try{a=this,r=o(arguments),c="function"==typeof n?n(r,a):n||{}}catch(u){p([u,"",[r,a,i],c])}s(t+"start",[r,a,i],c);try{return f=e.apply(a,r)}catch(d){throw s(t+"err",[r,a,d],c),d}finally{s(t+"end",[r,a,f],c)}}return r(e)?e:(t||(t=""),nrWrapper[a]=e,d(e,nrWrapper),nrWrapper)}function u(e,t,i,o){i||(i="");var a,c,f,u="-"===i.charAt(0);for(f=0;f<t.length;f++)c=t[f],a=e[c],r(a)||(e[c]=n(a,u?c+i:i,o,c))}function s(n,r,i){if(!f||t){var o=f;f=!0;try{e.emit(n,r,i,t)}catch(a){p([a,n,r,i])}f=o}}function d(e,t){if(Object.defineProperty&&Object.keys)try{var n=Object.keys(e);return n.forEach(function(n){Object.defineProperty(t,n,{get:function(){return e[n]},set:function(t){return e[n]=t,t}})}),t}catch(r){p([r])}for(var i in e)c.call(e,i)&&(t[i]=e[i]);return t}function p(t){try{e.emit("internal-error",t)}catch(n){}}return e||(e=i),n.inPlace=u,n.flag=a,n}},{}]},{},["loader"]);</script>
+
+  
+<style>body #backtotop {background: #5a5a5a;border-color: #5a5a5a;color: #ffffff;}body #backtotop:hover { background: #333333; border-color: #333333; }</style>
+<script>(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,"script","https://www.google-analytics.com/analytics.js","ga");ga("create", "UA-136436989-2", {"cookieDomain":"auto"});ga("set", "anonymizeIp", true);ga("send", "pageview");</script>
+<link rel="shortlink" href="https://midb.umn.edu/" />
+<link rel="canonical" href="https://midb.umn.edu/" />
+<meta name="Generator" content="Drupal 8 (https://www.drupal.org)" />
+<meta name="MobileOptimized" content="width" />
+<meta name="HandheldFriendly" content="true" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
+
+<link rel="shortcut icon" href="/NetworkProbabilityDownloader/images/favicon.ico" type="image/vnd.microsoft.icon" />
+<!--
+<link rel="shortcut icon" href="https://midb.umn.edu/themes/custom/folwell/favicon.ico" type="image/vnd.microsoft.icon" />
+-->
+<link rel="revision" href="https://midb.umn.edu/welcome" />
+
+  <title>Welcome | Masonic Institute for the Developing Brain</title>
+  
+
+  
+  <link rel="stylesheet" media="all" href="/NetworkProbabilityDownloader/css/css_JF6gLPJ4MQDiYAqFXcLTlKBApkP02yfNOJXomnHeDfM.css" />
+  
+  <link rel="stylesheet" media="all" href="/NetworkProbabilityDownloader/css/css_i1GhGR95VslXOaFDBaRbnS0Wk1VhYpBeDpIWNc_qjlU.css" />
+  
+  
+  <!-- 
+  <link rel="stylesheet" media="all" href="https://midb.umn.edu/sites/developingbrain.umn.edu/files/css/css_i1GhGR95VslXOaFDBaRbnS0Wk1VhYpBeDpIWNc_qjlU.css" />
+  -->
+
+
+<link rel="stylesheet" media="all" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i" />
+<link rel="stylesheet" media="all" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" />
+
+<link rel="stylesheet" media="all" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,600,600i,700,700i,800,800i&amp;display=swap" />
+
+<link href='https://fonts.googleapis.com/css?family=Amaranth:ital@1&display=swap' rel='stylesheet'>
+
+
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/np_downloader.css?id=.war_0414_A_2022" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/alert.css?id=.war_0414_A_2022" media="all" />
+
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/menu_generic.css?id=.war_0414_A_2022" media="all" />
+
+
+<!--[if lte IE 8]>
+<script src="/sites/developingbrain.umn.edu/files/js/js_VtafjXmRvoUgAzqzYTA3Wrjkx9wcWhjP0G4ZnnqRamA.js"></script>
+<![endif]-->
+
+
+
+<script src="https://use.fontawesome.com/releases/v5.12.0/js/all.js" defer crossorigin="anonymous"></script>
+<script src="https://use.fontawesome.com/releases/v5.12.0/js/v4-shims.js" defer crossorigin="anonymous"></script>
+
+  
+</head>
+
+
+
+  
+  
+<!--
+<body id="body" class="no-sidebars fixed-width path-frontpage page-node-type-dl-general-page" onload="startup()">
+  -->
+
+<body id="body" class="no-sidebars fixed-width path-frontpage page-node-type-dl-general-page" style="background-color:#fff;" onload="startup()">
+  <div class="page-wrapper">
+  <div id="skip">
+    <a class="visually-hidden focusable skip-link" href="#content">
+        Skip to main content
+    </a>
+  </div>
+  
+
+    <!-- Begin UMN Header -->
+<header id="mandatory-header-wrapper" class="umnhf-campus-tc dtd umnhf-background-maroon dropdown no-links" role="banner">
+    <div class="umnhf" id="umnhf-h">
+        <div class="umnhf" id="umnhf-h-mast">
+            <a target="_blank" class="umnhf" id="umnhf-h-wm" href="https://twin-cities.umn.edu"><span>Go to the U of M home page</span></a>
+                                    <ul class="umnhf" id="umnhf-h-ql" role="presentation">
+                <li class="umnhf" id="umnhf-h-onestop"><a target="_blank" href="https://onestop.umn.edu">One Stop</a></li>
+                <li class="umnhf" id="umnhf-h-myu"><a target="_blank" href="http://www.myu.umn.edu">MyU<span id="span_myU"></span></a></li>
+            </ul>
+                        <!-- Button below is for dropdown toggle, only visible on mobile screens. If using a non-dropdown version you can delete this tag -->
+            <!--
+            <button class="umnhf" id="umnhf-m-search" href="#" title="toggle search field">Search</button>
+            -->
+                    </div>
+        <script async src="https://cse.google.com/cse.js?cx=b22b57b600252f29d"></script>
+        <div class="gcse-searchbox-only" data-resultsUrl="https://midb.umn.edu/search/results" data-newWindow="true"></div>
+        <!--
+    <gcse:searchbox-only resultsUrl=https://midb.umn.edu/search/results" newWindow="true" queryParameterName="search">
+        -->
+    </div>
+</header>
+<!-- End UMN Header -->
+
+
+        <div class="dialog-off-canvas-main-canvas" data-off-canvas-main-canvas>
+    <div role="document" class="page">
+
+  <section class="site-identity">
+    <header class="folwell-identity">
+            <p class="prefix-name">
+                            <a target="_blank" href="https://clinicalaffairs.umn.edu">                Office of Academic Clinical Affairs
+                </a>                    </p>
+        <h1 class="sitename" id="sitename" style="display:inline-block">
+    <a target="_blank" href="https://midb.umn.edu/">Masonic Institute for the Developing Brain </a>
+</h1>
+<a id="give_link" href="https://midb.umn.edu/give" target="_blank">Give</a>
+ 
+  
+</header>
+
+
+
+  </section>
+ 
+  
+</div>
+</div>
+  
+  
+  
+  
+  
+
+ 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+
+<!--
+  <div style="text-align:center">
+   <p class="aligncenter">
+      <h3 id="midb_header" class="tipToTheLeft_X style="color:DarkBlue;width:100%;text-align:center">MIDB Probabilistic Atlases </h3> 
+  </div> 
+  
+-->
+<h3 style="text-align: center;">MIDB Precision Brain Atlas</h3>
+
+
+<div id="div_tabs" style="background-color:#f0efee;">
+<input type="radio" class="tabs_input" name="tabs" id="tab_home" checked onclick="handleTabSelected(this.id)" />
+<label id="label_home" class="tabLabel" for="tab_home">Home</label>
+
+<input type="radio" class="tabs_input" name="tabs" id="tab_overview" onclick="handleTabSelected(this.id)" />
+<label id="label_overview" class="tabLabel" for="tab_overview">Overview</label>
+
+<input type="radio" class="tabs_input" name="tabs" id="tab_midbAtlas" onclick="handleTabSelected(this.id)"  />
+<label id="label_midbAtlas" class="tabLabel"  for="tab_midbAtlas">What Is The MIDB Atlas</label>
+
+<input type="radio" class="tabs_input" name="tabs" id="tab_download" onclick="handleTabSelected(this.id)"  />
+<label id="label_download" class="tabLabel"  for="tab_download">Downloader Tool</label>
+
+<input type="radio" class="tabs_input" name="tabs" id="tab_resources" onclick="handleTabSelected(this.id)"  />
+<label id="label_resources" class="tabLabel"  for="tab_resources">Additional Resources</label>
+
+<input type="radio" class="tabs_input" name="tabs" id="tab_contactUs" onclick="handleTabSelected(this.id)"  />
+<label id="label_contact" class="tabLabel"  for="tab_contactUs">Contact Us</label>
+</div>
+<!--
+<input type="radio" class="tabs_input" name="tabs" id="tab_admin" onclick="handleTabSelected(this.id)"  />
+<label class="tabLabel"  for="tab_contactUs">Admin</label>
+  -->
+
+<div  id="div_splashImageWrapper" style="position: relative;">
+   <div id="div_splashImage" class="splashImage">
+       <img id="img_splashImage"  class="splashImage" alt="image not available" src="/NetworkProbabilityDownloader/images/brain_splash.png" height="320" width=100% style="object-fit: cover;">
+   </div>
+   <div id="div_overlayImage" style="position: absolute; z-index: 1; top:0px; right:10px;">
+      <img class="centerImageXX" title="Version: 0414_A_2022.war" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75" ondblclick="handleAdminRequest()">
+   </div>
+   <!--
+   <div id="midb_atlases_text" style="position: absolute; z-index: 1; bottom:10px; right:16px">
+            <h3 id="midb_header" style="color:white;">MIDB Probabilistic Atlases </h3> 
+   </div>
+     -->
+</div>
+
+ 
+ <!--
+  <p class="aligncenter">
+    <img class="centerImage" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="150" width="150">
+</p>
+
+ -->
+
+<div id="div_home" class="tab contentOverview" style="text-align: center;">
+<br>
+
+<span style="text-align: left; display:inline-block;margin-left: 10px;margin-right: 10px;">
+Welcome to the MIDB Precision Brain Atlases website. Here you will find a set of probabilistic functional atlases 
+derived from multiple studies that can be used to explore network topography. These atlases were derived using
+data from multiple methodologies at the DCAN labs and collaborators. Feel free to explore, download data, and
+provide feedback. 
+</span>
+<hr style="width:50%;height:2px;text-align:center;display:inline-block;">
+<br>
+<br>
+
+<button class="btn_mainMenu" onclick="handleTabSelected('tab_overview')"><img src="/NetworkProbabilityDownloader/images/Neuroatlas_atlas_overview.png" height="194" width="345"></img></button>
+<button class="btn_mainMenu" onclick="handleTabSelected('tab_midbAtlas')"><img src="/NetworkProbabilityDownloader/images/Neuroatlas_atlas_atlas.png" height="194" width="345"></img></button>
+<button class="btn_mainMenu" onclick="handleTabSelected('tab_download')"><img src="/NetworkProbabilityDownloader/images/Neuroatlas_atlas_download.png" height="194" width="345"></img></button>
+<br>
+<button class="btn_mainMenu" onclick="handleTabSelected('tab_resources')"><img src="/NetworkProbabilityDownloader/images/Neuroatlas_atlas_external.png" height="194" width="345"></img></button>
+<button class="btn_mainMenu" onclick="handleTabSelected('tab_contactUs')"><img src="/NetworkProbabilityDownloader/images/Neuroatlas_atlas_contact.png" height="194" width="345"></img></button>
+
+</div>
+
+
+<!-- begin the overview div -->
+<div id="div_midbAtlas" class="tab contentOverview" style="display:none;">
+ <p class="aligncenter" style="font-size:15px;">
+ <br>
+ <h3 id="overview_heading" style="text-align:center"><u>The MIDB Precision Mapping Brain Atlas</u></h3>
+ <p class="aligncenter" style="font-size:17px; font-weight:700; color: #777;">
+ Explore atlases derived from personalized brain topography
+ </p>
+ <p style="font-size:17px;">
+ The MIDB Precision Mapping Brain Atlas (MPMA) was created to support investigators in leveraging individual brain topographies to assist in characterizing various aspects of brain function and to aid in honing methods in medical discovery.  
+ </p>
+ <p style="font-size:17px;">
+ The MIDB Atlas consists of two derived atlas types and four sub-atlases:
+  </p>
+ <span style="font-size:17px;font-weight:600;">
+ Topographic Atlases:
+ </span>
+<br>
+ <span style="font-size:17px;">
+ &nbsp;&nbsp;&nbsp;&nbsp;1)&nbsp;&nbsp;<u>A Single Subject Topographic Atlas</u>: Consisting of single subject precision network maps
+ <br>
+ &nbsp;&nbsp;&nbsp;&nbsp;2)&nbsp;&nbsp;<u>A Group Probabilistic Atlas</u>: Consisting of Network based probabilities and associated regional parcellations
+</span>
+<br>
+ <span style="font-size:17px;font-weight:600;">
+ <br>
+ Integration Zone Atlases:
+ </span>
+<br>
+<span style="font-size:17px;">
+&nbsp;&nbsp;&nbsp;&nbsp;3)&nbsp;&nbsp;<u>A Single Subject Integration Zone Atlas</u>: Consisting of single subject precision integration zone maps
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;4)&nbsp;&nbsp;<u>A Group Integration Zone Atlas</u>: Consisting of group averaged integration zones
+</span>
+<br><br>
+<span style="font-size:17px;">
+The MPMA is a community resource and is designed to house precision brain atlases from multiple sources and using multiple methods. 
+To include your own version of a Topographic or Integration Zone Atlas, please contact <a href='javascript:;' onclick='handleContactUsClicked();'>dcanlab</a>
+<br><br>
+<br>
+<!--
+Citation: Hermosillo et al (2021). 
+<span style="font-style:italic; font-weight:600;">A Population Atlas of Individualized Functional Neural Network Topology: an ABCD Resource.</span><span style="background-color: yellow;">(bioarxiv  url goes here when folks are finished reviewing it.)</span>
+  -->
+</span>
+
+
+<!--
+<br><br>
+<p style="font-size:16px; font-style: italic;">
+ Note: The dlabel.nii files provided are in CIFTI format
+ <a href="https://www.humanconnectome.org/software/workbench-command" target="_blank" style="font-style: italic; color:DarkBlue;">
+ (refer to humanconnectome.org)</a>
+  -->
+<!--
+ <p style="font-style: italic; font-style: underline;">
+<br><br><b><u> Want to use individual subject brain maps? </b></u>
+ <p style="font-size:16px; font-style: italic;">
+ The dlabel.nii files provided are in CIFTI format
+ <a href="https://www.humanconnectome.org/software/workbench-command" target="_blank" style="font-style: italic; color:DarkBlue;">
+ (refer to humanconnectome.org)</a>
+ , and provided in fs_LR32k format (91282 greyordinates).
+ <p style="font-size:16px; font-style: italic;">
+ All individualized brain maps from the over 9500 subjects from the ABCD study are downloadable through the
+ <a href="https://nda.nih.gov/" target="_blank" style="font-style: italic; color:DarkBlue;">  National Data Archive (NDA)</a>.
+ <br><br>
+ We have developed an 
+ <a href="https://github.com/DCAN-Labs/nda-bids-upload" target="_blank" style="font-style: italic; color:DarkBlue;">NDA-BIDS upload tool</a> that facilitates researchers to upload their own ABCD processed data
+ using the Brain Imaging Data Structure (BIDS) standards after a brief approval process.
+ <p style="font-size:16px; font-style: italic;">
+ Details of this dataset are more fully described in Hermosillo et al (2021):  <b>A Population Atlas of Individualized Functional Neural Network Topology: an ABCD Resource. </b>
+  -->
+</div>
+
+<!-- begin the 'What Is MIDB Atlas div -->
+<div id="div_overview" class="tab contentMIDBAtlas" style="display:none;">
+<br>
+<h3 style="text-align:center"><u>Every Brain is Unique</u></h3>
+
+<span style="font-size:17px;">
+
+Brain function can be measured noninvasively using different techniques, including
+functional MRI. The precise spatial configuration of connections of each brain region
+is established through a combination of developmental factors, genetics, and each person’s
+lived experience. Neuroscientists have realized that by looking at coactivation patterns
+of brain connectivity, one can delineate brain areas that share similar functions. Such
+functional brain areas have correspondence with brain areas delineated using more invasive
+approaches, such as injecting viruses. Neurons self-organize into networks in an effort to
+make sense of organism-environment interactions. Perhaps unsurprisingly, emerging evidence
+suggests that the precise topography of each person’s networks is fairly unique.
+
+</span>
+<br><br>
+<span style="font-weight:600;font-size:17px;">Definitions:</span>
+<br>
+<ul>
+<li style="font-size:17px;"><b>Network</b> : A network is an interconnected collection of neural elements (for example, populations of cells) and the connectivity between the elements. 
+    A brain network may contain  more than one brain area and the constitutive brain areas might be distant in the brain. 
+    Examples of networks include the motor, visual, and dorsal attention systems.
+</li>
+<li style="font-size:17px;"><b>Integration Zone</b> : A brain region whose connectivity profile is within more than one network.
+</li>
+</ul>
+
+<!--
+&nbsp;&nbsp;&nbsp;&nbsp;1)&nbsp;&nbsp;<u>Network</u> : A network is an interconnected collection of neural elements (for example, populations of cells) and the connectivity between the elements.
+<br> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;2)&nbsp;&nbsp;<u>Integration Zone</u> : A brain region whose connectivity profile is within more than one network.
+  -->
+<br>
+<br>
+<br>
+
+
+<!--
+<span style="font-size:19px; font-weight: 600;">
+What constitutes a brain network?
+</span>
+<br><br>
+<span style="font-size:17px;">
+"Functional connectivity" has come to refer to correlated patterns of brain activity between regions. 
+Two regions are said to be “functionally connected” if the time series of their activity is highly correlated.
+The reasoning behind this definition is that brain areas with similar activity patterns are likely to be
+communicating and sharing information. This is likely true for regions that are highly anti-correlated, but 
+this remains to be fully explored within the literature.
+<br><br>
+While the best approach to defining neural networks is still a subject of debate, we can loosely define them 
+as a collection of brain regions (parcels, grayordinates, or voxels) that have shared patterns of co-activation,
+which in fMRI manifests as co-activation of  the BOLD response between regions.  This particular set of
+downloadable atlases were generated using a technique called template matching (see details below).  
+</span>
+  -->
+
+
+<span style="font-size:19px; font-weight: 600;">
+How is an individual’s brain network defined?
+</span>
+<br><br>
+<span style="font-size:17px;">
+Each study uses a different method of identifying neural network in an individual 
+(e.g. infomap community detection, template matching, or non-negative matrix factorization).
+Users are encouraged to peruse the primary literature provided with each data set. 
+
+<!--
+Each method has different strengths and weaknesses. <span style="font-size:17px; font-weight: 600;">
+Infomap</span> uses an unsupervised community 
+approach to identify communities based on information theory. <span style="font-size:17px; font-weight: 600;">Template matching</span> compares the
+whole-brain connectivity of each grayordinate or voxel for a given subject’s brain to the
+connectivity patterns of a set of template networks. The templates are generated from an
+independent population averages and therefore provide a basic foundation for expected networks
+structure. <span style="font-size:17px; font-weight: 600;">Non-negative matrix factorization</span> uses an additive, component-based approach with
+spatial constraints to identify components. 
+
+Precision brain maps are currently available as .dscalars.nii from the National Data archive. 
+Probabilistic maps for this dataset are available in cifti format which projects constrains
+analyses of cortical volumetric data to the cortical surface.
+<a href="https://pubmed.ncbi.nlm.nih.gov/23668970/" target="_blank" style="font-style: italic; color:DarkBlue;">  (Glasser et al. 2013).</a>
+
+For template matching, the codebase that identifies each participant’s networks, can be accessed on 
+<a href="https://gitlab.com/Fair_lab/compare_matrices_to_assign_networks" target="_blank" style="font-style: italic; color:DarkBlue;">gitlab</a>
+
+&nbsp; We’ve generated a probabilistic ROI set based on network similarity to networks defined by 
+ <a href="https://doi.org/10.1093/cercor/bhv239" target="_blank" style="font-style: italic; color:DarkBlue;">
+ Gordon and colleagues.</a>&nbsp;After mapping networks for each participant, the probability maps were generated using
+ 2995 participants with 10 minutes of motion-censored data.
+   -->
+ 
+ <br><br>
+ Read about the full details of the template matching procedure here: Hermosillo et al (2022) -  
+  <a href=" https://www.biorxiv.org/content/10.1101/2022.01.12.475422v1" target="_blank" style="font-style: italic; color:DarkBlue;">
+A Precision Functional Atlas of Network Probabilities and Individual-Specific Network Topography</a>
+ </span>
+ <br><br><br>
+  <span style="display:block; text-align: center; font-size:18px; font-weight: 600; ">
+ <u>Individual-specific map example</u>
+  </span>
+  <br>
+ <img class="centerImage" src="/NetworkProbabilityDownloader/images/brains_4.png" height=380 width=550>
+
+ <span class="aligncenter" style="display:block; text-align: center; font-size:14px; font-style: italic;width: 40%; margin-left: 30%;">
+In the figure above, each grayordinate belongs to one network. Each color represents a unique network. Brain surfaces are inflated for visualization purposes.
+Networks were identified from data acquired by the Midnight Scan Club.
+ <a href="https://openneuro.org" target="_blank" style="font-style: italic; color:DarkBlue;">Midnight Scan Club</a>.
+ <br>
+ <br>
+ <br>
+ <br>
+ </span>
+ <span style="display:block; text-align: center; font-size:18px; font-weight: 600; ">
+ <u>Probabilistic map of the Default Mode Network</u>
+  </span>
+  <br>
+  <span style="font-size:17px;">
+  Using many individual-specific maps shown above, we can generate probabilistic network maps.
+  Probabilistic maps represent the proportion of the population that has a given network at each
+  grayordinate. Here we show the DMN as an example.
+  </span>
+  
+  <br><br>
+ <img class="centerImage" src="/NetworkProbabilityDownloader/images/wb_view_DMN_probabilistic_1142x790.png" height=380 width=550>
+ <span class="aligncenter" style="display:inline-block; text-align: center; font-size:14px; font-style: italic; width: 42%; margin-left: 29%;">
+In the figure above, each grayordinate has probability of being assigned to a given network.  Warmer colors indicate a higher probability,
+cooler colors indicate a low probability.
+ <br>
+ <br>
+ <br>
+ <br>
+</span>
+
+<span style="display:block; text-align: center; font-size:18px; font-weight: 600; ">
+ <u>Some brain regions may belong to multiple networks</u>
+  </span>
+<br>
+<span style="display:block; text-align: left; font-size:17px;">
+A variation of the identifying individual-specific networks, overlapping template matching,
+allows networks to overlap. That is to say, it is possible, and likely that some brain regions
+participate in multiple networks.
+</span>
+<br>
+<img class="centerImage" src="/NetworkProbabilityDownloader/images/MSC04_overlapping_nets_with_legend.png" height=380 width=550>
+ <span class="aligncenter" style="display:block; text-align: center; font-size:14px; font-style: italic;width: 40%; margin-left: 30%;">
+In the figure above, each grayordinate can belong to multiple networks. Each color represents a unique network.
+Networks were identified from data acquired by the Midnight Scan Club.
+</span>
+<br><br>
+<span style="display:block; text-align: left; font-size:17px;">
+As one can see in the image above, some brain regions, such as the posterior cingulate gyrus and the
+posterior parietal cortex appear to participate in multiple networks. When networks overlap, we can
+identify brain regions that have the most numerous overlapping networks in an individual. By averaging
+across the population, we can identify consistent regions of network overlap.
+</span>
+<br><br>
+<img class="centerImage" src="/NetworkProbabilityDownloader/images/number_of_overlapping_networks_example_whitespace2588x1800.png" height=380 width=550>
+
+ <span class="aligncenter" style="display:block; text-align: center; font-size:14px; font-style: italic;width: 60%; margin-left: 20%;">
+In the figure above, on the left and center panels are the number of networks that overlap at every grayordinate for two different participants
+from the Midnight Scan Club. On the right is the average number of networks that overlap at any given region from using the ABCD study.
+</span>
+<br><br>
+ <span style="display:block; text-align: center; font-size:18px; font-weight: 600; ">
+ <u>Integration Zone regions</u>
+  </span>
+  <br>
+ <span style="font-size:17px;">
+Using the map of the average number of networks shown above, we generated a region set from regions that participate in the most networks.
+Below, we are displaying all surface brain regions that belong to more than 2.3 overlapping networks.
+  <br><br>
+  </span>
+ <img class="centerImage" src="/NetworkProbabilityDownloader/images/wb_view_integration_zone_1142x790.png" height=380 width=550>
+ <span class="aligncenter" style="display:inline-block; text-align: center; font-size:14px; font-style: italic; width: 40%; margin-left: 30%;">
+For an integration zone region-of-interest set, the blue regions shown above indicate where multiple networks overlap.
+<br>
+<br>
+<br>
+</span>
+<span style="font-size:20px; font-weight: 600; display:block; text-align: center;">
+How were the atlases generated?
+</span> 
+
+<span style="font-size:17px;">
+<br>
+The MIDB Probabilistic atlases are a collection of network atlases, each constructed by calculating the probability of observing
+a given network of multiple individual brain maps. Currently, probabilistic maps are provided as .dscalar.nii and labels files
+are provided as .dlabel.nii files.   <a href="https://www.humanconnectome.org/software/connectome-workbench" target="_blank" style="font-style: italic; color:DarkBlue;">(Refer to humanconnectome workbench)</a>
+
+ <br><br>
+</span>
+<br>
+<span style="font-size:20px; font-weight: 600; display:block; text-align: center;">
+Why use the MIDB atlas?
+</span>
+<span style="font-size:17px;">
+<ul id="midb_whyUse">
+       <li>Reliably measure group brain-behavior relationships</li>
+       <li>Individual participants within a group show topographic variations in their networks. The use of probabilistic atlases more precisely measures individual 
+           variation that contributes to spatial heterogeneity of a network. This enables investigators to more reliably measure group brain-behavior relationships.</li>
+<img class="centerImage" style="vertical-align: top; horizontal-align: center;" src="/NetworkProbabilityDownloader/images/reliabilty_figure.png" height=380 width=550>
+           <span class="aligncenter" style="display:inline-block; text-align: center; font-size:14px; font-style: italic; width: 60%; margin-left: 20%;">
+           In the figure above, we used a subset reliability analysis showing that using the MIDB probabilistic parcellation and MIDB Integration Zone parcellation
+           (generated from ABCD data) improves signal-to-noise in group-level predictions relative to the Gordon Parcellation. Blue circles indicate inter-group
+           correlation for each random subset using the MIDB probabilistic parcellation. Red circles indicate inter-group correlation for each random subset using
+           the Gordon parcellation.
+           </span>
+       <br><br>
+       <li>Established probabilistic network locations:</li>
+    <ul>
+       <li>Investigators who are specifically interested in characterizing the behavior of a particular network can use the MIDB probabilistic atlas label files 
+           established in a large group to confidently measure which network is being activated in an independent sample.
+    </ul>
+
+<li>Targeting in brain stimulation:</li>
+    <ul>
+       <li>The MIDB probabilistic atlases can serve as a stereotactic target for brain stimulation when collection of low-motion resting state fMRI data is not possible.</li>
+       <br>
+       <img class="centerImage" style="vertical-align: top;" src="/NetworkProbabilityDownloader/images/Figure8_Probabilistic_map-guided_seed-based_correlation_cropped.png" height=380 width=550>
+        <span class="aligncenter" style="display:inline-block; text-align: center; font-size:14px; font-style: italic; width: 62%; margin-left: 19%;">
+       In the figure above, a seed based correlation was conducted with 5 MSC and 5 ABCD subjects. <b>A)</b> A seed was placed at the DLPFC (as defined by the MIDB Frontoparietal 
+       probabilistic map) and connectivity to the subgenual cortex was calculated (dotted white circles). Note that, in most subjects, the connectivity to the frontoparietal 
+       network was anti-correlated with the subgenal cortex (green-blue). <b>B)</b> When the seed was placed in a region with a low probability of belonging to the frontoparietal network, 
+       connectivity to the subgenual cortex was inconsistent. White circles indicate the location of the subgenual gyrus (subgenal MNI coordinates=±5, 25, -10).  While this analysis, 
+       of course, uses resting state data, if no resting state data is available for a participant, targeted brain stimulation can be conducted with the MIDB Probabilistic maps.
+       </span>
+    </ul>
+
+</ul>
+</span>
+
+
+<!--
+<span style="font-size:19px; font-weight: 600;">
+Each Study uses different methods to identify networks.
+</span>
+
+<span style="font-size:17px;">
+For ABCD, multiple versions of individual-specific maps for each subject are available to download via the NIH that were generated using varying
+amounts of minutes, different community detection methods, and even concatenated rest and task data in order to leverage scan duration.
+</span>
+-->
+  
+</div>
+
+
+<!-- begin the resources div -->
+
+<div id="div_resources" class="tab contentResources" style="display:none;">
+<br>
+<h4 class="header_progress" style="display: inline-block;">Resources</h4>
+
+<ul>
+	<li>Studies</li>
+		<ul>
+			<li><a href="https://abcdstudy.org" target="_blank" style="font-style: italic; color:DarkBlue;">ABCD Study Website</a></li>
+		</ul>
+	
+	
+	<li>Code Repositories</li>
+		<ul>
+			<li><a href="https://github.com/DCAN-Labs/compare_matrices_to_assign_networks" target="_blank" style="font-style: italic; color:DarkBlue;">Template Matching</a></li>
+			<li><a href="https://github.com/DCAN-Labs/abcd-hcp-pipeline" target="_blank" style="font-style: italic; color:DarkBlue;">ABCD-HCP BIDS fMRI Pipeline</a></li>
+			<li><a href="https://github.com/DCAN-Labs/nda-abcd-s3-downloader" target="_blank" style="font-style: italic; color:DarkBlue;">NDA Collection 3165 ABCD-BIDS Downloader</a></li>
+			<li><a href="https://xcp-abcd.readthedocs.io/en/latest/index.html" target="_blank" style="font-style: italic; color:DarkBlue;">XCP-ABCD: A Robust Postprocessing Pipeline of fMRI data</a></li>
+		</ul>
+	
+	
+	<li>Data Repositories</li>
+		<ul>
+			<li><a href="https://nda.nih.gov/" target="_blank" style="font-style: italic; color:DarkBlue;">National Data Archive</a></li>
+			<li><a href="https://openneuro.org/datasets/ds000224/versions/1.0.3" target="_blank" style="font-style: italic; color:DarkBlue;">Midnight Scan Club</a></li>
+		</ul>
+	
+	<li>Open Science Platforms</li>
+		<ul>
+			<li><a href="http://neuro-knowledge.org/" target="_blank" style="font-style: italic; color:DarkBlue;">Neuroknowledge Engine</a></li>
+			<li><a href="http://neurosynth.org/" target="_blank" style="font-style: italic; color:DarkBlue;">Neurosynth</a></li>
+			<li><a href="https://collection3165.readthedocs.io/en/stable/" target="_blank" style="font-style: italic; color:DarkBlue;">ABCD-BIDS Community Collection (ABCC)</a></li>
+		</ul>
+	
+	<li>Additional Reading</li>
+		<ul>
+			<li><a href="https://pubmed.ncbi.nlm.nih.gov/23668970/" target="_blank" style="font-style: italic; color:DarkBlue;">HCP Processing Pipeline</a></li>
+			<li><a href="https://www.biorxiv.org/content/10.1101/2021.07.09.451638v1.full.pdf" target="_blank" style="font-style: italic; color:DarkBlue;">Adolescent Brain Cognitive Development (ABCD) Community MRI Collection and Utilities</a></li>
+			<li><a href="https://www.cell.com/neuron/pdf/S0896-6273(17)30613-X.pdf" target="_blank" style="font-style: italic; color:DarkBlue;">Precision Functional Mapping of Individual Human Brains</a></li>
+			<li><a href="https://pubmed.ncbi.nlm.nih.gov/29567376/" target="_blank" style="font-style: italic; color:DarkBlue;">The Adolescent Brain Cognitive Development (ABCD) study: Imaging acquisition across 21 sites</a></li>
+			<li><a href="https://pubmed.ncbi.nlm.nih.gov/34000397/" target="_blank" style="font-style: italic; color:DarkBlue;">Probabilistic mapping of human functional brain networks identifies regions of high group consensus</a></li>
+			<li><a href="https://pubmed.ncbi.nlm.nih.gov/32078800/" target="_blank" style="font-style: italic; color:DarkBlue;">Individual Variation in Functional Topography of Association Networks in Youth</a></li>
+		</ul>
+		
+</ul>
+
+<!--
+
+<br>
+<span style="display:block;font-size:18px; font-weight: 600; ">
+ABCD Study Website:&nbsp;
+<a href="https://abcdstudy.org" target="_blank" style="font-style: italic; color:DarkBlue;">Home Page</a>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://abcdstudy.org" target="_blank" style="font-style: italic; color:DarkBlue;"><img src="/NetworkProbabilityDownloader/images/abcd-study-logo.png" height=92.1 width=158></a>
+<br><br>
+ABCD Scan Details:&nbsp;
+<a href="https://pubmed.ncbi.nlm.nih.gov/29567376/" target="_blank" style="font-style: italic; color:DarkBlue;">
+The Adolescent Brain Cognitive Development (ABCD) study: Imaging acquisition across 21 sites </a>
+<br><br>
+Processing Pipeline:&nbsp;
+<a href="https://pubmed.ncbi.nlm.nih.gov/23668970/" target="_blank" style="font-style: italic; color:DarkBlue;">
+The minimal preprocessing pipelines for the Human Connectome Project</a>
+<br><br>
+Code repository for processing utilities:
+<a href="https://gitlab.com/Fair_lab/compare_matrices_to_assign_networks" target="_blank" style="font-style: italic; color:DarkBlue;">
+Template matching code</a>
+<br><br>
+openneuro.org:&nbsp;
+<a href="https://openneuro.org/datasets/ds000224/versions/1.0.3" target="_blank" style="font-style: italic; color:DarkBlue;">
+Midnight scan club dataset</a>
+</span>
+
+
+  -->
+
+<!--
+<a href="https://pubmed.ncbi.nlm.nih.gov" class="a_resources" style="font-style: italic; color:DarkBlue; font-size:20px;"><img alt="" src="/NetworkProbabilityDownloader/images/pubmed-logo-blue.svg" height="125" width="125">&nbsp;Resources</a>
+-->
+<!--
+<p class="aligncenter">
+<a target="_blank" href="https://pubmed.ncbi.nlm.nih.gov" class="a_resources" style="border-bottom:1px solid black; text-decoration:none;"><img alt="" src="/NetworkProbabilityDownloader/images/pubmed-logo-blue.svg" height="auto" width="125">
+<label style="font-size: 24px; font-style: italic; color: #0f6894; cursor: pointer;"> &nbsp;Resources</label></a>
+<br>
+<br>
+<ul>
+<li>
+<a href="https://pubmed.ncbi.nlm.nih.gov/29567376/" target="_blank" style="font-style: italic; color:DarkBlue;">The Adolescent Brain Cognitive Development (ABCD) study: Imaging acquisition across 21 sites</a>
+<li>
+<a href="https://pubmed.ncbi.nlm.nih.gov/23668970/" target="_blank" style="font-style: italic; color:DarkBlue;">The minimal preprocessing pipelines for the Human Connectome Project</a>
+</ul>
+ -->
+</div>
+ 
+<!-- end the resources div -->
+
+<!-- begin the 'Contact Us' div -->
+<div id="div_contactUs" class="tab contentContactUs" style="display:none;">
+<br><br>
+Please visit <a href="https://innovation.umn.edu/developmental-cognition-and-neuroimaging-lab/" target="_blank" style="font-style: italic; color:DarkBlue;">the dcanlab website</a> for any general questions.
+<br>
+<br>
+<br>
+<hr>
+
+<!--
+<br><br>
+Robert J.M. Hermosillo, MS., PhD
+<br>
+Postdoctoral Associate
+<br>
+Department of Pediatrics
+<br><br>
+Masonic Institute for the Developing Brain
+<br>
+University of Minnesota
+<br>
+Pronouns: He/His
+  -->
+  
+<span style="display:block; text-align:center; font-style:italic; font-size:12px;">
+
+&copy; Copyright 2020-2021 : Robert Hermosillo, Jim Fair
+<br><u>Copyright & License Notice</u>
+</span>
+<span style="font-style:italic; font-size:12px;">
+The MIDB atlas images and associated files are copyrighted by the Regents of the University of Minnesota. It can be freely used for educational and research purposes by non-profit institutions and US government agencies only. Other organizations are allowed to use The MIDB atlas only and will require prior approval. The images and software may not be sold, reproduced, or redistributed without prior written approval. 
+<br>
+As unestablished research software, these files are provided on an "as is'' basis without warranty of any kind, either expressed or implied. The downloading, or usage of any part of this software constitutes an implicit agreement to these terms. These terms and conditions are subject to change at any time without prior notice.
+</span>
+
+<br>
+<br>
+<hr class="footer">
+<p class="aligncenter">
+
+<span class="aligncenter" style="font-style:italic; font-size:12px;" ondblclick="toggleLogging()">Website design by Jim Fair
+</span>
+
+
+
+</div>
+<!-- end the 'Contact Us' div -->
+
+<!-- begin the admin div -->
+<div id="div_admin" class="tab contentResources" style="display:none; text-align: center;">
+
+<ul class="studyMenu">
+  <li class="studyMenu"><a href="javascript:;" id="a_addStudy" onclick="handleStudyMenuClicked(this)">Add Study</a></li>
+  <li class="studyMenu"><a href="javascript:;" id="a_removeStudy" onclick="handleStudyMenuClicked(this)">Remove Study</a></li>
+  <li class="studyMenu"><a href="javascript:;" id="a_updateStudy" onclick="handleStudyMenuClicked(this)">Update Study</a></li>
+  <li class="studyMenu"><a href="javascript:;" id="a_databaseAccess" onclick="handleStudyMenuClicked(this)">Database Access</a></li>
+  <li class="studyMenu"><a href="javascript:;" id="a_downloadSamples" onclick="handleStudyMenuClicked(this)">Download Documentation/Samples</a></li>
+  <li class="studyMenu"><a href="javascript:;" id="a_maps" onclick="handleStudyMenuClicked(this)">View/Update Maps</a></li>
+  
+  
+</ul>
+
+<div id="div_addStudy" style="display:none;">
+<!--
+<h3 style="text-align: center;"><u>Admin Study Tasks</u></h3>
+ -->
+ 
+<br><br>
+
+
+<table class="admin" id="adminTable">
+ <thead class="admin">
+ <tr class="admin">
+ <th class="admin" colspan="2">ADD A STUDY</th>
+ </tr>
+ </thead>
+ <tr class="admin">
+ <td class="admin">Displayed Study Name</td>
+ <td class="admin"><input class="admin" type="text" onblur="updateStudyFolderName(this)" id="input_studyDisplayName" size="25" placeholder="e.g.  Name - Template Matching"></td>
+ </tr>
+  <tr class="admin">
+ <td class="admin">Study Folder Name</td>
+ <td class="admin"><input class="admin" type="text" id="input_studyFolderName" size="25" readonly style="background-color: lightgrey;"></td>
+ </tr>
+ <!--
+ <tr class="admin">
+  <td class="admin">Study Folder Name</td>
+ <td class="admin"><input class="admin" type="text" id="studyFolderName" size="25"></td>
+ </tr>
+ -->
+ <tr class="admin">
+  <td class="admin">Available Data Type</td>
+ <td class="admin"><select class="admin" id="select_dataType" onchange="validateDroppedFiles(this)">
+      <option value="unselected" selected>choose available data types</option>
+      <option value="surface">surface</option>
+      <option value="volume">volume</option>
+      <option value="surface_volume">surface and volume</option>
+      </select></td>
+ </tr>
+ <tr class="admin">
+ <td colspan="2" class="header">Enter Available Networks</td>
+ </tr>
+ <tr class="admin networkDisplayNameRow">
+ <td class="admin">Network Display Name</td>
+ <td class="admin" id="td_selectNetworkType"><select class="admin select_networkType" id="select_networkType">
+      <option value="unselected">choose available network type</option>
+      <option value="Combined Networks">Combined Networks</option>
+      <option value="Integration Zone">Integration Zone</option>
+      <option value="Single Networks">Single Networks</option>
+      </select></td> </tr>
+</table>
+
+<p style="text-align:center">
+<br>
+<button id="button_addTableRow"  class="downloader"  onclick="addTableRow('adminTable')" style="margin-right:10px;"><img alt="" src="/NetworkProbabilityDownloader/images/add_network_entry_brown.png"></img></button>
+
+<button id="button_deleteTableRow"  class="downloader"  onclick="deleteTableRow('adminTable')"><img alt="" src="/NetworkProbabilityDownloader/images/remove_network_entry_brown.png"></img></button>
+<br>
+<button id="button_createStudy"  class="downloader"  onclick="preProcessCreateStudyEntry(this)"><img alt="" src="/NetworkProbabilityDownloader/images/submit_study_creation_brown.png"></img></button>
+
+		<div id="div_uploadProgress" style="display:none;">
+				<progress id="progress_upload" class="hide-me"></progress>
+				<h6 class="uploadHeader" id="header_progress" style="color: green;"><span id="span_progress_0">Uploading Files...</span><span id="span_progress_1">Uploading Files...</span></h6>
+			</div>
+			
+		<div id="div_unzipProgress" style="display: none;text-align: center;">
+		    <figure>
+		    	<img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+		    	<figcaption class="ziplist" style="color: green; font-weight: 500;">Unzipping Files On Server<br>Please Wait<br>(this may take a few minutes)</figcaption>
+		    </figure>
+		
+		</div>
+
+<form>
+  <div id="div_dropZone" style="text-align:center;">
+  <label class="dropZoneHeader" style="font-weight:600; font-size: 18px;">Drag/Drop Files Here</label>
+  <span style="font-size:14px; font-weight:500;">(folders.txt and summary.txt, surface.zip and/or volume.zip)</span>
+  <ul id="ul_zipList" style="z-index: 10;">
+      <!--
+      <li class="zipList">
+              <figure class="zipFigure"><img src="/NetworkProbabilityDownloader/images/zip.png" height="75" width="75">
+                  <figcaption class="zipList">surface.zip</figcaption>
+              </figure>
+      </li>
+        -->
+  </ul>
+  </div>
+</form>
+
+</div> <!-- end div_addStudy -->
+
+<div id="div_removeStudy" style="text-align:center; display:none">
+<br><br>
+<table class="admin" id="removeStudyTable">
+ <thead class="admin">
+ <tr class="admin">
+ <th class="admin" colspan="2">REMOVE A STUDY</th>
+ </thead>
+ <tr class="admin">
+ <td class="admin">Select Study To Remove</td>
+ <td class="admin">
+<select id="select_menuId" class="admin" style="display:block; margin-bottom: 0;">
+</select>
+</td>
+</tr>
+</table>
+
+<br><br>
+<button id="button_remove_study"  class="downloader"  onclick="handleRemoveStudyConfirmation()"><img alt="" src="/NetworkProbabilityDownloader/images/submit_remove_study_brown.png"></img></button>
+
+</div> <!-- end div_removeStudy -->
+
+<div id="div_removeStudyProgress" style="display: none;text-align: center;">
+    <figure>
+    	<img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+    	<figcaption class="ziplist" style="color: green; font-weight: 500;">Removing study On Server<br>Please Wait</figcaption>
+    </figure>
+		
+</div> <!-- end div_removeStudyProgres -->
+
+<div id="div_updateStudy" style="text-align:center; display:none">
+<br><br>
+<img src="/NetworkProbabilityDownloader/images/under_construction.jpg" height="200" width="200">
+
+</div> <!-- end div_removeStudy -->
+
+
+<div id="div_databaseAccess" style="text-align:center; display:none">
+<br><br>
+<h6>View Web Traffic Data</h6>
+<br>
+
+<select name="databaseDropdown" id="databaseDropdown">
+  <option value="unselected">Select option</option>
+  <option value="downloadEmailAddresses">Download email_addresses.csv</option>
+  <option value="viewEmailAddresses">Display email addresses</option>
+  <option value="viewWebHits">Display web hits history</option>
+  <option value="viewFileDownloads">Display file downloads history</option>
+  <option value="viewAdminAccess">Display admin access history</option>  
+</select> 
+<br>
+
+<button id="button_downloadDB"  class="downloader"  onclick="downloadDatabaseData()"><img alt="" src="/NetworkProbabilityDownloader/images/button_submit_db.png"></img></button>
+<br>
+
+
+<div id="div_webHitsView" class="fixedHead" style="text-align:center; display:none">
+
+<table class="admin" id="webHitsTable">
+
+<thead class="fixedHead" style="position:sticky; top:0;">
+<tr class="admin">
+</tr>
+<tr class="admin">
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Hit Count</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Time Stamp</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">IP Address</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">City</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">State</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Country</th>
+</tr>
+</thead>
+<tbody class="admin">
+</tbody>
+<tfoot class="fixedHead" style="position:sticky; bottom:0;">
+<tr class="admin">
+<th class="adminFooter" colspan=6 id="th_webHitsFooter" style="position:sticky; top:0;box-shadow: inset 1px 1px #000, 0 1px #000;">This is the footer</th>
+</tr>
+</tfoot>
+</table>
+</div>
+
+
+
+<div id="div_emailAddressesView" class="fixedHead" style="text-align:center; display:none">
+
+<table class="admin" id="emailAddressesTable">
+
+<thead class="fixedHead" style="position:sticky; top:0;">
+<tr class="admin">
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">First Name</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Last Name</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Email Address</th>
+</tr>
+</thead>
+<tbody class="admin">
+</tbody>
+<tfoot class="fixedHead" style="position:sticky; bottom:0;">
+<tr class="admin">
+<th class="adminFooter" colspan=3 id="th_emailAddressesFooter" style="position:sticky; top:0;box-shadow: inset 1px 1px #000, 0 1px #000;">This is the footer</th>
+</tr>
+</tfoot>
+</table>
+</div>
+
+
+<div id="div_fileDownloadsView" class="fixedHead" style="text-align:center; display:none">
+
+<table class="admin" id="fileDownloadsTable">
+
+<thead class="fixedHead" style="position:sticky; top:0;">
+<tr class="admin">
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Time Stamp</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">File Name</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Study</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">IP Address</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Email Address</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">City</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">State</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Country</th>
+</tr>
+</thead>
+<tbody class="admin">
+</tbody>
+<tfoot class="fixedHead" style="position:sticky; bottom:0;">
+<tr class="admin">
+<th class="adminFooter" colspan=8 id="th_fileDownloadsFooter" style="position:sticky; top:0;box-shadow: inset 1px 1px #000, 0 1px #000;">This is the footer</th>
+</tr>
+</tfoot>
+</table>
+</div>
+
+
+
+<div id="div_adminAccessView" class="fixedHead" style="text-align:center; display:none">
+
+<table class="admin" id="adminAccessTable">
+
+<thead class="fixedHead" style="position:sticky; top:0;">
+
+<tr class="admin">
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Time Stamp</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">IP Address</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">IP Valid</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Action</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Password Valid</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">City</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">State</th>
+<th class="admin" style="box-shadow: inset 1px 1px #000, 0 1px #000;">Country</th>
+
+</tr>
+</thead>
+<tbody class="admin">
+</tbody>
+<tfoot class="fixedHead" style="position:sticky; bottom:0;">
+<tr class="admin">
+<th class="adminFooter" colspan=9 id="th_adminAccessFooter" style="position:sticky; top:0;box-shadow: inset 1px 1px #000, 0 1px #000;">This is the footer</th>
+</tr>
+</tfoot>
+</table>
+</div>
+
+
+<div id="db_progress" style="text-align:center; display:none;">
+		    <figure>
+		    	<img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+		    	<figcaption class="ziplist" style="color: green; font-weight: 500;">Processing Request</figcaption>
+		    </figure>
+
+</div>
+
+
+
+
+</div> <!-- end div_databaseAccess -->
+
+
+<div id="div_downloadSamples" style="text-align: center; display:none">
+<br>
+<h6 style="display:inline-block; text-align:center;">Download sample files and documentation <br>(How to add a study)</h6>
+<br><br>
+<button id="button_downloadSamples"  class="downloader"  onclick="downloadAdminFile('/midb/sample_files.zip')"><img alt="" src="/NetworkProbabilityDownloader/images/button_download_doc.png"></img></button>
+<div id="div_downloadSamplesProgress" style="text-align:center; display:none;">
+
+</div>
+
+<div id="div_downloadAdminFile" style="display:none;">
+<a id="anchor_downloadAdminFile" href="" style="display: none" download></a>
+</div>
+
+</div>
+
+
+<div id="div_maps" style="display:none;">
+
+<br>
+<h6>Work With Web Traffic Maps</h6>
+<br>
+
+<select name="mapsDropdown" id="mapsDropdown">
+  <option value="unselected">Select option</option>
+  <option value="viewWebHitsMap">View Web Hits Map</option>
+  <option value="resynchWebHits">Resynch Web Hits</option>
+  <option value="downloadWebHitsGeoLoc">Download web_hits_geoloc.csv</option>
+  <option value="updateWebHitsMapURL">Update Web Hits Map URL</option>
+  <option value="downloadCreateMapDoc">Download How To Create Map Doc</option>
+  
+</select> 
+<br>
+<br>
+
+<button id="button_maps"  class="downloader"  onclick="processMapsRequest()"><img alt="" src="/NetworkProbabilityDownloader/images/button_submit_db.png"></img></button>
+<br>
+
+<div id="div_map_progress" style="text-align:center; display:none;">
+		    <figure>
+		    	<img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+		    	<figcaption class="ziplist" style="color: green; font-weight: 500;">Processing Request</figcaption>
+		    </figure>
+
+</div>
+
+</div>
+
+</div> <!-- end div_admin -->
+
+<div id="div_mobileDownload" style="text-align:center; display: none;">
+<br>
+<h6 style="text-align:center;">Sorry, downloads not available for mobile devices</h6>
+</div>
+
+
+<div id="div_downloadWrapper" class="tab contentDownload" style="display: none;">
+
+ 
+ <div id="div_submitNotification" style="display:none;">
+<br>
+<br>
+<p style="text-align:center">
+<br><br>
+<span id="span_submitNotification" style="color:red;font-weight:bold;">Retrieving image data...</span>
+<br><br><br>
+    <img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+    <!--
+    <br><br>
+    <img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+    <br><br>
+    <img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+	  -->
+</p>
+</div> 
+
+
+<!-- begin the download div -->
+<div id="div_download" class="tab contentDownload" style="display:none;">
+
+ <!--
+ <div id="div_submitNotification" style="display:none;">
+<br>
+<br>
+<p style="text-align:center">
+<br><br>
+<span id="span_submitNotification" style="color:red;font-weight:bold;">Retrieving image data...</span>
+<br><br><br><br><br>
+    <img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+    <br><br>
+    <img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+    <br><br>
+    <img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+
+</p>
+</div>    
+  -->   
+     
+<div id="div_submenu" class="div_left" style="text-align:center;z-index:70;">
+   <fieldset>
+        <label for="data_mode" id="label_dataType" style="background: #3d85c6; color: white;"> Select data type:</label>&nbsp;
+        <input type="radio" name="data_mode" id="radio_surface" value="Surface Data" checked onclick="processDataModeChoice(this)"><label id="label_surface" style="background: #FFC300;">Surface Data</label></input>
+        &nbsp;
+        <input type="radio" name="data_mode" id="radio_volume" value="Volume Data"  onclick="processDataModeChoice(this)">
+        <label id="label_volume" style="background: #f0efee;">Volume Data</label></input>
+        <br><br>  <!-- #F0EAD6; -->
+    </fieldset>
+
+
+<ul class="menu" id="ul_atlasMenu" style="position:relative; z-index:99;"> <!-- STUB BEGIN -->
+
+  <li class="menu" style="width: 200px;"><a class="menu" onmouseout="mouseOut(this)" onmouseover="showSubmenuLevel_1()">Select Study/Atlas</a> 
+
+      <ul class="submenu" id="ul_submenu">  <!-- STUB END -->
+        
+      </ul>  <!-- STUB BEGIN -->
+    </li> 
+</ul>   <!-- STUB END -->
+  
+ 
+<br>
+</div>
+
+<div id="div_networkMapImage" class="div_right">
+   <h6 class="centerROI_imageHeading" id="roi_image_header">Network Probabilistic Map <br>(Dataset Release V.1.0)</h6>
+   <img id="img_networkMap" class="centerImage" src="/NetworkProbabilityDownloader/images/DCAN.png" height="225" width="300" style="border:2px solid #555; max-width:100%;">
+   <br>
+   <p style="text-align:center">&nbsp; &nbsp; &nbsp;<button id="button_downloadNetworkDscalar"  class="downloader_dscalar"  onclick="preprocessDownloadFile(2)"><span>download dscalar.nii for<br>selected atlas/network</span><img alt="" src="/NetworkProbabilityDownloader/images/btn_dload_dscalar.png"></img></button></p>
+   
+</div>
+
+<div class="div_right" id="div_dummyNetworkMap" style="display:none; margin-top: 20px;">
+<br>
+<h6 class="centerROI_imageHeading" id="dcanFillerHeader">Developmental Cognition And<br>Neuroimaging Lab</h6>
+<img id="img_dcanFiller" class="centerImage" src="/NetworkProbabilityDownloader/images/DCAN.png" height="120" width="120" style="border:2px solid #555; max-width:100%; height:auto;" ondblclick="toggleDownloadLock()">
+<br>
+</div>
+
+<div id="div_selectNeuralNetworkName" class="div_left" style="display:none;position:relative;">
+<br>
+<form style="margin: 0;" >
+<p style="text-align:center">
+<label><strong>Choose network: </strong></label>
+<select id="select_neuralNetworkName" onchange="preProcessGetThresholdImages(true)" class="select_neuralNetwork" style="margin-bottom: 0;">
+</select>
+
+</form>
+
+</div>
+
+<!--
+<div id="div_submitNotification" style="display:none;">
+<br>
+<p style="text-align:center">
+<span id="span_submitNotification" style="color:red;font-weight:bold;">Retrieving image data...</span>
+<br>
+    <img alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100">
+</p>
+</div>
+  -->
+
+<div id="div_getThresholdImagesButton" style="display:none">
+<p style="text-align:center">
+<button id="getThresholdImagesButton"  class="downloader"  onclick="preProcessGetThresholdImages()"><img alt="" src="/NetworkProbabilityDownloader/images/button_submit.png"></img></button></p>
+</div>
+
+<div id="div_thresholdImage" class="div_left" style="display:block;position:relative;">
+   <p style="text-align:center">
+   <!--
+   <hr style="width:70%;text-align:center;margin:auto;height:2px;border-width:0;color:gray;background-color:gray">
+     -->
+   <br>
+   <!--  
+   <img id="img_threshold" class="centerImage" src="" height="900" width="358" style="border:2px solid #555">
+   -->
+   <h6 class="centerROI_imageHeading" id="roi_image_slides_header" style="text-align:center;">ABCD - TEMPLATE MATCHNG PROBABILISTIC ROIs (Dataset Release V.1.0)</h6>
+   <img id="img_threshold" class="centerImage" src="" height="1200" width="658" style="border:2px solid #555; max-width:100%; height:auto;">   
+  
+  <!-- jjf_now -->
+   <!--
+   <br>
+   <br>
+   <div id="div_atlasSummary" style="margin: auto:; padding-left:150px;">
+   <h4 id="h4_instructions" style="margin: auto; text-decoration: underline">Probabilistic Atlas Summary</h4>
+   <ul class="ul_atlasSummary">
+	  <li class="li_atlasSummary"> Data Source: ABCD Study  
+	  <li class="li_atlasSummary"> Methodology: Template Matching
+	  <li class="li_atlasSummary"> Version: 1.0
+	  <li class="li_atlasSummary"> Number of Subjects: 5000
+	  <li class="li_atlasSummary"> Age of Subjects: 9-10y
+	  <li class="li_atlasSummary"> Funding:
+	  <li class="li_atlasSummary"> Citation: Hermosillo et al
+	  <li class="li_atlasSummary"> Acknowledgements: John Doe
+   </ul>
+   </div>
+   -->
+   
+   <div id="thresholdImageWrapper" class="imageWrapper"></div>
+   
+  </div>  
+
+<div id="div_thresholdSlider" class="div_right" style="text-align: center">
+   <p style="text-align:center">
+   <!--
+   <fieldset>
+        <label for="data_mode"> Select data type:  &nbsp; </label>
+        <input type="radio" name="data_mode" id="radio_surface" value="Surface Data" checked>Surface Data</input>
+        &nbsp;
+        <input type="radio" name="data_mode" id="radio_volume" value="Volume Data">Volume Data</input>
+    </fieldset>
+     -->
+   <br>
+   
+   
+   <label class="tip_selectThreshold"><span style="font-weight: normal;color:black;">You can change the value by moving the slider with the cursor keys (<,>) or the mouse. Alternatively, you can enter a new value in the 'Selected Threshold Value' box</span>
+          <img src="/NetworkProbabilityDownloader/images/help.png" alt="help" width="25" height="25"></label>
+   <p style="text-align:center">
+   <label class="selectThreshold" style="font-weight: bold;">Select Threshold</label>
+   <br>
+   <span id="span_leftRangeLabel">0%&nbsp;</span><input type="range" min="0" max="10" value="0" class="slider" id="range_threshold" step="1" list="datalist_rangeSliderTicks" style="display:inline;" oninput="sliderRefreshGate()"><span id="span_rightRangeLabel">&nbsp;10%</span>
+    <p style="text-align:center">Selected Threshold Value:
+   
+    <p>
+     <span class='number-wrapper'>
+    <input type="number" id="number_thresholdValue" style="text-align:center;" min="0.6" max="1.0" step="0.01" onchange="trackInputNumberChange()">
+    </span>
+    <p style="text-align:center">
+      <button id="button_downloadFile"  class="downloaderThreshold"  onclick="preprocessDownloadFile(0)"><img alt="" src="/NetworkProbabilityDownloader/images/btn_dload_dlabel_new.png"></img></button>
+      <button id="button_downloadAll" class="downloader" onclick="preprocessDownloadFile(1)"><img alt="" src="/NetworkProbabilityDownloader/images/btn_dload_all_new.png"></img></button>
+    </p>
+    
+    <br><br>
+    <p style="font-size:14px; font-style: italic;">
+ Note: The dlabel.nii files provided are in CIFTI format
+ <a href="https://www.humanconnectome.org/software/workbench-command" target="_blank" style="font-style: italic; color:DarkBlue;">
+ <br>(refer to humanconnectome.org)</a>
+    
+   
+<!--
+<datalist id="datalist_rangeSliderTicks">
+  <option value="0" label="0%"></option>
+  <option value="10"></option>
+  <option value="20"></option>
+  <option value="30"></option>
+  <option value="40"></option>
+  <option value="50" label="50%"></option>
+  <option value="60"></option>
+  <option value="70"></option>
+  <option value="80"></option>
+  <option value="90"></option>
+  <option value="100" label="100%"></option>
+</datalist>
+  -->
+</div>
+
+
+<div id="div_rightSpacer" class="div_right">
+</div>
+
+  
+<div id="div_downloadFile" style="display:none;">
+<a id="anchor_downloadFile" href="" style="display: none" download></a>
+</div>
+
+<div id="div_popUpErrorButton" style="display:none;text-align:center">
+<!--
+<br>
+<button id="button_copyStackTrace" class="copy" onclick="copyStackTrace()"><img alt="copy details" src="/NetworkProbabilityDownloader/images/button_copy-details.png"></img></button></div>
+-->
+</div>
+ <!-- The actual snackbar -->
+<div id="snackbar"></div>
+ 
+
+ <div id= "div_spacer" class="aligncenter" style="height:100;width:400;visibility:hidden;padding-top:100px;">
+ 
+ some text
+</div>
+
+<div id="div_atlasSummary"  style="padding-top:52px;">
+
+   <hr>
+  
+   <h4 id="h4_instructions" class="aligncenterX" style="text-decoration: underline;margin-left: 122px;">Probabilistic Atlas Summary</h4>
+  
+   <ul class="ul_atlasSummary" id="ul_atlasSummary">
+      <!--
+	  <li class="li_atlasSummary"> Data Source: ABCD Study  
+	  <li class="li_atlasSummary"> Methodology: Template Matching
+	  <li class="li_atlasSummary"> Version: 1.0
+	  <li class="li_atlasSummary"> Number of Subjects: 5000
+	  <li class="li_atlasSummary"> Age of Subjects: 9-10y
+	  <li class="li_atlasSummary"> Data upload date: 07/31/2021
+	  <li class="li_atlasSummary"> Citation: Hermosillo et al
+	    -->
+   </ul>
+   <br>
+   <!--
+   <span style="display:block; text-align:center; font-style:italic; font-size:16px;">
+	If using this resource for academic purposes please cite "to-be-determined publication link"
+	</span>
+   -->
+   </div>
+
+</div>    <!-- ends the div_download -->
+
+</div>  <!-- ends div_dowloadWrapper -->
+
+
+<div id="alertBox" >
+    <div class="message" id="alertBoxMessage"></div>
+    <br>
+    <button class="ok" id="button_alertOK">ok</button>
+</div>
+
+
+<div id="adminAlertBox" >
+    <div class="message" id="adminAlertBoxMessage"></div>
+    <br>
+    <button class="ok" id="button_adminAlertOK" onclick="dismissAdminAlert()">ok</button>
+</div>
+
+<div id="updatesAlertBox" >
+    <div class="message" id="updateAlertBoxMessage">
+    <h6 class="updatesAlert">WEBSITE UPDATE
+        <hr class="updates">
+    </h6>
+    <span id="updateAlertSpan"></span>
+    </div>
+    <br>
+    <button class="ok" id="button_updatesAlertOK" style="color:black" onclick="dismissUpdatesAlert()">ok</button>
+</div>
+
+<div id="div_fileDownloadDialogue">
+    <div class="message" id="downloadDialogueMessage"></div>
+    <br>
+     I have already subscribed or I prefer to download without subscribing: &nbsp;<input type="checkbox" id="checkbox_email" onclick="toggleEmailInfo(this)">
+     <br><br>
+          <span id="span_invalidEmailAddress" style="visibility:hidden; color:red;background-color:lightgrey;"></span>
+     <br>
+     <div id="div_emailInfo">
+     <label for="fname">First name:</label>
+     <input type="text" id="fname" name="fname" size=28 style="color:black; font-size:18px;" onkeypress="clearEmailAddressErrors()"> 
+     <label for="lname">Last name:</label>
+     <input type="text" id="lname" name="lname" size=28 style="color:black; font-size:18px;" onkeypress="clearEmailAddressErrors()"> 
+     <label for="email">email:</label>
+     <input type="text" id="email" name="email" size=28 style="color:black; font-size:18px;" onkeypress="clearEmailAddressErrors()"> 
+     <br><br>
+     </div>
+    <button class="ok" id="button_downloadFileSubmit" onclick="downloadFile()" style="color:black;">submit</button>
+    <button class="ok" id="button_downloadFileCancel" onclick="cancelDownloadDialogue()" style="color:black;">cancel</button>    
+</div>
+
+
+<div id="div_updateURLDialogue" style="display:none;">
+
+<span id="span_url">Enter new url:</span>
+<br>
+<input type="text" id="newURLEntry" name="newURLEntry" size=64 style="color:black; font-size:16px;"> 
+<br><br>
+<button class="ok" id="button_downloadFileSubmit" onclick="preProcessUpdateMapURL()" style="color:black;">submit</button>
+<button class="ok" id="button_downloadFileCancel" onclick="cancelUpdateURL()" style="color:black;">cancel</button>    
+</div>
+
+
+<div id="midb_footer">
+<hr>
+
+<p class="aligncenter">
+
+<span class="aligncenter" style="font-style:italic; font-size:14px; text-align:center;">Follow us on Twitter:</span><br>
+<a href="https://twitter.com/DCANlabs?ref_src=twsrc%5Etfw" target="_blank" class="twitter-follow-button" data-show-count="false">Follow @DCANlabs</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<br>
+
+<!--
+<a href="https://groups.google.com/d/forum/dcanlab" style="color:#1da1f2;">Mailing list</a>
+-->
+<a href="https://groups.google.com/g/midb-atlas-forum" target="_blank" style="color:#1da1f2;">Mailing list</a>
+<hr>
+<!-- <p class="aligncenter"> -->
+
+<!--
+<span style="display:block; text-align:center; font-style:italic; font-size:12px;">
+
+&copy; Copyright 2020-2021 : Robert Hermosillo, Jim Fair
+<br><u>Copyright & License Notice</u>
+</span>
+<span style="font-style:italic; font-size:12px;">
+The MIDB atlas images and associated files are copyrighted by the Regents of the University of Minnesota. It can be freely used for educational and research purposes by non-profit institutions and US government agencies only. Other organizations are allowed to use The MIDB atlas only and will require prior approval. The images and software may not be sold, reproduced, or redistributed without prior written approval. 
+<br>
+As unestablished research software, these files are provided on an "as is'' basis without warranty of any kind, either expressed or implied. The downloading, or usage of any part of this software constitutes an implicit agreement to these terms. These terms and conditions are subject to change at any time without prior notice.
+</span>
+
+<br>
+<hr class="footer">
+<p class="aligncenter">
+
+<span class="aligncenter" style="font-style:italic; font-size:12px;" ondblclick="toggleLogging()">Website design by Jim Fair
+</span>
+
+  -->
+
+</div>
+
+<div id="div_promptAdminPasswordBox" style="display:none;">
+<div class="message" id="adminPasswordMessage"></div>
+<table id="table_adminInfoPrompt">
+<tr>
+
+<td colspan="2" id="td_adminPasswordPrompt" class="td_adminPasswordPrompt">
+<input type="text" name="adminPassword" id="pwd_adminPasswordPrompt" class="input_adminPassword password_mask" size=20 onkeyup="maskInput(this)" onkeypress="handleAdminPasswordEnterKey(event)" >
+</td>
+</tr>
+</table>
+<button class="ok" id="adminOKButton" onclick="handleAdminLogin()">ok</button>
+</div>
+
+<div id="div_confirm" style="display:none;">
+<div class="message" id="removeStudyConfirmMessage"></div>
+<br>
+<button class="ok" id="adminOKButton" onclick="handleRemoveStudyRequest(true)">continue</button>
+<button class="ok" id="adminOKButton" onclick="handleRemoveStudyRequest(false)">cancel</button>
+
+
+</div>
+
+<div id="errorBox"  style="display:none;">
+    <div class="message" id="errorBoxMessage1"></div>
+    <div class="message" id="errorBoxMessage2"></div>
+    <button class="ok" id="button_errorOK">Show Details</button>
+</div>
+
+<div id="div_errorStackTrace" class="aligncenter" style="display:none;">
+
+<h6 id="stackTraceHeader"></h6>
+
+
+<textarea id="errorStackTraceTextArea" name="name_errorStackTraceTextArea" rows="10" cols="150"></textarea>
+<br>
+<button id="button_copyStackTrace" class="copy" onclick="copyStackTrace()"><img alt="copy details" src="/NetworkProbabilityDownloader/images/button_copy-details.png"></img></button>
+</div>
+
+</div> <!-- end page wrapper div -->
+</body>
+</html>

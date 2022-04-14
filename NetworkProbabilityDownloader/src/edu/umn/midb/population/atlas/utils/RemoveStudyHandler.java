@@ -87,9 +87,7 @@ public class RemoveStudyHandler {
 		catch(Exception e) {
 			LOGGER.error(e.getMessage(), e);
 		}
-		
 		LOGGER.trace(loggerId + "cacheExistingMenuEntries()...exit.");
-	
 	}
 
 		

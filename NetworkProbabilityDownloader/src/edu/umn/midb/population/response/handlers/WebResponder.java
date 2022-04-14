@@ -20,14 +20,22 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 import edu.umn.midb.population.atlas.base.ApplicationContext;
+import edu.umn.midb.population.atlas.data.access.AdminAccessRecord;
+import edu.umn.midb.population.atlas.data.access.DBManager;
+import edu.umn.midb.population.atlas.data.access.EmailAddressRecord;
+import edu.umn.midb.population.atlas.data.access.FileDownloadRecord;
+import edu.umn.midb.population.atlas.data.access.WebHitRecord;
 import edu.umn.midb.population.atlas.menu.Menu;
 import edu.umn.midb.population.atlas.menu.MenuEntry;
 import edu.umn.midb.population.atlas.menu.SingleNetworkFoldersConfig;
 import edu.umn.midb.population.atlas.menu.StudySummary;
 import edu.umn.midb.population.atlas.security.TokenManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
+import edu.umn.midb.population.atlas.tasks.AdminAccessEntry;
 import edu.umn.midb.population.atlas.utils.AtlasDataCacheManager;
+import edu.umn.midb.population.atlas.utils.CreateStudyHandler;
 import edu.umn.midb.population.atlas.utils.NetworkMapData;
+import edu.umn.midb.population.atlas.utils.SMSNotifier;
 import edu.umn.midb.population.atlas.utils.Utils;
 import logs.ThreadLocalLogTracker;
 
@@ -62,10 +70,11 @@ public class WebResponder {
 		String responseString = "Study successfully created:<br>";
 		responseString += studyName;
 		responseString += "<br>Please refresh page<br>to view new menu.";
-			
-		if(appContext.createStudyHasError() || appContext.isFolderConfigurationError()
-		   || appContext.isZipFileUnpackError() || appContext.isZipFormatError()) {
-				responseString = appContext.getCreateStudyErrorMessage();
+		CreateStudyHandler csHandler = appContext.getCreateStudyHandler();	
+		
+		
+		if(csHandler.createStudyHasError()) {
+				responseString = csHandler.getCreateStudyErrorMessage();
 		}
 
 		try {
@@ -127,6 +136,7 @@ public class WebResponder {
 		ArrayList<String> configLines = AtlasDataCacheManager.getInstance().getNeuralNetworkFolderNamesConfig();
 		String responseString = buildNetworkFoldersConfigResponse(configLines);
 	
+		/*
 		if(responseString.endsWith("\n")) {
 			int endIndex = responseString.lastIndexOf("\n");
 			responseString = responseString.substring(0, endIndex);
@@ -136,7 +146,8 @@ public class WebResponder {
 			int endIndex = responseString.lastIndexOf("&&");
 			responseString = responseString.substring(0, endIndex);
 		}
-
+	    */
+		
 		try {
 		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
 			  response.getWriter().println(responseString);
@@ -334,6 +345,51 @@ public class WebResponder {
 		return summaryJSON;
 	}
 	
+	protected static String buildFileDownloadsResponse(ArrayList<FileDownloadRecord> fileDownloads) {
+		 String loggerId = ThreadLocalLogTracker.get();
+		 LOGGER.trace(loggerId + "buildFileDownloadsResponse()...invoked.");
+		 
+		 Gson gson = new Gson();
+		 String fileDownloadsJSON = gson.toJson(fileDownloads);
+		 LOGGER.trace(loggerId + "buildFileDownloadsResponse()...exit.");
+		 
+		 return fileDownloadsJSON;
+	}
+	
+	protected static String buildAdminAccessRecordsResponse(ArrayList<AdminAccessRecord> aaRecords) {
+		 String loggerId = ThreadLocalLogTracker.get();
+		 LOGGER.trace(loggerId + "buildAdminAccessRecordsResponse()...invoked.");
+		 
+		 Gson gson = new Gson();
+		 String aaRecordsJSON = gson.toJson(aaRecords);
+		 LOGGER.trace(loggerId + "buildAdminAccessRecordsResponse()...exit.");
+		 
+		 return aaRecordsJSON;
+	}
+	
+	
+	protected static String buildEmailAddressesResponse(ArrayList<EmailAddressRecord> emailAddresses) {
+		 String loggerId = ThreadLocalLogTracker.get();
+		 LOGGER.trace(loggerId + "buildEmailAddressesResponse()...invoked.");
+		 
+		 Gson gson = new Gson();
+		 String emailAddressesJSON = gson.toJson(emailAddresses);
+		 LOGGER.trace(loggerId + "buildEmailAddressesResponse()...exit.");
+		 
+		 return emailAddressesJSON;
+	}
+	
+	protected static String buildWebHitsResponse(ArrayList<WebHitRecord> webHits) {
+		 String loggerId = ThreadLocalLogTracker.get();
+		 LOGGER.trace(loggerId + "buildWebHitsResponse()...invoked.");
+		 
+		 Gson gson = new Gson();
+		 String webHitsJSON = gson.toJson(webHits);
+		 LOGGER.trace(loggerId + "buildWebHitsResponse()...exit.");
+		 
+		 return webHitsJSON;
+	}
+	
 	/**
 	 * Sends the .png files associated with the different probabilistic threhsolds for a selected
 	 * neural network.  The files are sent as a list of base64 encoded strings.
@@ -341,7 +397,7 @@ public class WebResponder {
 	 * @param response The current HttpServletResponse object
 	 * @param filePaths ArrayList of all the .png file names representing the different probabilistic thresholds
 	 * @param imageBase64Strings ArrayList of the .png files in base64 encoded format
-	 * @param neuralNetworkNames ArrayList of the neural network names
+	 * @param networkMapData {@link NetworkMapData}
 	 */
 	public static void sendThresholdImagesResponse(HttpServletResponse response, ArrayList<String> filePaths, ArrayList<String> imageBase64Strings,
 			                                       NetworkMapData networkMapData) {
@@ -377,7 +433,6 @@ public class WebResponder {
 		}
 						
 		try {
-	      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
 		  response.getWriter().println(responseString);
 	      Thread.sleep(1000);
 		}
@@ -417,13 +472,82 @@ public class WebResponder {
 		}
 	}
 	
-	public static void sendAdminValidationResponse(HttpServletResponse response, ApplicationContext appContext, String token, String password, String ipAddress) {
+	public static void sendAdminAccessDeniedResponse(HttpServletResponse response, ApplicationContext appContext, boolean isFileDownloadRequest) {
+		String loggerId = ThreadLocalLogTracker.get();
+		int actionCount = appContext.getActionCount();
+		LOGGER.trace(loggerId + "sendAdminAccessDeniedResponse()...invoked, actionCount=" + actionCount);
+		LOGGER.trace(loggerId + appContext.getActionList());
 		
+		String responseString = null;
+		AdminAccessEntry aaEntry = null;
+		
+		if(isFileDownloadRequest) {
+			String headerKey = "Content-Disposition";
+            String headerValue = String.format("attachment; filename=\"%s\"", "Access_Denied.txt");
+            response.setHeader(headerKey, headerValue);
+		}
+		
+		if(appContext.getActionCount()==1) {
+			//if this is the first action, the session has timed out because the
+			//user has signed in to the admin console, but left the screen idle for
+			//more than a half hour
+			responseString = "Access denied: Session has expired.<br> Please refresh browser page.";
+		}
+		else {
+			aaEntry = new AdminAccessEntry();
+			responseString = "Access denied.";
+			boolean invalidIP = appContext.getTokenManager().isInvalidIP();
+			if(invalidIP) {
+				aaEntry.setValidIP(false);
+			}
+			
+			aaEntry.setAction(appContext.getCurrentAction());
+			aaEntry.setRequestorIPAddress(appContext.getRemoteAddress());
+			aaEntry.setFormattedTimeStamp(appContext.getCurrentActionFormattedTimestamp());
+			aaEntry.setAppContext(appContext);
+			aaEntry.setRequest(appContext.getCurrentReguest());
+			aaEntry.setResponse(response);	
+			TokenManager tokenMgr = appContext.getTokenManager();
+			if(!tokenMgr.isValidIP()) {
+				aaEntry.setValidIP(false);
+			}
+			if(!tokenMgr.isValidPassword()) {
+				aaEntry.setValidPassword(false);
+			}
+			
+			if(!aaEntry.isValidIP()) {
+				String message = "MIDB_APP::::HACK_ATTEMPT:::" + NetworkProbabilityDownloader.getDomainName();
+				message += "::::IP_ADDRESS=" + aaEntry.getRequestorIPAddress();
+				SMSNotifier.sendNotification(message, "DBManager");
+			}
+			
+			DBManager.getInstance().insertAdminAccessRecord(aaEntry, appContext);
+		}
+		
+
+		try {
+			  response.getWriter().println(responseString);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		
+	
+	}
+	
+	public static void sendAdminValidationResponse(HttpServletResponse response, ApplicationContext appContext, String token, String password, String ipAddress) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendAdminValidationResponse()...invoked.");
+
 		boolean isValid = false;
+		boolean isValidIP = true;
 		boolean isExpired = false;
 		boolean isAccessDenied = false;
 		TokenManager tokenManager = null;
 		tokenManager = appContext.getTokenManager();
+		
+		String currentAction = appContext.getCurrentAction();
 		
 		if(tokenManager != null) {
 			isValid = tokenManager.validateToken(token, password, ipAddress);
@@ -433,14 +557,35 @@ public class WebResponder {
 				}
 				if(tokenManager.isAccessDenied()) {
 					isAccessDenied = true;
+					if(tokenManager.isInvalidIP()) {
+						isValidIP = false;
+
+					}
 				}
 			}
+			if(!isExpired) {
+				AdminAccessEntry aaEntry = new AdminAccessEntry();
+				aaEntry.setAction(appContext.getCurrentAction());
+				aaEntry.setRequestorIPAddress(appContext.getRemoteAddress());
+				aaEntry.setFormattedTimeStamp(appContext.getCurrentActionFormattedTimestamp());
+				aaEntry.setAppContext(appContext);
+				aaEntry.setRequest(appContext.getCurrentReguest());
+				aaEntry.setResponse(response);
+				TokenManager tokenMgr = appContext.getTokenManager();
+				boolean validPassword = tokenMgr.isValidPassword();
+				if(!isValidIP) {
+					aaEntry.setValidIP(false);
+				}
+				if(!validPassword) {
+					aaEntry.setValidPassword(false);
+				}
+				DBManager.getInstance().insertAdminAccessRecord(aaEntry, appContext);
+			}
+
 		}
-		appContext.setAdminActionValidated(isValid);
-		//for test
-		//isValid = false;
-		//isAccessDenied = true;
 		
+		appContext.setAdminActionValidated(isValid);
+
 		String responseString = (isValid) ? "true":"false";
 		if(isExpired) {
 			responseString += ":expired";
@@ -458,7 +603,7 @@ public class WebResponder {
 	    catch(Exception e) {
 	    	  LOGGER.error(e.getMessage(), e);
 	     }
-		
+		LOGGER.trace(loggerId + "sendAdminValidationResponse()...exit.");
 	}
 	
 	public static void sendAdminValidationStatus(ApplicationContext appContext, HttpServletResponse response) {
@@ -498,8 +643,49 @@ public class WebResponder {
 	    catch(Exception e) {
 	    	  LOGGER.error(e.getMessage(), e);
 	     }
-		 
+		LOGGER.trace(loggerId + "sendRemoveStudyResponse()...exit.");
 	}
+	
+	public static void sendResynchWebHitsResponse(HttpServletResponse response, String responseString) {
+		
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendResynchWebHitsResponse()...invoked.");
+
+		try {
+			  response.getWriter().println(responseString);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		LOGGER.trace(loggerId + "sendResynchWebHitsResponse()...exit.");
+	}
+	
+	public static void sendUpdateMapURLResponse(HttpServletResponse response, int updatedRowCount, String targetMap) {
+		
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendUpdateMapURLResponse()...invoked");
+
+		String responseString = null;
+
+		if(updatedRowCount==1) {
+			responseString = "Successfully updated " + targetMap + " url";
+		}
+		else {
+			responseString = "Unable to update " + targetMap + " url";
+		}
+		
+		try {
+			  response.getWriter().println(responseString);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		
+		LOGGER.trace(loggerId + "sendUpdateMapURLResponse()...exit");
+	}
+
 	
 	public static void sendUploadFileResponse(HttpServletResponse response, String fileName) {
 
@@ -517,4 +703,79 @@ public class WebResponder {
 
 		LOGGER.trace(loggerId + "sendUploadFileResponse()...exit.");
 	}
+	
+	public static void sendFileDownloadRecordsResponse(HttpServletResponse response, ApplicationContext appContext, ArrayList<FileDownloadRecord> fileDownloads) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendFileDownloadRecordsResponse()...invoked");
+		String jsonResponse = buildFileDownloadsResponse(fileDownloads);
+
+		try {
+			  response.getWriter().println(jsonResponse);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		LOGGER.trace(loggerId + "sendFileDownloadRecordsResponse()...exit");
+	}
+	
+	public static void sendAdminAccessRecordsResponse(HttpServletResponse response, ApplicationContext appContext, ArrayList<AdminAccessRecord> aaRecords) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendEmailAddressesResponse()...invoked");
+		String jsonResponse = buildAdminAccessRecordsResponse(aaRecords);
+
+		try {
+			  response.getWriter().println(jsonResponse);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		LOGGER.trace(loggerId + "sendEmailAddressesResponse()...exit");
+	}
+	
+	public static void sendEmailAddressesResponse(HttpServletResponse response, ApplicationContext appContext, ArrayList<EmailAddressRecord> emailAddresses) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendEmailAddressesResponse()...invoked");
+		String jsonResponse = buildEmailAddressesResponse(emailAddresses);
+
+		try {
+			  response.getWriter().println(jsonResponse);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		LOGGER.trace(loggerId + "sendEmailAddressesResponse()...exit");
+	}
+	
+	public static void sendWebHitsResponse(HttpServletResponse response, ApplicationContext appContext, ArrayList<WebHitRecord> webHits) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendWebHitsResponse()...invoked");
+		String jsonResponse = buildWebHitsResponse(webHits);
+
+		try {
+			  response.getWriter().println(jsonResponse);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		LOGGER.trace(loggerId + "sendWebHitsResponse()...exit");
+	}
+	
+	public static void sendWebHitsMapURLResponse(HttpServletResponse response, ApplicationContext appContext, String mapURL) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendWebHitsMapURLResponse()...invoked");
+		
+		try {
+			  response.getWriter().println(mapURL);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		LOGGER.trace(loggerId + "sendWebHitsMapURLResponse()...exit");		
+	}
+
 }

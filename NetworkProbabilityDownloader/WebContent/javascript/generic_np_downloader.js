@@ -1,4 +1,4 @@
-		 var version_buildString = "Version beta_29.0  1211_B_2021:00:00__war=NPDownloader_1211_B.war"; 
+		 var version_buildString = BUILD_DATE =  "Version beta_82.0  0414_A_2022:00:00__war=NPDownloader_0414_A_2022.war"; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;
@@ -30,12 +30,14 @@
          var DELIMITER_NETWORK_MAP_DATA = "$@$";
          var download_target_map_nii = null;
          var downloadZIP_path = null;
-         var downloadDisabled = true;
+         var downloadDisabled = false;
          var downloadDisabledMessage = "Downloads disabled pending peer review and paper acceptance. " +
-                                       "Inidvualized maps are avaialble via the " +
-                                       "<a href=\"https://collection3165.readthedocs.io\" target=\"_blank\"" +
-                                       " style=\"font-style: italic; color:yellow;\">ABCC (https://collection3165.readthedocs.io)</a>" +
+                                       "Individualized maps are available via the " +
+                                       "<a href=\"https://collection3165.readthedocs.io\" class=\"downloadMessage\" target=\"_blank\"" +
+                                       " style=\"font-style: italic; text-decoration: none; border-bottom:1px solid white; \">ABCC (https://collection3165.readthedocs.io)</a>" +
                                        "<br>If you'd like to utilize the atlases prior to then please email hermosir@umn.edu";
+         var downloadDialogueMessage = "Please enter your name and email address.  This information will be used only to keep you " +
+                                       "informed of changes and updates to this website.";
          var loggingEnabled = true;
          var oldConsoleLog = null;
          var selectElement = null;
@@ -80,6 +82,7 @@
         	 //alert("startup");
         	 //console.log = function() {};
         	 console.log(version_buildString);
+        	 number_RangeThresholdValue = document.getElementById("number_thresholdValue");
         	 //toggleLogging();
         	 var div_download = document.getElementById("div_download");
         	 div_download.style.display = "none";
@@ -91,6 +94,7 @@
         	 sessionStorage.clear();
         	 setAjaxStyle();
         	 resetSelectedTab();
+        	 //doUpdatesAlert("File downloads are enabled now.");
         	 getMenuData();
         	 //getNetworkFolderNamesConfig();
         	 console.log("startup()...end");
@@ -98,6 +102,7 @@
          
          function continueStartup() {
         	 console.log("continueStartup()...invoked");
+        	 //number_RangeThresholdValue = document.getElementById("number_thresholdValue");
         	 startupMenu();
         	 loadAllDivNames();
         	 hideAllDivs();
@@ -108,7 +113,6 @@
         	 var anchor_ABCD_combined = document.getElementById("a_abcd_template_matching_combined_clusters");
         	 //alert("ready to auto click menu");
         	 menuClicked(anchor_ABCD_combined, true, true);
-        	 number_RangeThresholdValue = document.getElementById("number_thresholdValue");
         	 range_thresholdSlider = document.getElementById("range_threshold");
         	 anchor_downloadFile = document.getElementById("anchor_downloadFile");
         	 
@@ -142,8 +146,9 @@
 
        	     //registerScrollEventListener();
         	 resetAddStudyForm()
+        	 //doUpdatesAlert("File downloads are enabled now.");
         	 console.log("continueStartup()...exit.");
-        	 toggleLogging();
+        	 //toggleLogging();
          }
          
          function registerScrollEventListener() {
@@ -419,20 +424,23 @@
         	 return liTag + ulTag;
          }
          
-         
-         //function disableScroll() {
-        	 //console.log("disableScroll()...invoked.");
-        	 //var body_element = document.getElementById("body");
-        	 //body_element.classList.add("disable_scrolling");
-         //}
-         
-         //function enableScroll() {
-        	// console.log("enableScroll()...invoked.");
-        	 //var body_element = document.getElementById("body");
-        	 //body_element.classList.remove("disable_scrolling");
-         //}
-         
  
+         function cancelDownloadDialogue() {
+        	 console.log("cancelDownloadDialogue()...invoked.");
+        	 var div_downloadDialogue = document.getElementById("div_fileDownloadDialogue");
+        	 div_downloadDialogue.style.display = "none";
+        	 console.log("cancelDownloadDialogue()...exit.");
+         }
+         
+         function clearEmailAddressErrors() {
+        	 console.log("clearEmailAddressErrors()...invoked.");
+
+        	 var span_invalidEmailAddress = document.getElementById("span_invalidEmailAddress");
+        	 span_invalidEmailAddress.style.visibility = "hidden";
+        	 
+        	 console.log("clearEmailAddressErrors()...exit.");
+         }
+         
          
          function displayThresholdImageElements() {
         	 console.log("displayThresholdImageElements()...invoked.");
@@ -573,61 +581,194 @@
              console.log("doAlert()...msg=" + msg);
              alertBox.show();
          }
+        
          
-         
-         function doSubmissionAlert(selectedNeuralNetworkName) {
-
-         	console.log("doSubmissionAlert()...invoked.");
-         	         	
-         	var div_selectNeuralNetwork = document.getElementById("div_selectNeuralNetworkName");
-         	div_selectNeuralNetwork.style.display = "none";
-         	         	
-         	//var textArea = document.getElementById("textArea_progressUpdateId");
-         	//textArea.value = "Retrieving images for " + selectedNeuralNetworkName;
-        	//textArea.scrollTop = textArea.scrollHeight - textArea.getBoundingClientRect().height;
-         	alert("progressDiv=" + div_progressUpdateDiv);
-
-         }
-         
-         function downloadFile(choice) {
+         function downloadFile(emailAlreadyValidated) {
         	 console.log("downloadFile()...invoked.");
+        	 
+    	     var div_downloadMessage = document.getElementById("downloadDialogueMessage");
+        	 var div_downloadDialogue = document.getElementById("div_fileDownloadDialogue");
+        	 var checkbox_subscribeOption = document.getElementById("checkbox_email");
+ 	
+           	 //var optedOut = true;
+        	 var optedOut = checkbox_subscribeOption.checked;
+        	 var emailInfoValidated = false;
+        	 
+        	
+        	 if(optedOut || emailAlreadyValidated) {
+        		 emailInfoValidated = true;
+        	 }
+        	 else {
+        		 // if the email dialogue has already been displayed for a prior download
+        		 // then this call will return true and the dialogue will not be displayed
+        		 // again
+        		 emailInfoValidated = emailDialogueValidation();
+        	 }
+        	 
+        	 if(!emailInfoValidated) {
+        	     div_downloadMessage.innerHTML = downloadDialogueMessage;
+            	 div_downloadDialogue.style.display = "block";
+        		 var fnameInput = document.getElementById("fname");
+        		 fnameInput.focus();
+        		 return;
+        	 }
+        	      	 
+        	 div_downloadDialogue.style.display = "none";
+        	 
+        		 
+    		 if(!optedOut) {
+        		 var fname = document.getElementById("fname").value;
+        		 var lname = document.getElementById("lname").value;
+        		 var email = document.getElementById("email").value;
+        		 
+        		 var fnameString = "fname=" + fname;
+        		 var lnameString = "lname=" + lname;
+        		 var emailString = "emailAddress=" + email;
+        		         		 
+        		 var idParameters = "&" + fnameString + "&" + lnameString + "&" + emailString;
+        		 anchor_downloadFile.href += idParameters;
+    		 }
+    		 else {
+    			 var optedOutString = "&optedOut=true";
+    			 anchor_downloadFile.href += optedOutString;
+    		 }
+        		 
+    		 anchor_downloadFile.click();
+        	 console.log("downloadFile()...request triggered, exit");
+        	 
+        	 return;
+        }
+ 
+         
+         function preprocessDownloadFile(choice, dialogueCompleted) {
+        	 console.log("preprocessDownloadFile()...invoked, choice=" + choice);
         	 
         	 if(downloadDisabled) {
         		 doAdminAlert(downloadDisabledMessage, true);
         		 //doAlert(downloadDisabledMessage, alertOK);
         		 return;
         	 }
+ 
         	 if(choice==1) {
+        		 console.log("choice=1, path=" + downloadZIP_path);
             	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadZIP_path;
-            	 anchor_downloadFile.click();
-            	 return;
+	        	 anchor_downloadFile.href += "&selectedStudy=" + selectedStudy;
+	        	 anchor_downloadFile.href += "&selectedNeuralNetworkName=" + selectedNeuralNetworkName;
         	 }
         	 else if(choice==2) {
+        		 console.log("choice=2, path=" + download_target_map_nii);
         		 downloadFilePathAndName = download_target_map_nii;
             	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadFilePathAndName;
-            	 anchor_downloadFile.click();
-            	 return;
+	        	 anchor_downloadFile.href += "&selectedStudy=" + selectedStudy;
+	        	 anchor_downloadFile.href += "&selectedNeuralNetworkName=" + selectedNeuralNetworkName;
         	 }
-        	 var key = range_thresholdSlider.value;
-        	 if(key.indexOf(".")==-1) {
-        		 key = key + ".0";
+        	 else if(choice==0) {
+	        	 var key = range_thresholdSlider.value;
+	        	 if(key.indexOf(".")==-1) {
+	        		 key = key + ".0";
+	        	 }
+	        	 console.log("key=" + key);
+	        	 downloadFilePathAndName = targetDownloadFilesMap.get(key);
+	        	 console.log("downloadTargetFile name=" + downloadFilePathAndName);
+	        	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadFilePathAndName;
+	        	 anchor_downloadFile.href += "&selectedStudy=" + selectedStudy;
+	        	 anchor_downloadFile.href += "&selectedNeuralNetworkName=" + selectedNeuralNetworkName;
         	 }
-        	 console.log("key=" + key);
-        	 downloadFilePathAndName = targetDownloadFilesMap.get(key);
-        	 console.log("downloadTargetFile name=" + downloadFilePathAndName);
-        	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadFilePathAndName;
-        	 anchor_downloadFile.click();
-        	 console.log("downloadFile()...exit.");
+        	 
+    	     var div_downloadMessage = document.getElementById("downloadDialogueMessage");
+        	 var div_downloadDialogue = document.getElementById("div_fileDownloadDialogue");
+    	     div_downloadMessage.innerHTML = downloadDialogueMessage;
+    	     
+    		 var span_invalidEmailAddress = document.getElementById("span_invalidEmailAddress");
+    		 span_invalidEmailAddress.style.visibility = "hidden";
+        	 
+        	 var checkbox_subscribeOption = document.getElementById("checkbox_email");
+        	 	
+           	 //var optedOut = true;
+        	 var optedOut = checkbox_subscribeOption.checked;
+        	 var emailInfoValidated = false;
+        	 
+        	
+        	 if(optedOut) {
+        		 emailInfoValidated = true;
+        	 }
+        	 else {
+        		 // if the email dialogue has already been displayed for a prior download
+        		 // then this call will return true and the dialogue will not be displayed
+        		 // again
+        		 var preprocessCheck = true;
+        		 emailInfoValidated = emailDialogueValidation(preprocessCheck);
+        	 }
+        	 
+        	 if(!emailInfoValidated) {
+        	     div_downloadMessage.innerHTML = downloadDialogueMessage;
+            	 div_downloadDialogue.style.display = "block";
+        		 var fnameInput = document.getElementById("fname");
+        		 fnameInput.focus();
+        		 return;
+        	 }
+        	 else {
+        		 var emailAlreadyValidated = true;
+        		 downloadFile(emailAlreadyValidated);
+        	 }
+    	     
+        	 console.log("preprocessDownloadFile()...exit.");
          }
          
-         function downloadSampleFiles() {
-        	 console.log("downloadSampleFiles()...invoked.");
-        	 var anchor_downloadSampleFiles = document.getElementById("anchor_downloadSampleFiles");
-        	 anchor_downloadSampleFiles.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + "/midb/sample_files.zip";
-        	 anchor_downloadSampleFiles.click();
-        	 console.log("downloadSampleFiles()...exit.");
+         function downloadDatabaseData() {
+        	 console.log("downloadDatabaseData()...invoked");
+        	 var db_dropdown = document.getElementById("databaseDropdown");
+        	 
+        	 var selection = db_dropdown.options[db_dropdown.selectedIndex].value
+        	 console.log("selection=" + selection);
+        	 
+    		 var div_webHitsView = document.getElementById("div_webHitsView");
+    		 div_webHitsView.style.display = "none";
+    		 
+    		 var div_emailAddressesView = document.getElementById("div_emailAddressesView");
+    		 div_emailAddressesView.style.display = "none";
+    		 
+    		 var div_fileDownloadsView = document.getElementById("div_fileDownloadsView");
+    		 div_fileDownloadsView.style.display = "none";
+    		 
+    		 var div_adminAccessView = document.getElementById("div_adminAccessView");
+    		 div_adminAccessView.style.display = "none";
+    		 
+    		 if(!selection.includes("downloadEmailAddresses")) {
+    			 var div_dataBaseProgress = document.getElementById("db_progress");
+    			 div_dataBaseProgress.style.display = "block";
+    		 }
+ 
+        	 
+        	 switch(selection) {
+        	 	case "downloadEmailAddresses":
+        	 		downloadAdminFile("/midb/email_addresses.csv");
+        	 		break;
+        	 	case "viewEmailAddresses":
+        	 		sendGetEmailAddressesJSON();
+        	 		break;
+        	 	case "viewWebHits":
+        	 		sendGetWebHitsRequest();
+        	 		break;
+        	 	case "viewFileDownloads":
+        	 		sendGetFileDownloadsJSON();
+        	 		break; 
+        	 	case "viewAdminAccess":
+        	 		sendGetAdminAccessRecordsJSON();
+        	 		break; 
+        	 }
+        	 
          }
          
+         function downloadAdminFile(fileNameAndPath) {
+           	 console.log("downloadAdminFile()...invoked.");
+        	 var anchor_downloadAdminFiles = document.getElementById("anchor_downloadAdminFile");
+        	 anchor_downloadAdminFiles.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + fileNameAndPath;
+        	 anchor_downloadAdminFiles.click();
+        	 console.log("downloadAdminFile()...exit.");
+         }
+         
+
          function downloadFileViaAjax(fileName) {
         	 console.log("downloadFileViaAjax()...invoked.");
 
@@ -668,6 +809,51 @@
         	 
         	 req.send();
         	 console.log("downloadFileViaAjax()...exit.");
+         }
+         
+         function emailDialogueValidation(preprocessCheck) {
+        	 console.log("emailDialogueValidation()()...invoked.");
+        	 
+        	 var isValid = true;
+        	 
+        	 var firstName = document.getElementById("fname").value;
+        	 var lastName = document.getElementById("lname").value;
+        	 var emailAddress = document.getElementById("email").value;
+        	 var errorMessage = null;
+        	 
+        	 var validEmailSyntax = validateEmail(emailAddress)
+        	 
+        	 if(firstName==null || lastName==null || email==null) {
+        		 isValid = false;
+        		 errorMessage = "Not all fields have been completed";
+        	 }
+        	 else if(firstName.trim().length==0) {
+        		 isValid = false;
+        		 errorMessage = "First name is missing";
+        	 }
+        	 else if(lastName.trim().length==0) {
+        		 isValid = false;
+        		 errorMessage = "Last name is missing";
+        	 }
+        	 else if(emailAddress.trim().length==0) {
+        		 isValid = false;
+        		 errorMessage = "Last name is missing";
+        	 }
+        	 
+        	 if(!validEmailSyntax) {
+        		 errorMessage = "Email address appears to be invalid";
+        		 isValid = false;
+        	 }
+        	 
+        	 if(!isValid && !preprocessCheck) {
+        		 var span_invalidEmailAddress = document.getElementById("span_invalidEmailAddress");
+        		 span_invalidEmailAddress.innerHTML = errorMessage;
+        		 span_invalidEmailAddress.style.visibility = "visible";
+        	 }
+        	 
+        	 console.log("emailDialogueValidation()()...exit.");
+        	 return isValid;
+
          }
          
          function errorAlertOK() {
@@ -820,63 +1006,6 @@
         	 
          }
          
-         /* getNeuralNetworkNames() returns the list of neural network names that display
-          * in the dropdown when Single Networks is the selected menu choice.
-          * 
-          * Additionally, it returns all image files for Combined Networks that appear in
-          * the main image panel.
-          * 
-          */
-         function getNeuralNetworkNames() {
-
-         	console.log("getNeuralNetworkNames()...invoked...");
-         	
-         	ajaxRequest_startTime = performance.now();
-
-           	var paramString = "&selectedStudy=" + selectedStudy;
-           	paramString += "&selectedDataType=" + selectedDataType;
-           	//alert("paramString=" + paramString);
-
-         	var ajaxRequest = getAjaxRequest();
-         	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getNeuralNetworkNames"
-         		      + paramString;
-         	
-         	var encodedUrl = encodeURI(url);
-         	ajaxRequest.open('get', encodedUrl, true);
-         	
-             ajaxRequest.onreadystatechange=function() {
-                 
-                 if (ajaxRequest.readyState==4 && ajaxRequest.status==200) {
-                     //console.log(ajaxRequest.responseText);
-                     if(ajaxRequest.responseText.includes("Unexpected Error")) {
-                     	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
-                  		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
-                  		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
-                      	var errorArray = errorData.split("&");
-                     	var msg1 = errorArray[0];
-                     	var msg2 = errorArray[1];
-                     	stackTraceData = errorArray[2];
-                     	doErrorAlert(msg1, msg2, errorAlertOK);
-                     	return;
-                     }
-                     var responseArray = ajaxRequest.responseText.split("!@!");
-                   	 var div_submitNotification = document.getElementById("div_submitNotification");
-                	 div_submitNotification.style.display = "none";
-           
-                	 buildNeuralNetworkDropdownList(responseArray[0]);
-                     processThresholdImagesResponse(responseArray[1]);
-                 }
-                 if (ajaxRequest.readyState==4 && ajaxRequest.status==503) {
-                 	alert("The server is not responding.")
-                 	return;
-                 }
-                 
-         	}
-          	ajaxRequest.send();
-          	console.log("getNeuralNetworkNames()...exit...");
-         
-         }
-         
          function getOffset(el) {
         	  const rect = el.getBoundingClientRect();
         	  return {
@@ -919,13 +1048,10 @@
          }
          
          function getThresholdImages() {
-        	//alert("getThresholdImages...invoked");
            	console.log("getThresholdImages()...invoked...");
            	
          	ajaxRequest_startTime = performance.now();
          	    
-           	//var alertMsg = "Retrieving image data for " + selectedNeuralNetworkName;
-           	//doAlert(alertMsg, alertOK);
          	var span_submitNotification = document.getElementById("span_submitNotification");
          	
          	if(selectedStudy != priorSelectedStudy) {
@@ -992,8 +1118,6 @@
                        	doErrorAlert(msg1, msg2, errorAlertOK);
                        	return;
                        }
-                       //alert("images response");
-                       //var responseArray = ajaxRequest.responseText.split("!@!");
                        if(selectedSubmenuAnchor.id.includes("combined")) {
                             processThresholdImagesResponse(ajaxRequest.responseText);
                        }
@@ -1002,7 +1126,7 @@
                     	   var combinedDataArray = ajaxRequest.responseText.split(DELIMITER_NETWORK_MAP_DATA);
                     	   /* first, process the image data for the Network Probabilistic Map  */
                     	   processNetworkProbabilityMapData(combinedDataArray[0]);
-                    	   /* now process all image files for the TEMPLATE MATCHNG PROBABILISTIC image panel */
+                    	   /* now process all image files for the main image panel */
                     	   processThresholdImagesResponse(combinedDataArray[1]);
                        }
                    }
@@ -1019,7 +1143,8 @@
          
          
          function handleAddStudyResponse(responseText) {
-             console.log("handleAddStudyResponse()()...invoked.");
+             console.log("handleAddStudyResponse()...invoked, responseText=" + responseText);
+             
                           
              if(responseText.includes("success")) {
             	 console.log("adding new study to studyMenuIDArray:" + newStudy.folderName);
@@ -1228,6 +1353,7 @@
         	 console.log("preProcessGetThresholdImages()...exit.");
          }
          
+         
          function loadAllDivNames() {
         	 console.log("loadAllDivNames()...invoked.");
         	 allDivNames.push("div_selectNeuralNetworkName");
@@ -1267,6 +1393,67 @@
       	  	 console.log("processFileDownloadResponse()...exit.")
          }
          
+         function preProcessUpdateMapURL() {
+  	 		
+        	var div_urlDialogue = document.getElementById("div_updateURLDialogue");
+        	div_urlDialogue.style.display = "none";
+        	
+        	var newURL = document.getElementById("newURLEntry").value;
+        	if(newURL.trim().length==0) {
+        		doAdminAlert("The url field must not be blank");
+            	div_urlDialogue.style.display = "block";
+            	return;
+        	}
+        	else if(!newURL.startsWith("https://")) {
+        		doAdminAlert("The url must start with https://");
+        		return;
+        	}
+
+        	
+ 			var div_mapProgress = document.getElementById("div_map_progress");
+			div_mapProgress.style.display = "block";
+        	        	
+ 	 		sendUpdateMapURLRequest(newURL.trim(), "WEB_HITS_MAP");
+         }
+         
+         
+ 		
+ 		function processMapsRequest() {
+ 		   	 console.log("processMapsRequest()...invoked.");
+
+ 		   	 var mapsDropdown = document.getElementById("mapsDropdown");
+        	 var selection = mapsDropdown.options[mapsDropdown.selectedIndex].value
+        	 console.log("selection=" + selection);
+        	 
+        	 
+        	switch(selection) {
+        	
+     	 	case "viewWebHitsMap":
+     	 		sendGetWebHitsMapURLRequest()
+     	 		break;
+     	 	case "updateWebHitsMapURL":
+     	 		var div_urlDialogue = document.getElementById("div_updateURLDialogue");
+     	 		div_urlDialogue.style.display = "block";
+     	 		document.getElementById("newURLEntry").focus();
+     	 		break;
+     	 	case "downloadWebHitsGeoLoc":
+     	 		downloadAdminFile("/midb/web_hits_geoloc.csv");
+     	 		break;
+     	 	case "resynchWebHits":
+     	 		var div_mapProgress = document.getElementById("div_map_progress");
+     	 		div_mapProgress.style.display = "block";
+     	 		sendResynchWebHitsRequest();
+     	 		break;
+     	 	case "downloadCreateMapDoc":
+     	 		downloadAdminFile("/midb/Create_New_Web_Hits_Map.rtf");
+        	}
+ 		   	 
+ 		   	 console.log("processMapsRequest()...exit.");
+ 		}
+ 		
+ 	   
+
+         
          function processNetworkProbabilityMapData(responseData) {
         	 
        	  	  console.log("processNetworkProbabilityMapData()...invoked.")
@@ -1286,7 +1473,21 @@
        	  	  console.log("processNetworkProbabilityMapData()...exit.")
 
          }
-              
+         
+         
+          /**
+           * The incoming data consists of 2 arrays:
+           * The first array is the base64 encoded images that appear in the main image panel
+           * The second array is a list of target download files that are .nii files on the server
+           * When the user selects a threshold image and chooses to download a file, then the
+           * corresponding .nii file will have the same index in the target download file array as does
+           * the base64 image has in its array.
+           * In other words, if the image they choose has an array index of [3], then the target
+           * .nii file will be stored in the target file array at index of [3] also.
+           * 
+           * The imageDataURLArray elements map to the targetDownloadFilePathsArray elements.
+           * 
+           */     
           function processThresholdImagesResponse(ajaxResponseText) {
         	  
         	  console.log("processThresholdImagesResponse()...invoked.")
@@ -1413,14 +1614,30 @@
         	 console.log("resetSelectedTab()...invoked");
         	 var tab_home = document.getElementById("tab_home");
         	 var tab_overview = document.getElementById("tab_overview");
+        	 var tab_midbAtlas = document.getElementById("tab_midbAtlas");
         	 var tab_resources = document.getElementById("tab_resources");
         	 var tab_download = document.getElementById("tab_download");
+        	 var tab_contact = document.getElementById("tab_contactUs");
+        	 
+        	 var label_home = document.getElementById("label_home");
+        	 var label_overview = document.getElementById("label_overview");
+        	 var label_midbAtlas = document.getElementById("label_midbAtlas");
+        	 var label_download = document.getElementById("label_download");
+        	 var label_resources = document.getElementById("label_resources");
+        	 var label_contact = document.getElementById("label_contact");
+
 
         	 tab_home.checked = true;
         	 tab_overview.checked = false;
+        	 //label_overview.style.color = "#333";
+        	 tab_midbAtlas.checked = false;
+        	 //label_midbAtlas.style.color = "#333";
         	 tab_resources.checked = false;
+        	 //label_resources.style.color = "#333";
         	 tab_download.checked = false;
-
+        	 //label_download.style.color = "#333";
+        	 tab_contact.checked = false;
+        	 //label_contact.style.color = "#333";
         	 handleTabSelected(tab_home.id);
         	 console.log("resetSelectedTab()...exit");
          }
@@ -1584,7 +1801,7 @@
          
          function trackInputNumberChange() {
         	 
-        	 //console.log("trackInputNumberChange()...invoked.");
+        	 console.log("trackInputNumberChange()...invoked.");
         	 var newValue = number_inputThresholdValueControl.value;
         	 
         	 if(newValue.startsWith(".")) {
@@ -1595,11 +1812,12 @@
         	 range_thresholdSlider.value = number_inputThresholdValueControl.value;
         	 //console.log("trackInputNumberChange()...new value =" + range_thresholdSlider.value); 
         	 trackThresholdValue(false);
+        	 console.log("trackInputNumberChange()...exit.");
          }
          
          
          function trackThresholdValue(isFirstTrackingEvent) {
-        	 //console.log("trackThresholdValue()...invoked...autoScrollEnabled=" + autoScrollEnabled);
+        	 console.log("trackThresholdValue()...invoked...");
         	 /*
         	 if(autoScrollEnabled) {
         		 console.log("autoScrolling into view...");
@@ -1662,7 +1880,7 @@
            	     autoScrollHelpPending = false;
         	 }
         	 */
-        	 //console.log("trackThresholdValue()...exit.");
+        	 console.log("trackThresholdValue()...exit.");
          }
          
       
@@ -1705,13 +1923,26 @@
         	 downloadDisabled = !downloadDisabled;
         	 console.log("toggleDownloadLock()...exit.");
          }
+         
+         function toggleEmailInfo(checkbox) {
+        	 console.log("toggleEmailInfo()...invoked.");
+        	 
+        	 var div_emailInfo = document.getElementById("div_emailInfo");
+        	 
+        	 if(checkbox.checked) {
+        		 div_emailInfo.style.display = "none";
+        	 }
+        	 else {
+        		 div_emailInfo.style.display = "block";
+        	 }
+        	 console.log("toggleEmailInfo()...exit.");
+         }
                   
          function uploadStudyFile(zipFormData, fileName, fileSize) {
 
         	console.log("uploadStudyFile()...invoked.");
         	 
           	var ajaxRequest = getAjaxRequest();
-         	//var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getNeuralNetworkNames";
          	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=uploadStudyFiles";
          	
          	var paramString = "&studyFolderName=" + newStudy.studyFolder;
@@ -1831,6 +2062,23 @@
           	ajaxRequest.send(zipFormData);
           	console.log("uploadStudyFile()...exit.");
          }
+         
+         function updateWebHitsMapURL(newURL) {
+        	 
+         }
+         
+         
+         function validateEmail(email) {
+             var re = /\S+@\S+\.\S+/;
+             return re.test(email);
+         }
+         
+  	   	function viewWebHitsMap(googleMapURL) {
+		   console.log("viewWebHitsMap()...invoked");
+		   console.log(googleMapURL);
+		   window.open(googleMapURL, '_blank');
+		   console.log("viewWebHitsMap()...exit");
+	   }
 
             
          

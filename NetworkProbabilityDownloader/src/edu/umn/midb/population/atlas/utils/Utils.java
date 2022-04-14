@@ -4,22 +4,84 @@ import java.util.Random;
 
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 
+import edu.umn.midb.population.atlas.data.access.DBManager;
+import logs.ThreadLocalLogTracker;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+
 public class Utils {
 	
+	private static Logger LOGGER = null;
+	private static String LOGGER_ID = " ::LOGGERID=Utils:: ";
+
+	static {
+		LOGGER = LogManager.getLogger(DBManager.class);
+	}
+
+
+	
 	public static String convertJcpyt(String encrypted, String strkey) {
+		LOGGER.trace(LOGGER_ID + "convertJcpyt()...invoked");
 		StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
 		encryptor.setPassword(strkey);
 
 		String decrypted = encryptor.decrypt(encrypted);
+		LOGGER.trace(LOGGER_ID + "convertJcpyt()...exit");
 		return decrypted;
 	}
 		
 	public static String encryptJsypt(String to_encrypt, String strkey) {
+		LOGGER.trace(LOGGER_ID + "encryptJsypt()...invoked");
+
 		StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
 		encryptor.setPassword(strkey);
 		String encrypted= encryptor.encrypt(to_encrypt);
+		LOGGER.trace(LOGGER_ID + "encryptJsypt()...exit");
 		return encrypted;
 	}
+	
+	public static void pause(long pauseMS) {
+		String loggerId = ThreadLocalLogTracker.get();
+		//LOGGER.trace(loggerId + "pause()...invoked.");
+
+		try {
+			Thread.sleep(pauseMS);
+		}
+		catch(InterruptedException iE) {
+			LOGGER.trace(loggerId + "pause()...caught exception...");
+			LOGGER.error(iE.getMessage(), iE);
+		}
+		//LOGGER.trace(loggerId + "pause()...exit...");
+	}
+	
+	public static String[] parseSettingEntry(String entry) {
+		
+		boolean endsWithEqual = false;
+		
+		if(entry.endsWith("=")) {
+			endsWithEqual = true;
+		}
+		
+		String[] originalArray = entry.split("=");
+		String[] returnArray = null;
+		
+		if(!endsWithEqual &&  originalArray.length==2) {
+			returnArray = originalArray;
+		}
+		
+		else {
+			int index = entry.indexOf("=");
+			String entryKey = entry.substring(0, index);
+			String entryValue = entry.substring(index+1);
+			returnArray = new String[] {entryKey, entryValue};
+		}
+		
+		return returnArray;
+		
+	}
+
 	
 
 }

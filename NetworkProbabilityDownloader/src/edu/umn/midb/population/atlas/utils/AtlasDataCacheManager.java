@@ -13,6 +13,8 @@ import java.util.Iterator;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import edu.umn.midb.population.atlas.data.access.DBManager;
 import edu.umn.midb.population.atlas.data.access.DirectoryAccessor;
 import edu.umn.midb.population.atlas.security.TokenManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
@@ -34,6 +36,7 @@ public class AtlasDataCacheManager {
 	//the Singleton instance
 	private static AtlasDataCacheManager instance = null;
 	private static Logger LOGGER = null;
+	private static String DEFAULT_LOGGER_ID = " ::LOGGERID=AtlasDataCacheManager_Init:: ";
 	//contains collection of base64NetworkImageStrings keyed by the different 
 	//neural network types
 	private Hashtable<String, ArrayList<String>> base64NetworkImageStrings = new Hashtable<String, ArrayList<String>>();
@@ -56,6 +59,7 @@ public class AtlasDataCacheManager {
 	private static final String NETWORK_FOLDERS_CONFIG_PATH = "/midb/network_folder_names.conf";
 	private static final String NEW_LINE = "\n";
 	private String localHostName = null;
+	private String key = null;
 
 
 	private ArrayList<String> privilegedIPs = new ArrayList<String>();
@@ -66,6 +70,13 @@ public class AtlasDataCacheManager {
 	
 	static {
 	      LOGGER = LogManager.getLogger(AtlasDataCacheManager.class);
+	}
+	
+	/*
+	 * Declare empty constructor as private to prevent instantiation from other classes
+	 */
+	private AtlasDataCacheManager() {
+		
 	}
 	
 	/**
@@ -213,9 +224,9 @@ public class AtlasDataCacheManager {
 		int equalsIndex = -1;
 		int closeParenIndex = -1;
 		String studyNameKey = null;
-		int i = 0;
 		
 		if(!file.exists()) {
+			LOGGER.fatal("Config file not found:" + NETWORK_FOLDERS_CONFIG_PATH);
 			return;
 		}
 	
@@ -265,6 +276,7 @@ public class AtlasDataCacheManager {
 		File file = new File(NETWORK_FOLDERS_CONFIG_PATH);
 		
 		if(!file.exists()) {
+			LOGGER.fatal("Config file not found:" + NETWORK_FOLDERS_CONFIG_PATH);
 			return;
 		}
 		
@@ -304,6 +316,8 @@ public class AtlasDataCacheManager {
 	 * 
 	 * @param networkNamePath Name of the selected neural network type.
 	 * 
+	 * @return base64Strings Array of base64-encoded images
+	 * 
 	 */
 	private ArrayList<String> loadBase64ImagePathStrings(String networkNamePath) {
 		
@@ -341,14 +355,7 @@ public class AtlasDataCacheManager {
 		LOGGER.trace(loggerId + "loadBase64ImagePathStrings()...exit.");
 		return base64ImageStrings;
 	}
-	
-	/**
-	 * 
-	 */
-	public byte[] getAllDataZipBuffer() {
-		return this.allDataZipBuffer;
-	}
-	
+
 	/**
 	 * Returns an ArrayList of base64 encoded Strings for all the .png files associated with the probabilistic thresholds for a specific neural network
 	 * @param networkNamePath The name of the selected neural network type
@@ -578,7 +585,6 @@ public class AtlasDataCacheManager {
 		LOGGER.trace(loggerId + "loadKeyFromFile()...invoked.");
 
 		boolean shouldContinue = true;
-		String key = null;
 		String[] keyArray = null;
 		
 		File file = new File(KEY_CONFIG_PATH);
@@ -613,6 +619,7 @@ public class AtlasDataCacheManager {
 		
 		EmailNotifier.setKey(key);
 		
+		
 		LOGGER.trace(loggerId + "loadKeyFromFile()...exit.");
 	
 	}
@@ -633,9 +640,20 @@ public class AtlasDataCacheManager {
 			return;
 		}
 		
+		String key = null;
+		
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(file));
 			String outputLine = null;
+			
+			String accSidE = null;
+			String accAuthE = null;
+			String toPhoneE = null;
+			String fromPhoneE = null;
+			String ipLocatorAccountId = null;
+			String ipLocatorLicenseKey = null;
+			String ipInfoToken = null;
+			
 			
 			while ((outputLine = br.readLine()) != null && shouldContinue) {
 				
@@ -647,7 +665,7 @@ public class AtlasDataCacheManager {
 				}
 
 				if(outputLine.contains("MIDB_SERIALIZATION")) {
-					String[] rawArray = outputLine.trim().split("=");
+					String[] rawArray = Utils.parseSettingEntry(outputLine.trim());
 					concatenatedUP = rawArray[1];
 					upArray = concatenatedUP.split("::");
 					String sender = upArray[0];
@@ -656,24 +674,60 @@ public class AtlasDataCacheManager {
 					EmailNotifier.setSender(sender);
 				}
 				else if(outputLine.contains("MIDB_ROOT")) {
-					String[] rawArray = outputLine.trim().split("=");
-					String key = rawArray[1];
+					String[] rawArray = Utils.parseSettingEntry(outputLine.trim());
+					key = rawArray[1];
 					EmailNotifier.setKey(key);
 					TokenManager.setKey(key);
 				}
 				else if(outputLine.contains("MIDB_VERSION")) {
-					String[] rawArray = outputLine.trim().split("=");
+					String[] rawArray = Utils.parseSettingEntry(outputLine.trim());
 					String recipient = rawArray[1];
 					EmailNotifier.setRecipient(recipient);
 				}
 				else if(outputLine.contains("MIDB_MRI")) {
-					String[] rawArray = outputLine.trim().split("=");
-					String password = rawArray[1];
-					TokenManager.setPassword(password);
+					String[] rawArray = Utils.parseSettingEntry(outputLine.trim());
+					String encryptedPassword = rawArray[1];
+					TokenManager.setPassword(encryptedPassword);
+				}
+				else if(outputLine.contains("MIDB_DB")) {
+					String[] rawArray = Utils.parseSettingEntry(outputLine.trim());
+					String encryptedPassword = rawArray[1];
+					DBManager.getInstance().initAuthentication(encryptedPassword, key);
+				}
+				else if(outputLine.contains("MIDB_TTP")) {
+					String[] rawArray = Utils.parseSettingEntry(outputLine.trim());
+					toPhoneE = rawArray[1];
+				}				
+				else if(outputLine.contains("MIDB_FTP")) {
+					String[] rawArray = Utils.parseSettingEntry(outputLine.trim());
+					fromPhoneE = rawArray[1];
+				}				
+				else if(outputLine.contains("MIDB_TAC")) {
+					String[] rawArray = Utils.parseSettingEntry(outputLine.trim());
+					accSidE = rawArray[1];
+				}				
+				else if(outputLine.contains("MIDB_TAU")) {
+					String[] rawArray = Utils.parseSettingEntry(outputLine.trim());
+					accAuthE = rawArray[1];
+				}
+				else if(outputLine.contains("MIDB_IPLOC_AUT")) {
+					String[] rawArray = Utils.parseSettingEntry(outputLine.trim());
+					ipLocatorLicenseKey = rawArray[1];
+				}
+				else if(outputLine.contains("MIDB_IPLOC_ACC")) {
+					String[] rawArray = Utils.parseSettingEntry(outputLine.trim());
+					ipLocatorAccountId = rawArray[1];
+				}
+				else if(outputLine.contains("MIDB_IPINF_TAU")) {
+					String[] rawArray = Utils.parseSettingEntry(outputLine.trim());
+					ipInfoToken = rawArray[1];
 				}
 				
 			}
 			br.close();
+			initSMSNotifier(accSidE, accAuthE, toPhoneE, fromPhoneE);
+			IPLocator.initAuthentication(key, ipLocatorAccountId, ipLocatorLicenseKey);
+			IPInfoRequestor.initAuthentication(key, ipLocatorLicenseKey);
 		}
 		catch(Exception e) {
 			LOGGER.error("Unable to process settings.conf");
@@ -686,4 +740,38 @@ public class AtlasDataCacheManager {
 		return this.singleNetworkFolderNamesMap.get(studyName);
 	}
 	
-}
+	private void initSMSNotifier(String accountSIDE, String authTokenE, String toPhoneE, String fromPhoneE) {
+		LOGGER.trace(DEFAULT_LOGGER_ID + "initSMSNotifier()...invoked");
+		
+		boolean success = true;
+		int successCount = 0;
+		
+		SMSNotifier.setKey(key);
+		
+		if(accountSIDE != null) {
+			SMSNotifier.setAccountSIDE(accountSIDE);
+			successCount++;
+		}
+		if(authTokenE != null) {
+			SMSNotifier.setAuthTokenE(authTokenE);
+			successCount++;
+		}
+		if(toPhoneE != null) {
+			SMSNotifier.setToNumberE(toPhoneE);
+			successCount++;
+		}
+		if(fromPhoneE != null) {
+			SMSNotifier.setFromNumberE(fromPhoneE);
+			successCount++;
+		}
+		
+		if(successCount < 4) {
+			success = false;
+		}
+		
+		LOGGER.trace(DEFAULT_LOGGER_ID + "initSMSNotifier()...exit, success=" + success);
+
+	}
+	
+	
+} // end class

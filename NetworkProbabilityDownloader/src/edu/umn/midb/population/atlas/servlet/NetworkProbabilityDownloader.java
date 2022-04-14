@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -15,7 +16,9 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
@@ -28,75 +31,51 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import edu.umn.midb.population.atlas.base.ApplicationContext;
 import edu.umn.midb.population.atlas.config.PropertyManager;
+import edu.umn.midb.population.atlas.data.access.AdminAccessRecord;
+import edu.umn.midb.population.atlas.data.access.DBManager;
 import edu.umn.midb.population.atlas.data.access.DirectoryAccessor;
+import edu.umn.midb.population.atlas.data.access.EmailAddressRecord;
+import edu.umn.midb.population.atlas.data.access.FileDownloadRecord;
+import edu.umn.midb.population.atlas.data.access.WebHitRecord;
 import edu.umn.midb.population.atlas.exception.BIDS_FatalException;
+import edu.umn.midb.population.atlas.exception.DiagnosticsReporter;
+import edu.umn.midb.population.atlas.security.CommandRunner;
 import edu.umn.midb.population.atlas.security.TokenManager;
+import edu.umn.midb.population.atlas.tasks.AdminAccessEntry;
 import edu.umn.midb.population.atlas.tasks.DownloadTracker;
-import edu.umn.midb.population.atlas.tasks.HitTracker;
+import edu.umn.midb.population.atlas.tasks.EmailAddressEntry;
+import edu.umn.midb.population.atlas.tasks.EmailTracker;
+import edu.umn.midb.population.atlas.tasks.FileDownloadEntry;
+import edu.umn.midb.population.atlas.tasks.Tracker;
+import edu.umn.midb.population.atlas.tasks.WebHitsTracker;
+import edu.umn.midb.population.atlas.tasks.WebHitEntry;
 import edu.umn.midb.population.atlas.utils.AtlasDataCacheManager;
+import edu.umn.midb.population.atlas.utils.CountryNamesResolver;
 import edu.umn.midb.population.atlas.utils.CreateStudyHandler;
 import edu.umn.midb.population.atlas.utils.EmailNotifier;
+import edu.umn.midb.population.atlas.utils.IPInfoRequestor;
+import edu.umn.midb.population.atlas.utils.IPLocator;
 import edu.umn.midb.population.atlas.utils.NetworkMapData;
 import edu.umn.midb.population.atlas.utils.RemoveStudyHandler;
+import edu.umn.midb.population.atlas.utils.SMSNotifier;
 import edu.umn.midb.population.atlas.utils.ZipChunkHandler;
 import edu.umn.midb.population.response.handlers.WebResponder;
 import logs.ThreadLocalLogTracker;
 
 /**
  * 
- * https://gitlab.com/Fair_lab/midb-precision-functional-atas
- * 
  * The servlet that is the entry point for client requests coming from a web browser.
- * The initial client request from the browser will retrieve a list of the different
- * neural network types, such as aud, co, or others.  The client will then select a network
- * type which results in a request for a collection of png images that map to each probabilistic
+ * The initial client request from the browser will retrieve menu data and information
+ * from other menu configuration files that allows the client to build a dynamic menu
+ * based on entries in the configuration files. After retrieving the menu data
+ * the client will then select a neural network type (such as Combined or Integration Zone)
+ * which results in a request for a collection of png images that map to each probabilistic
  * threshold in 1% steps from 1% to 100%.  The client can then send a request to
  * download the NII file related to the selected probabilistic threshold.
  * 
  * @author jjfair   
  *  
- * multi-level menu with bootstrap video
- * https://www.youtube.com/watch?v=jEAeDID1pks
- * 
- * also see:
- * https://www.cssscript.com/multi-level-navigation/
- * 
- * also see:
- * 
- * https://www.jotform.com/blog/multilevel-drop-down-navigation-menus-examples-and-tutorials/
-
-   1)* Move MIDB...
-   2)* New main landing page (landing div) : childmind.org
-   3)* copyright (robert, me)
-   4)* remove funding
-   5)* add upload date
-   6)* remove acknowledgements
-   7) additional copyright images
-   8)* TBD:FUTURE:  Choose data sets
-         Human Connectome Project
-              Combined
-              Single
-   9)  Add controls to switch from Volume Data / Surface Data
-   10) Change menu processing to generic traversal without IDs
-   11) Automate dynamic menu building based on config file
-   12) Add admin screens to change menu config
-   13) reformat tab selections
-   14) add new landing screen (main div/layer)
-   15) add logging toggle to javascript
-   16) add drag/drop and interface for creating new menu entry
-   
-   
-   @MultipartConfig(fileSizeThreshold = 1024 * 1024 * 1024 * 2,
-   maxFileSize = 2147483647, 
-   maxRequestSize = 1024 * 1024 * 1024 * 5)
-   
-   
-   https://stackoverflow.com/questions/20212851/slice-large-file-into-chunks-and-upload-using-ajax-and-html5-filereader
-
-   https://coderanch.com/t/479604/java/Creating-file-chunks-files-java
  */
-
-
 
 @MultipartConfig(location = "/midb/temp")
 
@@ -125,9 +104,15 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
    */
 	
+
+//  @MultipartConfig(fileSizeThreshold = 1024 * 1024 * 1024 * 2,
+//  maxFileSize = 2147483647, 
+//  maxRequestSize = 1024 * 1024 * 1024 * 5)
+
+	
 	private static final long serialVersionUID = 1L;
 	private static final long VERSION_NUMBER = 0;
-	public static final String BUILD_DATE = "Version beta_29.0  1211_B_2021:00:00__war=NPDownloader_1211_B.war"; 
+	public static final String BUILD_DATE = "Version beta_82.0  0414_A_2022:00:00__war=NPDownloader_0414_A_2022.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";
@@ -141,22 +126,24 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	public static final String ADMIN_ACCESS_FILE = "/midb/tracking/admin_access.csv";
 	public static Logger LOGGER = null;
 	public static final String DOWNLOAD_ENTRY_TEMPLATE = "ID,IP_ADDRESS,TIMESTAMP,DOWNLOAD_REQUESTED_FILE";
-	public static final String HIT_ENTRY_TEMPLATE = "ID,IP_ADDRESS,TIMESTAMP,USER_AGENT";
-	public static final String ADMIN_ENTRY_TEMPLATE = "IP_ADDRESS,ACTION,TIMESTAMP,USER_AGENT";
 
     //private static final SimpleDateFormat SDF1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private static final DateTimeFormatter DT_FORMATTER_1 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    //private static final DateTimeFormatter DT_FORMATTER_1 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final DateTimeFormatter DT_FORMATTER_FOR_ID = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
 
 	public static final String ECLIPSE_RESOURCES_PATH = "/Users/jjfair/git/network_probability_downloader/NetworkProbabilityDownloader/build/classes/edu/umn/midb/population/atlas/config/files/";
+	private static final String DEFAULT_LOGGER_ID = " ::LOGGERID=SERVLET_INIT:: ";
+	private static String DOMAIN_NAME = null;
+	private static int HIT_COUNT = 0;
 	private String localHostName = "UNKNOWN";
+	private static ArrayList<String> privilegedList = null;
 	
 	/**
 	 * Checks for intermittent problem where NGINX generates a duplicate request which originates
 	 * from the local loopback interface of 127.0.0.1
 	 * 
-	 * @param request
-	 * @return
+	 * @param request - HttpServletRequest
+	 * @return isDuplicate - boolean
 	 */
 	protected boolean checkDuplicateRequest(HttpServletRequest request) {
 		
@@ -187,38 +174,13 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		return isDuplicate;
 	}
 	
-	static protected void createDiagnosticEntry(String entry) {
-		
-		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "createDiagnosticEntry()...invoked.");
-		
-		try {
-			FileWriter fw = new FileWriter(DIAGNOSTICS_FILE, true);
-		    BufferedWriter bw = new BufferedWriter(fw);
-		    bw.write(DIAGNOSTICS_DEMARCATION);
-		    bw.newLine();
-		    bw.write(entry);
-		    bw.newLine();
-		    bw.write(DIAGNOSTICS_DEMARCATION);
-		    bw.newLine();
-		    bw.newLine();
-		    bw.close();
-		}
-		catch(Exception e) {
-			LOGGER.error(loggerId + "createDiagnosticEntry()...error encountered.");
-			LOGGER.error(loggerId + e.getMessage(), e);
-		}
-		
-		LOGGER.trace(loggerId + "createDiagnosticEntry()...invoked.");
-
-	}
 	
 	/**
 	 * Entry point into the servlet. The 'action' parameter is read from the query
 	 * string which then directs the request to the appropriate action-handler method.
-	 * The action will be one of the following:
+	 * The action may be one of the following, but not limited to the example list.
 	 * <ul>
-	 * <li>getNeuralNetworkNames
+	 * <li>getMenuData
 	 * <li>getThresholdImages
 	 * <li>downloadFile
 	 * </ul>
@@ -227,82 +189,128 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		String action = request.getParameter("action");
+		
+		//do this so we can set the DOMAIN_NAME
+		if(HIT_COUNT==0) {
+			updateHitCount(request);
+		}
 				
 		if(checkDuplicateRequest(request)) {
 			return;
 		}
 		
-		String ipAddress = null;
+		String ipAddress = getOriginalIPAddress(request);
+
+		//this.shallowAccessIPAddresses.add(ipAddress);
 		
-		ipAddress = request.getRemoteAddr();
-		if(ipAddress.contains("127.0.0.1")) {
-			String originalIP = request.getHeader("X-Forwarded-For");
-			if(originalIP != null) {
-				ipAddress = originalIP;
+		// NOTE: IMPORTANT!!!!! IF THIS BLOCK IS REMOVED CHANGE THE WEB.XML FILE
+		// SO THAT IT INCLUDES THE FOLLOWING WELCOME FILE
+		//     <welcome-file>/HTML/network_probability_downloader.html</welcome-file>
+        
+		boolean accessAllowed = true;
+		if(action==null || action.equals("initialRequest")) {
+			accessAllowed = checkAccessAllowed(request, ipAddress);
+
+			if(!accessAllowed) {
+				response.setContentType("text/html");  
+				response.sendRedirect("https://midbatlas.io");
+				response.getWriter().flush();
+				response.getWriter().close();
+				return;
+			}
+			else {
+				ServletContext sc = getServletContext();
+				sc.getRequestDispatcher("/HTML/network_probability_downloader.html").forward(request, response);
+				return;
 			}
 		}
-				
+	    	
+		
 		HttpSession session = request.getSession();
 		ApplicationContext appContext = (ApplicationContext)session.getAttribute("applicationContext");
 		if(appContext==null) {
 			appContext = new ApplicationContext();
-			appContext.setLoggerId(session.getId());
+			appContext.setTokenManager(new TokenManager(appContext, ipAddress));
+			appContext.setLoggerId(session.getId(), ipAddress);
+			appContext.setRemoteAddress(ipAddress);
+			appContext.setSessionId(session.getId());
 			//ThreadLocalLogTracker.set(appContext.getLoggerId());
 			request.getSession().setAttribute("applicationContext", appContext);
 		}
 		String loggerId = appContext.getLoggerId();
+		appContext.setCurrentAction(action);
+		appContext.setCurrentReguest(request);
+		
 		try {
-			ThreadLocalLogTracker.set(appContext.getLoggerId());
-			//action = request.getParameter("action");
-			if(action==null) {
-				action = request.getQueryString().substring(7,25);
-			}
-			else {
-				action = action.trim();
-			}
-			LOGGER.trace(loggerId + "doGet() invoked, action param =" + action);
+			ThreadLocalLogTracker.set(appContext.getLoggerId());			
+			action = action.trim();
+	
+			//LOGGER.trace(loggerId + "doGet() invoked, action param =" + action);
 			response.setContentType(CONTENT_TEXT_PLAIN);
 			response.setCharacterEncoding(CHARACTER_ENCODING_UTF8);
 			
 			String queryString = request.getQueryString();
 			appContext.addQueryStringToHistoryChain(queryString);
+			appContext.incrementActionCount();
 			
 			switch (action) {
 			
 			case "downloadFile":
-				handleAjaxDownloadFile(appContext, request, response);
+				handleDownloadFile(appContext, request, response);
 				break;
 			case "getMenuData":
-				//pause(5000);
-				submitHitEntry(request);
-				appContext.setTokenManager(new TokenManager());
-				handleAjaxGetMenuDataRequest(appContext, request, response);
+				appContext.setTokenManager(new TokenManager(appContext, ipAddress));
+				ipAddress = getOriginalIPAddress(request);
+				submitHitEntry(appContext, request);
+				handleGetMenuDataRequest(appContext, request, response);
 				break;
 			case "getNetworkFolderNamesConfig":
-				handleAjaxGetNetworkFolderNamesConfig(appContext, request, response);
+				handleGetNetworkFolderNamesConfig(appContext, request, response);
 				break;
 			case "getThresholdImages":
 				//pause(30000);
 				long gtiActionBeginTime = System.currentTimeMillis();
 				String selectedNeuralNetworkName = request.getParameter("neuralNetworkName");
 
-				handleAjaxGetThresholdImages(appContext, request, response, false);
+				handleGetThresholdImages(appContext, request, response);
 				long gtiActionEndTime = System.currentTimeMillis();
 				long gtiProcessingTime = gtiActionEndTime-gtiActionBeginTime;
 				//LOGGER.info("NetworkProbabilityDownloader.doGet()...selectedNeuralNetworkName=" + selectedNeuralNetworkName);
 				//LOGGER.info("Processing time in ms for getThresholdImages=" + gtiProcessingTime);
 				break;
 			case "removeStudy":
-				updateAdminAccessFile(request, ipAddress, action);
-				handleAjaxRemoveStudy(appContext, request, response);
+				//this updates the csv text file - does not insert database record
+				handleRemoveStudy(appContext, request, response);
 				break;
 			case "validateAdminAccess":
-				updateAdminAccessFile(request, ipAddress, action);
-				handleAjaxValidateAdminAccess(appContext, request, response);
+				handleValidateAdminAccess(appContext, request, response);
 				break;
 			case "validateAdminAccessStatus":
-				updateAdminAccessFile(request, ipAddress, action);
-				handleAjaxValidateAdminAccessStatus(appContext, request, response);
+				handleValidateAdminAccessStatus(appContext, request, response);
+				break;
+			case "unsubscribe":
+				handleUnsubscribe(request, response, appContext);
+				break;
+			case "getWebHits":
+				handleGetWebHits(appContext, request, response);
+				break;
+			case "getEmailAddresses": //this is not the csv download request
+				handleGetEmailAddresses(appContext, request, response);
+				break;
+			case "getFileDownloadRecords": //this is not download a file, it's download history
+				handleGetFileDownloadRecords(appContext, request, response);
+				break;
+			case "getAdminAccessRecords":
+				handleGetAdminAccessRecords(appContext, request, response);
+				break;
+			case "getWebHitsMapURL":
+				handleGetWebHitsMapURL(appContext, request, response);
+				break;
+			case "updateMapURL":
+				handleUpdateMapURL(appContext, request, response);
+				break;
+			case "resynchWebHits":
+				handleResynchWebHits(appContext, request, response);
 				break;
 			}
 		
@@ -313,6 +321,12 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		} 
 	}
 	
+	/**
+	 * Receives requests coming in via a post.  Currently, the only functionality requiring
+	 * this is the 'uploadStudyFiles' action. This action is restricted to individuals who
+	 * have access to the Admin Console in the client.
+	 * 
+	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		LOGGER.trace("doPost()...request received.");
@@ -333,23 +347,18 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		}
 		
 		String queryString = request.getQueryString();
-		appContext.addQueryStringToHistoryChain(queryString);
-
+		if(appContext != null) {
+			appContext.addQueryStringToHistoryChain(queryString);
+			appContext.setCurrentAction(action);
+		}
 
 		try {
 			switch (action) {
 			case "uploadStudyFiles":
 				LOGGER.trace(loggerId + "doPost()...action=" + action);
-				updateAdminAccessFile(request, ipAddress, action);
 				response.setContentType(CONTENT_TEXT_PLAIN);
 				response.setCharacterEncoding(CHARACTER_ENCODING_UTF8);
-				handleAjaxAddStudyRequest(appContext, request, response);
-				break;
-			case "uploadZipChunks":
-				LOGGER.trace(loggerId + "doPost()...action=" + action);
-				response.setContentType(CONTENT_TEXT_PLAIN);
-				response.setCharacterEncoding(CHARACTER_ENCODING_UTF8);
-				handleAjaxUploadZipChunk(appContext, request, response);
+				handleAddStudy(appContext, request, response);
 				break;
 			}
 		}
@@ -359,124 +368,198 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		}
 
 	}
-
+	
 	
 	/**
 	 * 
 	 * Handles any encountered exception by supplying an error description and
-	 * a formatted stack trace that is delivered to the client.
+	 * a formatted stack trace that is delivered to the client via delegation to the
+	 * {@link DiagnosticsReporter}
 	 * 
+	 * @param appContext - {@link ApplicationContext}
 	 * @param request HttpServletRequest Reference to the current HttpServletRequest
 	 * @param response HttpServletResponse Reference to the current HttpServletResponse
 	 * @param e Exception Reference to the encountered exception
-	 * @throws ServletException
-	 * @throws IOException
+	 * @throws ServletException - uncaught exception
+	 * @throws IOException - uncaught exception
 	 */
 	protected void handleFatalError(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response, Exception e) throws ServletException, IOException {
 
 		String loggerId = appContext.getLoggerId();
 		LOGGER.fatal(loggerId + "handleFatalError()...invoked");
-		String NEW_LINE = "\r\n";
-		String ipAddress = request.getRemoteAddr();
 		
-		if(ipAddress.contains("127.0.0.1")) {
-			String originalIP = request.getHeader("X-Forwarded-For");
-			if(originalIP != null) {
-				ipAddress = originalIP;
-			}
-		}
-		
-		appContext.setRemoteAddress(ipAddress);
-		
-		/*
-		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
-		LocalTime localTime = LocalTime.now();
-		String timeStamp = dtf.format(localTime);
-		*/
-		//use local system clock
-	    String timeString = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+		DiagnosticsReporter.createDiagnosticsEntry(appContext, request, response, e);
 
-		
-		String id = request.getSession().getId();
-		id += "__";
-		id += timeString;
-		appContext.setId(id);
-		String queryStringHistory = appContext.getQueryStringHistory();
-		
-		StackTraceElement[] stackTraceEntries = e.getStackTrace();
-	    int stackEntriesCount = stackTraceEntries.length;
-	    String stackTraceData = BUILD_DATE + NEW_LINE;
-	    HttpSession session = request.getSession(false);
-	    String attributeName = null;
-	    Object sessionObject = null;
-	    Object backupSessionObject = null;
-	    
-	    String specificMessage = e.getMessage();
-	    if(specificMessage==null) {
-	    	specificMessage = "";
-	    }
-	    
-	    if(session!=null) {
-	    	ArrayList<String> allAttributeNames = new ArrayList<String>();
-	    	allAttributeNames.add("session attributes follow:" + NEW_LINE );
-	    	Enumeration<String> attributeNames = session.getAttributeNames();
-	    	while(attributeNames.hasMoreElements()) {
-	    		attributeName = attributeNames.nextElement();
-	    		allAttributeNames.add(attributeName + NEW_LINE);
-	    		sessionObject = session.getAttribute(attributeName);
-	    		if(sessionObject != null) {
-		    		allAttributeNames.add(sessionObject.toString() + NEW_LINE);
-	    		}
-	    		else {
-	    			allAttributeNames.add("object is null" + NEW_LINE);
-	    		}
-	    		
-	    	}
-	    	stackTraceData += allAttributeNames.toString();
-	    }	
-
-	    stackTraceData += "" + e + NEW_LINE;
-	    LOGGER.fatal(loggerId + e);
-	   
-	    for(int i=0;i<stackEntriesCount;i++) {
-		  LOGGER.fatal(stackTraceEntries[i]);
-		  stackTraceData += stackTraceEntries[i] + NEW_LINE;
-	    }
-	   
-	    String fatalErrorPrefix = "$$$_FATAL_BEGIN_$$$";
-	    String fatalErrorSuffix = "$$$_FATAL_END_$$$";
-		String responseError1 = "An Unexpected Error Occurred: ";
-		String responseError2 = "&We are unable to process your request.<br>"
-				              + "Show details for more information.&";
-		//responseError += stackTraceEntries[0] + "\n";
-		//responseError += stackTraceEntries[1] + "\n";
-		String completeResponseMessage = fatalErrorPrefix + responseError1 + responseError2 + stackTraceData + 
-				                         queryStringHistory + fatalErrorSuffix;
-		
-
-		response.getWriter().println(completeResponseMessage);
-		response.getWriter().flush();
-		createDiagnosticEntry(completeResponseMessage);
-
-		EmailNotifier.sendEmailNotification("INCIDENT_ID=" + id);
 		LOGGER.fatal(loggerId + "handleFatalError()...exit");
 		return;
 		
 	}
 	
 	/**
+	 * Handles a request to be removed from the mailing list, which means the 
+	 * email address will be removed from the email_addresses table in MYSQL.
+	 * If the operation fails {@link SMSNotifier#sendNotification(String, String)}
+	 * will be invoked and an SMS notification will be sent since being able to
+	 * unsubscribe is a legal requirement.
+	 * 
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @param appContext {@link ApplicationContext}
+	 */
+	public void handleUnsubscribe(HttpServletRequest request, HttpServletResponse response, ApplicationContext appContext) {
+		
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleUnsubscribe()...invoked.");
+		String emailAddress = request.getParameter("id");
+		int deleteCount = 0;
+		
+		try {
+			deleteCount = DBManager.getInstance().deleteEmailAddress(emailAddress);
+		}
+		catch(Exception e) {
+			LOGGER.trace(loggerId + "Unable to delete email address, address=" + emailAddress);
+		}
+		
+		if(deleteCount==0) {
+			String domainName = getDomainName();
+			String message = "MIDB_APP_ERROR::::UNABLE TO DELETE EMAIL_ADDRESS::::" + domainName;
+			message += "::::" + emailAddress + "::::check /midb/unsubscribe_list.cvs";
+			SMSNotifier.sendNotification(message, "NetworkProbabilityDownloader");
+		}
+		
+		ServletContext sc = getServletContext();
+		try {
+			sc.getRequestDispatcher("/HTML/unsubscribe.html").forward(request, response);
+		}
+		catch(Exception e) {
+			LOGGER.fatal(loggerId + e.getMessage(), e);
+		}
+
+	}
+	
+	/**
+	 * External classes use this when sending SMS notifications. The message will
+	 * typically include the domain name of the sending server.
+	 * @see SMSNotifier
+	 *
+	 * @return String containing domain name such as midbatlas.io
+	 *
+	 */
+	public static String getDomainName() {
+		return DOMAIN_NAME;
+	}
+	
+	/**
+	 * Allows requests only coming from certain ip address when the domain is not
+	 * midbatlas.io.  This is so a backup server used as a test environment may only
+	 * be used by specific users. If the requestor ip address does not belong to a
+	 * trusted developer, then access will be denied, which will cause the doGet() method
+	 * to redirect the request to https://midbatlas.io.
+	 * 
+	 * @param request An instance of @see HttpServletRequest
+	 * @param ipAddress The ip address of the original requestor forwarded by NGINX
+	 * 
+	 * @return boolean indicating if access is allowed for the requestor ip address
+	 */
+	protected static boolean checkAccessAllowed(HttpServletRequest request, String ipAddress) {
+		LOGGER.trace("checkAccessAllowed()...invoked, ipAddress=" + ipAddress);
+		
+		String loggerId = " ::LOGGERID=ACCESS_CHECKER:: ";
+		boolean accessAllowed = true;
+		
+		
+		String serverName = request.getServerName();
+		LOGGER.trace("checkAccessAllowed()...serverName=" + serverName);
+		
+		if(request.getServerName().contains("midbatlas.io")) {
+			accessAllowed = true;
+		}
+		else {
+			if(privilegedList.contains(ipAddress)) {
+				accessAllowed = true;
+			}
+			else if(ipAddress.contains("127.0.0.1")) {
+				accessAllowed = true;
+			}
+			else {
+				accessAllowed = false;
+			}
+		}
+		if(!accessAllowed) {
+			LOGGER.fatal(loggerId + "ACCESS DENIED, ip=" + ipAddress);
+		}
+		else {
+			LOGGER.fatal(loggerId + "ACCESS ALLOWED, ip=" + ipAddress);
+		}
+		return accessAllowed;
+	}
+	
+	
+	/**
+	 * Handles a request to download one of the admin files, such as email_addresses.csv. 
+	 * The {@link DirectoryAccessor#getFileBytes(String)} method will be invoked to get
+	 * the binary file bytes as a byte array. The byte array will then be passed to the
+	 * {@link WebResponder#sendFileDownloadResponse(HttpServletResponse, byte[], String)}
+	 * method.
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws Exception uncaught exception
+	 */
+	protected void handleDownloadAdminFile(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws Exception {
+		
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleDownloadAdminFile()...invoked.");
+		
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, true);
+			return;
+		}
+		
+		String filePathAndName = request.getParameter("filePathAndName");
+		
+		if(filePathAndName.equals("/midb/email_addresses.csv")) {
+			DBManager.getInstance().updateEmailAddressesCSVFile();
+		}
+		else if(filePathAndName.equals("/midb/web_hits_geoloc.csv")) {
+			DBManager.getInstance().updateWebHitsGeoLocCSVFile();
+		}
+		
+		byte[] fileBinaryBuffer = DirectoryAccessor.getFileBytes(filePathAndName);
+		int index = filePathAndName.lastIndexOf("/");
+		String fileNameOnly = filePathAndName.substring(index+1);
+		WebResponder.sendFileDownloadResponse(response, fileBinaryBuffer, fileNameOnly);
+		LOGGER.trace(loggerId + "handleDownloadAdminFile()...exit.");
+	}
+	
+	/**
 	 * Handles a request to download an NII file that maps to the selected probabilistic threshold percentage.
+	 * The {@link DirectoryAccessor#getFileBytes(String)} method will be invoked to get the binary file bytes
+	 * that will be sent back to the client via the {@link WebResponder#sendFileDownloadResponse(HttpServletResponse, byte[], String)}
 	 * 
 	 * @param appContext {@link ApplicationContext}
 	 * @param request A reference to the current HttpServletRequest
 	 * @param response A reference to the current HttpServletResponse
+	 * 
+	 * @throws Exception uncaught exception
 	 */
-	protected void handleAjaxDownloadFile(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
+	protected void handleDownloadFile(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		
 		String loggerId = appContext.getLoggerId();
-		LOGGER.trace(loggerId + "handleAjaxDownloadFile()...invoked.");
+		LOGGER.trace(loggerId + "handleDownloadFile()...invoked.");
 		String filePathAndName = request.getParameter("filePathAndName");
-		LOGGER.trace(loggerId + "handleAjaxDownloadFile()...filePathAndName=" + filePathAndName);
+		
+		//we don't track files downloaded for admin tasks
+		if(filePathAndName.contains("sample_files.zip") || filePathAndName.contains(".csv") ||
+		   filePathAndName.contains("Create_New_Web_Hits_Map.rtf")) {
+			handleDownloadAdminFile(appContext, request, response);
+			LOGGER.trace(loggerId + "handleDownloadFile()...exit.");
+			return;
+		}
+		
+		boolean optedOut = true;
+		
 		String ipAddress = request.getRemoteAddr();
 		//since we use NGINX as a front-end load distributor on AWS-LINUX then we need the following
 		if(ipAddress.contains("127.0.0.1")) {
@@ -485,110 +568,151 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				ipAddress = originalIP;
 			}
 		}
-		byte[] fileBinaryBuffer = DirectoryAccessor.getFileBytes(filePathAndName);
-		int slashIndex = filePathAndName.lastIndexOf("/");
-		String fileNameOnly = filePathAndName.substring(slashIndex+1);
+		
+		String message = "MIDB_APP_FILE_DOWNLOAD::::" + DOMAIN_NAME + "::::IP=" + ipAddress;
+		SMSNotifier.sendNotification(message, "NetworkProbabilityDownloader");
+
+		
+		String optedOutParm = request.getParameter("optedOut");
+		if(optedOutParm == null) {
+			optedOut = false;
+		}
+		
+		String emailAddress = request.getParameter("emailAddress");
+		if(emailAddress == null) {
+			emailAddress = "unknown";
+		}
+		String selectedStudy = request.getParameter("selectedStudy");
+		String selectedNeuralNetworkName = request.getParameter("selectedNeuralNetworkName");
+
+		
+		if(!optedOut && !appContext.isEmailAddressAlreadyTracked()) {
+			String fname = request.getParameter("fname");
+			String lname = request.getParameter("lname");
+			
+			EmailAddressEntry emailEntry = new EmailAddressEntry(fname, lname, emailAddress);
+			emailEntry.setAppContext(appContext);
+			emailEntry.setRequest(request);
+			emailEntry.setResponse(response);
+			emailEntry.setRequestorIPAddress(ipAddress);
+			EmailTracker.getInstance().addEmailAddressEntry(emailEntry);
+			appContext.setEmailAlreadyTracked(true);
+		}
+
+		LOGGER.trace(loggerId + "handleAjaxDownloadFile()...filePathAndName=" + filePathAndName);
+
 		LocalDateTime localTime = LocalDateTime.now();
-		String formattedTS = DT_FORMATTER_1.format(localTime);
-		formattedTS = formattedTS.replace(" ", ",");
+		String formattedTS = appContext.getCurrentActionFormattedTimestamp();
 		String id = DT_FORMATTER_FOR_ID.format(localTime);
-		String downloadEntry = DOWNLOAD_ENTRY_TEMPLATE.replace("ID", id);
-		downloadEntry = downloadEntry.replace("IP_ADDRESS", ipAddress);
-		downloadEntry = downloadEntry.replace("DOWNLOAD_REQUESTED_FILE", filePathAndName);
-		downloadEntry = downloadEntry.replace("TIMESTAMP", formattedTS);
-		DownloadTracker.getInstance().addDownloadEntry(downloadEntry);
+		
+		int index = filePathAndName.lastIndexOf("/");
+		String fileNameOnly = filePathAndName.substring(index+1);
+		FileDownloadEntry fdEntry = new FileDownloadEntry();
+		fdEntry.setId(id);
+		fdEntry.setFormattedTimeStamp(formattedTS);
+		fdEntry.setAppContext(appContext);
+		fdEntry.setRequest(request);
+		fdEntry.setResponse(response);
+		fdEntry.setFileName(fileNameOnly);
+		fdEntry.setFilePath(filePathAndName);
+		fdEntry.setStudy(selectedStudy);
+		fdEntry.setNeuralNetworkName(selectedNeuralNetworkName);
+		fdEntry.setRequestorIPAddress(ipAddress);
+		if(!optedOut) {
+			fdEntry.setEmailAddress(emailAddress);
+		}
+		DownloadTracker.getInstance().addDownloadEntry(fdEntry);
+		
+		byte[] fileBinaryBuffer = DirectoryAccessor.getFileBytes(filePathAndName);
+
 		WebResponder.sendFileDownloadResponse(response, fileBinaryBuffer, fileNameOnly);
-		LOGGER.trace(loggerId + "handleAjaxDownloadFile()...exit.");
+		LOGGER.trace(loggerId + "handleDownloadFile()...exit.");
 		
 		return;
 	}
 	
-	protected void handleAjaxGetAdminValidationStatus(ApplicationContext appContext, HttpServletResponse response) {
-		String loggerId = appContext.getLoggerId();
-		LOGGER.trace(loggerId + "handleAjaxGetAdminValidationStatus()...invoked.");
-		
-		
-		LOGGER.trace(loggerId + "handleAjaxGetAdminValidationStatus()...exit.");
-	}
 	
-	protected void handleAjaxGetMenuDataRequest(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
+	/**
+	 * Handles the getMenuData action. This handling of this action is delegated to
+	 * {@link WebResponder#sendMenuDataResponse(HttpServletResponse, ApplicationContext)}.
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 */
+	protected void handleGetMenuDataRequest(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
 		String loggerId = appContext.getLoggerId();
-		LOGGER.trace(loggerId + "handleAjaxGetMenuData()...invoked.");
+		LOGGER.trace(loggerId + "handleGetMenuDataRequest()...invoked.");
 
 		WebResponder.sendMenuDataResponse(response, appContext);
 		
-		LOGGER.trace(loggerId + "handleAjaxGetMenuData()...exit.");
+		LOGGER.trace(loggerId + "handleGetMenuDataRequest()...exit.");
 	}
 
 
 	
-	protected void handleAjaxGetNetworkFolderNamesConfig(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
+	/**
+	 * Handles the request to get the single network folders configuration. Each study
+	 * has an entry in the network_folder_names.config file. This file is sent to the client
+	 * so that it may cache the entries for each study in a map. The task for this request
+	 * is delegated to {@link WebResponder#sendNetworkFolderNamesConfigResponse(HttpServletResponse)}.
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 */
+	protected void handleGetNetworkFolderNamesConfig(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
 		String loggerId = appContext.getLoggerId();
-		LOGGER.trace(loggerId + "handleAjaxGetNetworkFolderNamesConfig()...invoked.");
+		LOGGER.trace(loggerId + "handleGetNetworkFolderNamesConfig()...invoked.");
 		
 		//ArrayList<String> folderNamesConfig = AtlasDataCacheManager.getInstance().getNeuralNetworkFolderNamesConfig();
 		//handleAjaxGetThresholdImages(appContext, request, response, true, folderNamesConfig);
 		WebResponder.sendNetworkFolderNamesConfigResponse(response);
 		
-		LOGGER.trace(loggerId + "handleAjaxGetNetworkFolderNamesConfig()...invoked.");
+		LOGGER.trace(loggerId + "handleGetNetworkFolderNamesConfig()...invoked.");
 	}
 	
 	
 	/**
-	 * When the client selects a specific neural network, a request to get all the threshold images is sent
-	 * to the servlet. This method will retrieve the collection of images from {@link AtlasDataCacheManager}.
-	 * It will then forward the request to the {@link WebResponder} for further processing.
+	 * When the client selects a specific neural network, a request to get all the threshold images for that
+	 * network is sent to the servlet. This method will retrieve the collection of images from {@link AtlasDataCacheManager}.
+	 * There are 3 arrays that comprise the response data:
+	 * <ul>
+	 * <li>An array of base64 encoded png images of each threshold image
+	 * <li>An array of file paths designating .nii files that map to each threshold image
+	 * <li>A reference to a {@link NetworkMapData} instance. This object contains a base64 encoded png image
+	 *     and a file path designating a .nii file.
+	 * </ul>
+	 *  <p>   
+	 * It will then forward the request to the {@link WebResponder} for further processing. 
 	 * 
 	 * @param appContext A reference to the {@link ApplicationContext}
 	 * @param request A reference to the current HttpServletRequest
 	 * @param response A reference to the current HttpServletResponse
-	 * @param isFirstRequest boolean
-	 * @param neuralNetworkNames A list of available neural network names
 	 */
-	protected void handleAjaxGetThresholdImages(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response, boolean isFirstRequest) {
+	protected void handleGetThresholdImages(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
 
 		String loggerId = appContext.getLoggerId();
-		LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...invoked.");
+		LOGGER.trace(loggerId + "handleGetThresholdImages()...invoked.");
 		
 		boolean isSingleNetworkResponse = false;
 		NetworkMapData networkMapData = null;
 			
 		
-		//String rootDirectory = "/myPath";
-		
-		//if isFirstRequest=true then this is the default request
-		//a.k.a. the first request coming in and the arrayList of neuralNetworkNames
-		//will be populated, otherwise it will be null.
-		//Also if this is the default request then the 'selected' neuralNetworkName
-		//will be DEFAULT_NEURAL_NETWORK
-		
-		String selectedNeuralNetworkName = null;
-		//String selectedNeuralNetworkPathName = AtlasDataCacheManager.getInstance().getNetworkPathName(selectedNeuralNetworkName);
-		//String selectedNeuralNetworkPathName = null;
-		
-		if(!isFirstRequest) {
-			selectedNeuralNetworkName = request.getParameter("neuralNetworkName");
-			LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...selectedNeuralNetworkName=" + selectedNeuralNetworkName);
-			//selectedNeuralNetworkPathName = AtlasDataCacheManager.getInstance().getNetworkPathName(selectedNeuralNetworkName);
-			LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...selectedNeuralNetworkPathName=" + selectedNeuralNetworkName);
-		}
-		
+		String selectedNeuralNetworkName = request.getParameter("neuralNetworkName");
+			
 		if(!selectedNeuralNetworkName.equals("combined_clusters")) {
 			isSingleNetworkResponse = true;
 		}
 		
 		String selectedStudy = request.getParameter("selectedStudy");
 		
-		//for diagnostic logging test
-		if(selectedStudy.contains("bogus")) {
-				throw new NullPointerException("test");
-		}
 		String targetDirectory = ROOT_PATH.replace(STUDY_NAME_PLACEHOLDER, selectedStudy);
 		String selectedDataType = request.getParameter("selectedDataType");
 		targetDirectory = targetDirectory.replace(DATA_TYPE_PLACEHOLDER, selectedDataType);
 		targetDirectory = targetDirectory + selectedNeuralNetworkName;
-		LOGGER.trace(targetDirectory);
-		LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...selected network name=" + targetDirectory);
+		LOGGER.trace(loggerId + targetDirectory);
+		LOGGER.trace(loggerId + "handleGetThresholdImages()...selected network name=" + targetDirectory);
 
 		ArrayList<String> imagePaths = AtlasDataCacheManager.getInstance().getImagePathNames(targetDirectory);
 		ArrayList<String> imageBase64Strings = AtlasDataCacheManager.getInstance().getBase64ImagePathStrings(targetDirectory);
@@ -598,15 +722,32 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		}
 		
 		WebResponder.sendThresholdImagesResponse(response, imagePaths, imageBase64Strings, networkMapData);
-		LOGGER.trace(loggerId + "handleAjaxGetThresholdImages()...exit.");
+		LOGGER.trace(loggerId + "handleGetThresholdImages()...exit.");
 		
 		return;
 	}
 	
-	protected void handleAjaxAddStudyRequest(ApplicationContext appContext, HttpServletRequest request,
+	/**
+	 * Handles a request to add a study to the studies repository. This allows for
+	 * dynamic creation of studies in the client study menu. All data is stored under the
+	 * midb root folder. This method will create an instance of {@link CreateStudyHandler}
+	 * and delegate the required tasks to the handler.
+	 * 
+	 * This method tracks how many of the required files necessary to create a study have
+	 * been uploaded. Once the final file is uploaded, the {@link CreateStudyHandler#completeStudyDeploy()}
+	 * method will be invoked. Any error messages will be stored in the handler.
+	 * The success or failure status will be sent to the client via the {@link WebResponder#sendAddStudyResponse(ApplicationContext, HttpServletResponse)} 
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws IOException - uncaught exception
+	 * @throws BIDS_FatalException - application-generated exception
+	 */
+	protected void handleAddStudy(ApplicationContext appContext, HttpServletRequest request,
 			                                   HttpServletResponse response) throws IOException, BIDS_FatalException {
 		String loggerId = appContext.getLoggerId();
-		LOGGER.trace(loggerId + "handleAjaxAddStudyRequest()...invoked.");
+		LOGGER.trace(loggerId + "handleAddStudy()...invoked.");
 		
 		//Part part = null;	
 		String fileName = null;
@@ -626,7 +767,6 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		if(currentFileNumber == 1) {
 			createStudyHandler = new CreateStudyHandler(appContext, request, response);
 			appContext.setCreateStudyHandler(createStudyHandler);
-			appContext.clearErrors();
 			fileName = createStudyHandler.uploadFile(request, fileSize);
 		}
 		else {
@@ -642,43 +782,161 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			WebResponder.sendUploadFileResponse(response, fileName);
 		}
 		
-		LOGGER.trace(loggerId + "handleAjaxAddStudyRequest()...exit.");
+		LOGGER.trace(loggerId + "handleAddStudy()...exit.");
 
 
 	}
 	
-	protected void handleAjaxUploadZipChunk(ApplicationContext appContext, HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+	/**
+	 * Handles a request to update the url to either the WEB_HITS_MAP or the FILE_DOWNLOADS_MAP.
+	 * These urls are stored in the map_urls table in MYSQL. Before proceeding with this task,
+	 * the session will be checked to see if admin access has been validated. If not, then the
+	 * {@link WebResponder#sendAdminAccessDeniedResponse(HttpServletResponse, ApplicationContext, boolean)}
+	 * will be invoked. Otherwise, {@link DBManager#updateMapURL(String, String)} will be invoked
+	 * and then {@link WebResponder#sendUpdateMapURLResponse(HttpServletResponse, int, String)}.
+	 * 
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws SQLException unhandled exception to be reported by servlet
+	 */
+	protected void handleUpdateMapURL(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws SQLException {
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleUpdateMapURL()...invoked.");
 		
-		    //ZipChunkHandler.uploadChunk(request, response);
-	}
-	
-	protected void handleAjaxRemoveStudy(ApplicationContext appContext, HttpServletRequest request,
-            HttpServletResponse response) throws IOException, BIDS_FatalException {
-				
 		if(!appContext.isAdminActionValidated()) {
-			response.getWriter().write("Session timeout<br>study not removed.<br>Please refresh browser page");
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
 			return;
-			/*
-			StackTraceElement[] ste = Thread.currentThread().getStackTrace();
-			String message = "Invalid Admin State";
-			BIDS_FatalException bidsFatalError = new BIDS_FatalException(message, ste);
-			throw bidsFatalError;
-			*/
 		}
 		
+		String url = request.getParameter("newURL");
+		String targetMap = request.getParameter("targetMap");
+		
+		int updatedRowCount = DBManager.getInstance().updateMapURL(url, targetMap);
+
+		WebResponder.sendUpdateMapURLResponse(response, updatedRowCount, targetMap);
+		
+		LOGGER.trace(loggerId + "handleUpdateMapURL()...exit.");
+
+	}
+
+	/**
+	 * Handles a request to remove a study. This action will remove the study entry from
+	 * 3 different configuration files:
+	 * <ul>
+	 * <li>menu.conf
+	 * <li>network_folder_names.conf
+	 * <li>summary.conf
+	 * </ul>
+	 * 
+	 * It will then remove the study folder which holds all the threshold image files,
+	 * and the .nii files for every threshold. All of these tasks are delegated to an instance
+	 * of {@link RemoveStudyHandler}.
+	 * <p>
+	 * Before this action is executed, the session will be examined to see if admin access
+	 * has been validated. If not, then {@link WebResponder#sendAdminAccessDeniedResponse(HttpServletResponse, ApplicationContext, boolean)}
+	 * will be invoked. Once a study has been removed, {@link WebResponder#sendRemoveStudyResponse(HttpServletResponse, String)} will
+	 * be invoked.
+	 * 
+	 * @param appContext  {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws IOException - unhandled exception
+	 * @throws BIDS_FatalException - application-generated exception
+	 */
+	protected void handleRemoveStudy(ApplicationContext appContext, HttpServletRequest request,
+            HttpServletResponse response) throws IOException, BIDS_FatalException {
+		
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleRemoveStudy()...invoked");
+				
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			return;
+		}
+		
+		LocalDateTime localTime = LocalDateTime.now();
+		String formattedTS = appContext.getCurrentActionFormattedTimestamp();
+		formattedTS = formattedTS.replace(" ", ",");
+		String id = DT_FORMATTER_FOR_ID.format(localTime);
+
+		AdminAccessEntry aaEntry = new AdminAccessEntry();
+		String ipAddress = appContext.getRemoteAddress();
+		String action = appContext.getCurrentAction();
+		aaEntry.setAction(action);
+		aaEntry.setAppContext(appContext);
+		aaEntry.setRequestorIPAddress(ipAddress);
+		aaEntry.setFormattedTimeStamp(formattedTS);
+		aaEntry.setRequest(request);
+		boolean isValidIP = appContext.getTokenManager().isValidIP();
+		aaEntry.setValidIP(isValidIP);
+
+		DBManager.getInstance().insertAdminAccessRecord(aaEntry, appContext);
 		String studyFolder = request.getParameter("studyFolder");
 		RemoveStudyHandler rsh = new RemoveStudyHandler(studyFolder);
 		rsh.removeStudy();
 		WebResponder.sendRemoveStudyResponse(response, studyFolder);
-		
+		LOGGER.trace(loggerId + "handleRemoveStudy()...exit");
 	}
+	
+	
+	/**
+	 * Handles a request to re-synch the web_hits table in MYSQL. This will be
+	 * accomplished by invoking {@link DBManager#resynchWebHits()}. The underlying
+	 * database mechanism to re-synch the file is encapsulated in a stored procedure
+	 * named rWebHits which exists in the midbatlas_db database. The table is re-synched
+	 * by deleting any records with an ip_address that matches a developer ip_address.
+	 * Then all the records are re-numbered for a correct number sequence with no gaps
+	 * in the hit_count column.  After the DBManager finishes the task, 
+	 * {@link WebResponder#sendResynchWebHitsResponse(HttpServletResponse, String)} is
+	 * invoked.
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws SQLException - exception that needs to be reported
+	 */
+	protected void handleResynchWebHits(ApplicationContext appContext, HttpServletRequest request,
+				HttpServletResponse response) throws SQLException {
+		
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleResynchWebHits()...invoked.");
+		
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			return;
+		}
+		
+		boolean success = DBManager.getInstance().resynchWebHits();
+		String responseMessage = null;
+		
+		if(success) {
+			responseMessage = "Successfully resynched table: web_hits";
+		}
+		else {
+			responseMessage = "Unable to resynch table: web_hits";
 
-	protected void handleAjaxValidateAdminAccess(ApplicationContext appContext, HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+		}
+		WebResponder.sendResynchWebHitsResponse(response, responseMessage);
+		
+		LOGGER.trace(loggerId + "handleResynchWebHits()...exit.");
+
+	}
+	
+
+	/**
+	 * Handles validating admin access. This action is delegated to {@link WebResponder#sendAdminValidationResponse(HttpServletResponse, ApplicationContext, String, String, String)}.
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 */
+	protected void handleValidateAdminAccess(ApplicationContext appContext, HttpServletRequest request,
+            HttpServletResponse response)  {
 		
 			String loggerId = appContext.getLoggerId();
-			LOGGER.trace(loggerId + "handleAjaxValidateAdminAccess()...invoked.");
+			LOGGER.trace(loggerId + "handleValidateAdminAccess()...invoked.");
 			
 			String token = request.getParameter("token");
 			String password = request.getParameter("mriVersion");
@@ -693,17 +951,25 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			
 			WebResponder.sendAdminValidationResponse(response, appContext, token, password, ipAddress);
 
-			LOGGER.trace(loggerId + "handleAjaxValidateAdminAccess()...exit.");
+			LOGGER.trace(loggerId + "handleValidateAdminAccess()...exit.");
 	}
 	
-	protected void handleAjaxValidateAdminAccessStatus(ApplicationContext appContext, HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+	/**
+	 * Handles determining if the session has already been validated for admin access.
+	 * This task is delegated to {@link WebResponder#sendAdminValidationStatus(ApplicationContext, HttpServletResponse)}.
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 */
+	protected void handleValidateAdminAccessStatus(ApplicationContext appContext, HttpServletRequest request,
+            HttpServletResponse response)  {
 		
 			String loggerId = appContext.getLoggerId();
-			LOGGER.trace(loggerId + "handleAjaxValidateAdminAccessStatus()...invoked.");
+			LOGGER.trace(loggerId + "handleValidateAdminAccessStatus()...invoked.");
 
 			WebResponder.sendAdminValidationStatus(appContext, response);
-			LOGGER.trace(loggerId + "handleAjaxValidateAdminAccessStatus()...exit.");			
+			LOGGER.trace(loggerId + "handleValidateAdminAccessStatus()...exit.");			
 	}
 
 
@@ -711,12 +977,12 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	/**
 	 * Override of the init() method which handles instantiation and initialization of the
 	 * {@link PropertyManager} and the {@link AtlasDataCacheManager} as well as the dynamic
-	 * configuration of the log4j logging mechanism.
+	 * configuration of the log4j logging mechanism. Other components are also initialized.
 	 */
 	public void init() {
 		//DO NOT USE LOGGER YET BECAUSE LogConfigurator has not run yet
 		System.out.println("NetworkProbabilityDownloader.init()...invoked...version=" + BUILD_DATE);
-		//System.out.println(System.getProperty("com.sun.jndi.ldap.object.trustURLCodebase"));
+		
 		//we preload PropertyManager because it will invoke the LogConfigurator
 		PropertyManager.getInstance();
 		LOGGER = LogManager.getLogger(NetworkProbabilityDownloader.class);
@@ -725,6 +991,10 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		    InetAddress addr;
 		    addr = InetAddress.getLocalHost();
 		    localHostName = addr.getHostName();
+		    //set the domain to local host name for now
+		    //when the first servlet request comes in the domain name 
+		    //will be properly set (midbatlas.io)
+		    DOMAIN_NAME = localHostName;
 		    LOGGER.info("local machine name=" + localHostName);
 		}
 		catch (UnknownHostException ex) {
@@ -732,7 +1002,10 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		    LOGGER.error(ex.getLocalizedMessage(), ex);
 		}
 		
+		// AtlasDataCacheManager.getInstance() will cause the AtlasDataCacheManager
+		// to preload the default image data
 		AtlasDataCacheManager.getInstance().setLocalHostName(localHostName);
+		
 		
 		if(localHostName.contains("JAMESs-MacBook-Pro")) {
 			AtlasDataCacheManager.getInstance().loadKeyFromFile();
@@ -742,78 +1015,92 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		Map<String,String> envMap = System.getenv();
 		
-		LOGGER.trace("Environment Variables follow!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		Set<String> envKeys = envMap.keySet();
 		
-		for (Map.Entry<String, String> entry : envMap.entrySet()) {
-			if(entry.getKey().contains("MIDB_ROOT")) {
-				LOGGER.trace("EMAIL_ARGS found...continue");
-				EmailNotifier.setKey(entry.getValue());
-				TokenManager.setKey(entry.getValue());
+		//key must be processed before other env vars
+		String key = envMap.get("MIDB_ROOT");
+		
+		if(key != null) {
+			LOGGER.trace("Processing MIDB_ROOT...");
+			EmailNotifier.setKey(key);
+			TokenManager.setKey(key);
+			initSMSNotifier(key);
+			initIPLocator(key);
+			initIPInfoRequestor(key);
+		}
+		else {
+			LOGGER.fatal("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+			LOGGER.fatal("MIDB_ROOT not found! Key is null!");
+		}
 
-				continue;
-			}
-			else if(entry.getKey().contains("MIDB_SERIALIZATION")) {
-				LOGGER.trace("MIDB_SERIALIZATION found...continue");
-				String[] encryptedArray = entry.getValue().split("::");
+		Iterator<String> envIt = envKeys.iterator();
+		String envKey = null;
+		String envValue = null;
+		LOGGER.trace("Processing environment variables::!!!!!!!!!!!!!!!!!!!!!!!");
+		
+		
+		while(envIt.hasNext()) {
+			envKey = envIt.next();
+			envValue = envMap.get(envKey);
+			//LOGGER.trace(envKey + "==" + envValue);
+			
+			switch(envKey) {
+			case	"MIDB_SERIALIZATION" :
+				LOGGER.trace("Processing MIDB_SERIALIZATION");
+				String[] encryptedArray = envValue.split("::");
 				EmailNotifier.setSender(encryptedArray[0]);
 				EmailNotifier.setPassword(encryptedArray[1]);
-				continue;
-			}
-			else if(entry.getKey().contains("MIDB_VERSION")) {
-				LOGGER.trace("MIDB_VERSION found...continue");
-				String encryptedRecipient = entry.getValue();
+				break;
+			case	"MIDB_VERSION" :
+				LOGGER.trace("Processing MIDB_VERSION");
+				String encryptedRecipient = envValue;
 				EmailNotifier.setRecipient(encryptedRecipient);
-				continue;
-			}
-			else if(entry.getKey().contains("MIDB_MRI")) {
-				LOGGER.trace("MIDB_MRI found...continue");
-				String encryptedPassword = entry.getValue();
+				break;
+			case	"MIDB_MRI" :
+				LOGGER.trace("Processing MIDB_MRI");
+				String encryptedPassword = envValue;
 				TokenManager.setPassword(encryptedPassword);
-				continue;
+				break;
+			case	"MIDB_DB" :
+				LOGGER.trace("Processing MIDB_DB");
+				if(key != null) {
+					DBManager.getInstance().initAuthentication(envValue, key);
+				}
 			}
-			
-            LOGGER.trace(entry.getKey() + " : " + entry.getValue());
-        }
+		}
 		
 		LOGGER.info("exiting init().");
 
-		// AtlasDataCacheManager.getInstance() will cause the AtlasDataCacheManager
-		// to preload the default image data
 		DownloadTracker.getInstance();
-		HitTracker.getInstance();
-		try {
-			Class.forName("edu.umn.midb.population.atlas.security.TokenManager");
-			Class.forName("edu.umn.midb.population.atlas.utils.EmailNotifier");
-		}
-		catch(Exception e) {
-			LOGGER.error(e.getMessage(), e);
-		}
+		WebHitsTracker.getInstance();
+		EmailTracker.getInstance();
+		CountryNamesResolver.getInstance();
 		
-		//get local machine name
+		privilegedList = AtlasDataCacheManager.getInstance().getPrivilegedList();
+		LOGGER.trace(DEFAULT_LOGGER_ID + "acl loaded:::" + privilegedList);
 		
 		LOGGER.info("exiting init().");
 	}
 	
-	protected void submitHitEntry(HttpServletRequest request) {
+	protected static synchronized void updateHitCount(HttpServletRequest request) {
+		HIT_COUNT++;
+		String domainName = request.getServerName();
+		DOMAIN_NAME = domainName;
+	}
+	
+	/**
+	 * Entry point for adding a record to the web_hits history table in MYSQL.
+	 * An instance of {@link WebHitEntry} will be created and queued via the
+	 * {@link WebHitsTracker#addWebHitEntry(WebHitEntry)}. The WebHitEntry will
+	 * then be added to the database. 
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 */
+	protected void submitHitEntry(ApplicationContext appContext, HttpServletRequest request) {
 		
 		String ipAddress = request.getRemoteAddr();
-		String userAgent = request.getHeader("USER-AGENT");
-		
-		LOGGER.trace("remoteAddr=" + ipAddress);
-		
-		/*
-		Enumeration<String> headersEnum = request.getHeaderNames();
-		LOGGER.trace("HEADERS follow");
-		LOGGER.trace(headersEnum);
-		String aHeaderName = null;
-		String aHeaderValue = null;
-		
-		while(headersEnum.hasMoreElements()) {
-			aHeaderName = headersEnum.nextElement();
-			aHeaderValue = request.getHeader(aHeaderName);
-			LOGGER.trace(aHeaderName + "=" + aHeaderValue);
-		}
-	    */
+		String userAgent = request.getHeader("USER-AGENT");	
 		
 		//since we use NGINX as a front-end load distributor on AWS-LINUX then we need the following
 		//we make this a conditional check since this might be an environment without a load distributor
@@ -826,55 +1113,264 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		}
 		
 		LocalDateTime localTime = LocalDateTime.now();
-		String formattedTS = DT_FORMATTER_1.format(localTime);
+		String formattedTS = appContext.getCurrentActionFormattedTimestamp();
 		formattedTS = formattedTS.replace(" ", ",");
 		String id = DT_FORMATTER_FOR_ID.format(localTime);
-		String hitEntry = HIT_ENTRY_TEMPLATE.replace("ID", id);
-		hitEntry = hitEntry.replace("IP_ADDRESS", ipAddress);
-		hitEntry = hitEntry.replace("TIMESTAMP", formattedTS);
-		hitEntry = hitEntry.replace("USER_AGENT", userAgent);
-		HitTracker.getInstance().addHitEntry(hitEntry);
+
+		WebHitEntry whEntry = new WebHitEntry();
+		whEntry.setAppContext(appContext);
+		whEntry.setRequestorIPAddress(ipAddress);
+		whEntry.setFormattedTimeStamp(formattedTS);
+		whEntry.setUserAgent(userAgent);
+		whEntry.setRequest(request);
+		whEntry.setId(id);
+		WebHitsTracker.getInstance().addWebHitEntry(whEntry);
 	}
 	
-	protected static synchronized void updateAdminAccessFile(HttpServletRequest request, String ipAddress, String action) {
-		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "updateAdminAccessFile()...invoked.");
+	/**
+	 * Resolves the ip address of the original requestor. This is necessary since each
+	 * request is forwarded from the NGINX reverse proxy server.
+	 * 
+	 * @param request HttpServletRequest
+	 * @return String The ip address of the original requestor
+	 */
+	protected String getOriginalIPAddress(HttpServletRequest request) {
+		String ipAddress = null;
 		
-		String userAgent = request.getHeader("USER-AGENT");
-		
-		LocalDateTime localTime = LocalDateTime.now();
-		String formattedTS = DT_FORMATTER_1.format(localTime);
-		formattedTS = formattedTS.replace(" ", ",");
-		//String id = DT_FORMATTER_FOR_ID.format(localTime);
-		String adminEntry = ADMIN_ENTRY_TEMPLATE.replace("IP_ADDRESS", ipAddress);
-		adminEntry = adminEntry.replace("ACTION", action);
-		adminEntry = adminEntry.replace("TIMESTAMP", formattedTS);
-		adminEntry = adminEntry.replace("USER_AGENT", userAgent);
+		ipAddress = request.getRemoteAddr();
+		if(ipAddress.contains("127.0.0.1")) {
+			String originalIP = request.getHeader("X-Forwarded-For");
+			if(originalIP != null) {
+				ipAddress = originalIP;
+			}
+		}
+		return ipAddress;
+	}
+	
+	/**
+	 * Initializes the {@link IPInfoRequestor}.
+	 * 
+	 * @param key String
+	 */
+	private void initIPInfoRequestor(String key) {
 
-		FileWriter fw = null;
-		PrintWriter pw = null;
+		LOGGER.trace(DEFAULT_LOGGER_ID + "initIPInfoRequestor()...invoked");
 		
-		try {
-			fw = new FileWriter(ADMIN_ACCESS_FILE, true);
-			pw = new PrintWriter(fw);
-			pw.println(adminEntry);
-			pw.close();
-			LOGGER.info(loggerId + "adminAccess, ipAddress=" + ipAddress);
-		}
-		catch(IOException ioE) {
-			LOGGER.error(loggerId + "Failed to create PrintWriter for file=" + ADMIN_ACCESS_FILE);
-			LOGGER.error(ioE.getMessage(), ioE);
-		}
-		LOGGER.trace(loggerId + "updateAdminAccessFile()...exit.");
+		Map<String,String> envMap = System.getenv();
+		String ipInfoToken = envMap.get("MIDB_IPINF_TAU");
+		IPInfoRequestor.initAuthentication(key, ipInfoToken);
+		
+		LOGGER.trace(DEFAULT_LOGGER_ID + "initIPInfoRequestor()...exit");
 	}
 
-	public static void pause(long milliseconds) {
-		try {
-			Thread.sleep(milliseconds);
+	
+	/**
+	 * Initializes the {@link IPLocator}.
+	 * 
+	 * @param key String
+	 */
+	private void initIPLocator(String key) {
+		LOGGER.trace(DEFAULT_LOGGER_ID + "initIPLocator()...invoked");
+		
+		Map<String,String> envMap = System.getenv();
+
+		String ipLocatorAccountId = envMap.get("MIDB_IPLOC_ACC");
+		String ipLocatorLicenseKey = envMap.get("MIDB_IPLOC_AUT");
+		
+		IPLocator.initAuthentication(key, ipLocatorAccountId, ipLocatorLicenseKey);
+		
+		LOGGER.trace(DEFAULT_LOGGER_ID + "initIPLocator()...exit");
+	}
+	
+	/**
+	 * Initializes the {@link SMSNotifier}.
+	 * 
+	 * @param key String
+	 */
+	private void initSMSNotifier(String key) {
+		LOGGER.trace(DEFAULT_LOGGER_ID + "initSMSNotifier()...invoked");
+		
+		boolean success = true;
+		int successCount = 0;
+		
+		SMSNotifier.setKey(key);
+		
+		Map<String,String> envMap = System.getenv();
+		
+		String accSidE = envMap.get("MIDB_TAC");
+		if(accSidE != null) {
+			SMSNotifier.setAccountSIDE(accSidE);
+			successCount++;
 		}
-		catch(Exception e) {
-			
+
+		
+		String accAuthE = envMap.get("MIDB_TAU");
+		if(accAuthE != null) {
+			SMSNotifier.setAuthTokenE(accAuthE);
+			successCount++;
 		}
+
+		String toPhone = envMap.get("MIDB_TTP");
+		if(toPhone != null) {
+			SMSNotifier.setToNumberE(toPhone);
+			successCount++;
+		}
+
+		String fromPhone = envMap.get("MIDB_FTP");
+		if(fromPhone != null) {
+			SMSNotifier.setFromNumberE(fromPhone);
+			successCount++;
+		}
+		
+		if(successCount < 4) {
+			success = false;
+		}
+
+		LOGGER.trace(DEFAULT_LOGGER_ID + "initSMSNotifier()...exit, success=" + success);
+		
+	}
+	
+	/**
+	 * Handles a request to view the admin access records that exist in the admin_access
+	 * table in mysql. Since this is a request that can only come from the admin console,
+	 * the admin access validation will be checked. If the admin access has not been validated,
+	 * then the {@link WebResponder#sendAdminAccessDeniedResponse(HttpServletResponse, ApplicationContext, boolean)}
+	 * will be invoked. Otherwise, {@link DBManager#getAdminAccessRecords()} will be invoked to
+	 * retrieve the records. Then the {@link WebResponder#sendAdminAccessRecordsResponse(HttpServletResponse, ApplicationContext, ArrayList)}
+	 * method will be invoked. 
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws SQLException - unhandled exception
+	 */
+	protected void handleGetAdminAccessRecords(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws SQLException {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "handleGetAdminAccessRecords()...invoked.");
+		
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			return;
+		}
+
+		ArrayList<AdminAccessRecord> aaRecords = DBManager.getInstance().getAdminAccessRecords();
+		WebResponder.sendAdminAccessRecordsResponse(response, appContext, aaRecords);
+		
+		LOGGER.trace(loggerId + "handleGetAdminAccessRecords()...exit.");
+	}
+	
+	/**
+	 * Handles a request to view email addresses stored in the mysql table named email_addresses.
+	 * First, the admin access validation will be checked. If the validation is not confirmed,
+	 * then the {@link WebResponder#sendAdminAccessDeniedResponse(HttpServletResponse, ApplicationContext, boolean)}
+	 * method will be invoked. Otherwise, {@link DBManager#getEmailAddresses()} will be invoked
+	 * and {@link WebResponder#sendEmailAddressesResponse(HttpServletResponse, ApplicationContext, ArrayList)}
+	 * will be invoked.
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws SQLException - unhandled exception
+	 */
+	protected void handleGetEmailAddresses(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws SQLException {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "handleGetEmailAddresses()...invoked.");
+		
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			return;
+		}
+
+		ArrayList<EmailAddressRecord> emailAddresses = DBManager.getInstance().getEmailAddresses();
+		WebResponder.sendEmailAddressesResponse(response, appContext, emailAddresses);
+		
+		LOGGER.trace(loggerId + "handleGetEmailAddresses()...exit.");
+	}
+	
+	
+	/**
+	 * Handles a request to view the file download records in the mysql file_downloads table.
+	 * First, the admin access validation will be checked. If the validation is not confirmed,
+	 * then {@link WebResponder#sendAdminAccessDeniedResponse(HttpServletResponse, ApplicationContext, boolean)}
+	 * will be invoked. Otherwise {@link DBManager#getFileDownloads()} will be invoked and then
+	 * {@link WebResponder#sendFileDownloadRecordsResponse(HttpServletResponse, ApplicationContext, ArrayList)}
+	 * will be invoked.
+	 * 
+	 * @param appContext  {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws SQLException - unhandled exception
+	 */
+	protected void handleGetFileDownloadRecords(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws SQLException {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "handleGetFileDownloadRecords()...invoked.");
+
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			return;
+		}
+		
+		ArrayList<FileDownloadRecord> fileDownloads = DBManager.getInstance().getFileDownloads();
+		WebResponder.sendFileDownloadRecordsResponse(response, appContext, fileDownloads);
+		
+		LOGGER.trace(loggerId + "handleGetFileDownloadRecords()...exit.");
+	}
+	
+	/**
+	 * Handles a request to view the web hits history. First, the admin access validation
+	 * will be checked. If the admin access has not been validated yet, then
+	 * {@link WebResponder#sendAdminAccessDeniedResponse(HttpServletResponse, ApplicationContext, boolean)}
+	 * will be invoked. Otherwise, {@link DBManager#getWebHits()} will be invoked, and
+	 * then {@link WebResponder#sendWebHitsResponse(HttpServletResponse, ApplicationContext, ArrayList)}
+	 * will be invoked.
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws SQLException - unhandled exception
+	 */
+	protected void handleGetWebHits(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws SQLException {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "handleGetWebHits()...invoked.");
+		
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			return;
+		}
+
+		ArrayList<WebHitRecord> webHits = DBManager.getInstance().getWebHits();
+		WebResponder.sendWebHitsResponse(response, appContext, webHits);
+		
+		LOGGER.trace(loggerId + "handleGetWebHits()...exit.");
+	}
+	
+	
+	/**
+	 * Handles a request to get the current url to the google map that displays the 
+	 * locations for all web hits. First, the session will be checked to see if
+	 * admin access has been validated. If not, then {@link WebResponder#sendAdminAccessDeniedResponse(HttpServletResponse, ApplicationContext, boolean)}
+	 * will be invoked. Otherwise, {@link DBManager#getWebHitsMapURL()} will be invoked,
+	 * and then {@link WebResponder#sendWebHitsMapURLResponse(HttpServletResponse, ApplicationContext, String)} will be invoked.
+	 * 
+	 * @param appContext  {@link ApplicationContext}
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws SQLException - unhandled exception
+	 */
+	protected void handleGetWebHitsMapURL(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws SQLException {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "handleGetWebHitsMapURL()...invoked.");
+		
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			return;
+		}
+		
+		String mapURL = DBManager.getInstance().getWebHitsMapURL();
+		WebResponder.sendWebHitsMapURLResponse(response, appContext, mapURL);
+		
+		LOGGER.trace(loggerId + "handleGetWebHitsMapURL()...exit.");
+
 	}
 
 }

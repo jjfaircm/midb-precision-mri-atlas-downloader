@@ -83,6 +83,17 @@
     	console.log("dismissAdminAlert()...exit");
     }
     
+    function dismissUpdatesAlert() {
+    	console.log("dismissUpdatesAlert()...invoked");
+    	
+    	var div_updatesAlertBox = document.getElementById("updatesAlertBox");
+    	div_updatesAlertBox.style.display = "none";
+    	
+    	console.log("dismissAdminAlert()...exit");
+    }
+    
+    
+    
     function doAdminAlert(responseText, isDownloadAlert) {
     	console.log("doAdminAlert()...invoked");
     	
@@ -92,15 +103,287 @@
     	div_adminAlertBox.style.display = "block";
     	
     	if(isDownloadAlert) {
-    		console.log("changing color to blue");
     		div_adminAlertBox.style.backgroundColor = "#0F52BA";
     	}
+    	else {
+    		div_adminAlertBox.style.backgroundColor = "#644B26";
+    	}
     	
+    	//#644B26 #483d8b #0f52ba #536895 #000080 #191970.OK
+    	// GRAY: #808080 #696969.ok #575757
     	console.log("doAdminAlert()...exit");
     }
+    
+    function doUpdatesAlert(message) {
+
+    	console.log("doUpdatesAlert()...invoked");
+    	
+    	var div_updatesAlertBox = document.getElementById("updatesAlertBox");
+    	var span_updatesAlertSpanMessage = document.getElementById("updateAlertSpan");
+    	span_updatesAlertSpanMessage.innerHTML = message;
+    	div_updatesAlertBox.style.display = "block";
+    	
+    	//#644B26 #483d8b #0f52ba #536895 #000080 #191970.OK
+    	// GRAY: #808080 #696969.ok #575757
+    	console.log("doAdminAlert()...exit");
+    
+    }  
 	  
 	function enableScroll() {
 	    window.onscroll = function() {};
+	}
+	
+	function buildEmailAddressesTable(emailAddressesJSON) {
+
+	   	 console.log("buildEmailAddressesTable()...invoked.");
+		 var emailAddressesArray = JSON.parse(emailAddressesJSON);
+		 var currentEmailAddress = null;
+		 var tr = null;
+		 var td = null;
+		 var tbodyRef = document.getElementById("emailAddressesTable").getElementsByTagName('tbody')[0];
+		 
+		 while(tbodyRef.rows.length > 0) {
+			 tbodyRef.deleteRow(0);
+		 }
+		 
+		 for(var i=0; i<emailAddressesArray.length; i++) {
+			 currentEmailAddress = emailAddressesArray[i];
+			 tr = tbodyRef.insertRow();
+			 tr.className = "admin";
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentEmailAddress.firstName;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentEmailAddress.lastName;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentEmailAddress.emailAddress;
+			 tr.appendChild(td);
+		 }
+		 
+		 var th_emailAddressesCount = document.getElementById("th_emailAddressesFooter");
+		 th_emailAddressesCount.innerHTML = "Email Addresses Record Count: " + emailAddressesArray.length;
+		 var div_dataBaseProgress = document.getElementById("db_progress");
+		 div_dataBaseProgress.style.display = "none";
+		 var div_emailAddressesView = document.getElementById("div_emailAddressesView");
+		 div_emailAddressesView.style.display = "block";
+	   	 console.log("buildEmailAddressesTable()...exit.");
+	}
+	
+	function buildAdminAccessTable(adminAccessJSON) {
+		
+	   	 console.log("buildAdminAccessTable()...invoked.");
+		 var adminAccessRecordArray = JSON.parse(adminAccessJSON);
+		 var currentAdminAccessRecord = null;
+		 var tr = null;
+		 var td = null;
+		 var tbodyRef = document.getElementById("adminAccessTable").getElementsByTagName('tbody')[0];
+		 
+		 while(tbodyRef.rows.length > 0) {
+			 tbodyRef.deleteRow(0);
+		 }
+
+		 for(var i=0; i<adminAccessRecordArray.length; i++) {
+			 currentAdminAccessRecord = adminAccessRecordArray[i];
+			 
+			 tr = tbodyRef.insertRow();
+			 tr.className = "admin";
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentAdminAccessRecord.createDate;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentAdminAccessRecord.ipAddress;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentAdminAccessRecord.validIP;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentAdminAccessRecord.action;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentAdminAccessRecord.validPassword;
+			 tr.appendChild(td);
+			 
+			 tr.appendChild(td);
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentAdminAccessRecord.city;
+			 tr.appendChild(td);
+			 
+			 tr.appendChild(td);
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentAdminAccessRecord.state;
+			 tr.appendChild(td);
+			 
+			 tr.appendChild(td);
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentAdminAccessRecord.country;
+			 tr.appendChild(td);
+			 
+		 }
+		 var th_adminAccessCount = document.getElementById("th_adminAccessFooter");
+		 th_adminAccessCount.innerHTML = "Admin Access Record Count: " + adminAccessRecordArray.length;
+		 var div_dataBaseProgress = document.getElementById("db_progress");
+		 div_dataBaseProgress.style.display = "none";
+		 var div_fileDownloadsView = document.getElementById("div_adminAccessView");
+		 div_fileDownloadsView.style.display = "block";
+	   	 console.log("buildAdminAccessTable()...exit.");	
+	}
+	
+	function buildFileDownloadsTable(fileDownloadsJSON) {
+
+	   	 console.log("buildFileDownloadsTable()...invoked.");
+		 var fileDownloadsArray = JSON.parse(fileDownloadsJSON);
+		 var currentFileDownloadRecord = null;
+		 var tr = null;
+		 var td = null;
+		 var tbodyRef = document.getElementById("fileDownloadsTable").getElementsByTagName('tbody')[0];
+		 
+		 while(tbodyRef.rows.length > 0) {
+			 tbodyRef.deleteRow(0);
+		 }
+
+		 for(var i=0; i<fileDownloadsArray.length; i++) {
+			 currentFileDownloadRecord = fileDownloadsArray[i];
+			 
+			 tr = tbodyRef.insertRow();
+			 tr.className = "admin";
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentFileDownloadRecord.createDate;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentFileDownloadRecord.fileName;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentFileDownloadRecord.study;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentFileDownloadRecord.ipAddress;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentFileDownloadRecord.emailAddress;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentFileDownloadRecord.city;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentFileDownloadRecord.state;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentFileDownloadRecord.country;
+			 tr.appendChild(td);
+		 }
+		 
+		 var th_fileDownloadsCount = document.getElementById("th_fileDownloadsFooter");
+		 th_fileDownloadsCount.innerHTML = "File Downloads Record Count: " + fileDownloadsArray.length;
+		 var div_dataBaseProgress = document.getElementById("db_progress");
+		 div_dataBaseProgress.style.display = "none";
+		 var div_fileDownloadsView = document.getElementById("div_fileDownloadsView");
+		 div_fileDownloadsView.style.display = "block";
+	   	 console.log("buildFileDownloadsTable()...exit.");
+	}
+
+	
+	function buildWebHitsTable(webHitsJSON) {
+	   	 console.log("buildWebHitsTable()...invoked.");
+		 var webHitsArray = JSON.parse(webHitsJSON);
+		 var currentWebHit = null;
+		 var tr = null;
+		 var td = null;
+		 var tbodyRef = document.getElementById("webHitsTable").getElementsByTagName('tbody')[0];
+		 
+		 while(tbodyRef.rows.length > 0) {
+			 tbodyRef.deleteRow(0);
+		 }
+		 
+		 for(var i=0; i<webHitsArray.length; i++) {
+			 currentWebHit = webHitsArray[i];
+			
+			 tr = tbodyRef.insertRow();
+			 tr.className = "admin";
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentWebHit.hitCount;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentWebHit.createDate;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentWebHit.ipAddress;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentWebHit.city;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentWebHit.state;
+			 tr.appendChild(td);
+			 
+			 td = document.createElement("td");
+			 td.className = "admin";
+			 td.innerHTML = currentWebHit.country;
+			 tr.appendChild(td);
+		 }
+		 
+		 var webHitsTable = document.getElementById("webHitsTable");
+		 var th_webHitsCount = document.getElementById("th_webHitsFooter");
+		 th_webHitsCount.innerHTML = "Web Hits Record Count: " + webHitsArray.length;
+		 var div_dataBaseProgress = document.getElementById("db_progress");
+		 div_dataBaseProgress.style.display = "none";
+		 var div_webHitsView = document.getElementById("div_webHitsView");
+		 div_webHitsView.style.display = "block";
+		 //var width = window.getComputedStyle(document.querySelector('#webHitsTable')).width
+		 //div_webHitsView.style.width = width + "100px";
+	   	 console.log("buildWebHitsTable()...exit.");
+	}
+	
+	function cancelUpdateURL() {
+		console.log("cancelUpdateURL()...invoked.");
+		var div_updateURL = document.getElementById("div_updateURLDialogue");
+		div_updateURL.style.display = "none";
+		console.log("cancelUpdateURL()...exit.");
 	}
 	
 
@@ -407,10 +690,11 @@
 		   handleTabSelected("div_admin");
 	   }
 	   else if(responseText.includes("false") && responseText.includes("expired")) {
+		   doAdminAlert("Access denied<br>Error 100");
 		   return;
 	   }
 	   else if(responseText.includes("false") && responseText.includes("access_denied")) {
-		   doAdminAlert("Access denied");
+		   doAdminAlert("Access denied<br>Error 200");
 		   return;
 	   }
 	   else if(responseText.includes("false") && !responseText.includes("expired")) {
@@ -429,7 +713,7 @@
    }
    
    function handleStudyMenuClicked(anchor) {
-	   console.log("handleStudyMenuClicked()...invoked");
+	   console.log("handleStudyMenuClicked()...invoked, anchor.id=" + anchor.id);
 	   
 	   anchor.style.backgroundColor = "#7a0019";
 	   anchor.style.color = "#FFC300";
@@ -441,28 +725,73 @@
 	   var div_addStudy = document.getElementById("div_addStudy");
 	   var div_removeStudy = document.getElementById("div_removeStudy");
 	   var div_updateStudy = document.getElementById("div_updateStudy");
+	   var div_databaseAccess = document.getElementById("div_databaseAccess");
 	   var div_downloadSamples = document.getElementById("div_downloadSamples");
-
-
+	   var div_maps = document.getElementById("div_maps");
 	   
+	   div_addStudy.style.display = "none";
+	   div_removeStudy.style.display = "none";
+	   div_updateStudy.style.display = "none";
+	   div_databaseAccess.style.display = "none";
+	   div_downloadSamples.style.display = "none";
+	   div_maps.style.display = "none";
+
 	   var anchor_addStudy = document.getElementById("a_addStudy");
 	   var anchor_removeStudy = document.getElementById("a_removeStudy");
 	   var anchor_updateStudy = document.getElementById("a_updateStudy");
+	   var anchor_databaseAccess = document.getElementById("a_databaseAccess");
 	   var anchor_downloadSamples = document.getElementById("a_downloadSamples");
+	   var anchor_maps = document.getElementById("a_maps");
 
+	   
+	   anchor_addStudy.style.color = "white";
+	   anchor_removeStudy.style.color = "white";
+	   anchor_updateStudy.style.color = "white";
+	   anchor_databaseAccess.style.color = "white";
+	   anchor_downloadSamples.style.color = "white";
+	   anchor_maps.style.color = "white";
+	   
+	   
+	   switch (anchor.id) {
+	   case "a_addStudy":
+		   div_addStudy.style.display = "block";
+		   anchor_addStudy.style.color = "#FFC300";
+		   break;
+	   case "a_removeStudy":
+		   div_removeStudy.style.display = "block";
+		   anchor_removeStudy.style.color = "#FFC300";
+		   break;
+	   case "a_updateStudy":
+		   div_updateStudy.style.display = "block";
+		   anchor_updateStudy.style.color = "#FFC300";
+		   break;
+	   case "a_databaseAccess":
+		   div_databaseAccess.style.display = "block";
+		   anchor_databaseAccess.style.color = "#FFC300";
+		   break;
+	   case "a_downloadSamples":
+		   div_downloadSamples.style.display = "block";
+		   anchor_downloadSamples.style.color = "#FFC300";
+		   break;
+	   case "a_maps":
+		   div_maps.style.display = "block";
+		   anchor_maps.style.color = "#FFC300";
+		   break;
+	   }
+
+/*
 	   
 	   if(anchor.id=="a_addStudy") {
 		   div_addStudy.style.display = "block";
 		   div_removeStudy.style.display = "none";
 		   div_updateStudy.style.display = "none";
+		   div_databaseAccess.style.display = "none";
 		   div_downloadSamples.style.display = "none";
-
 
 		   anchor_removeStudy.style.color = "white";
 		   anchor_updateStudy.style.color = "white";
+		   anchor_databaseAccess.style.color = "white";
 		   anchor_downloadSamples.style.color = "white";
-
-
 	   }
 	   
 	   else if(anchor.id=="a_removeStudy") {
@@ -470,19 +799,23 @@
 		   div_addStudy.style.display = "none";
 		   div_updateStudy.style.display = "none";
 		   div_downloadSamples.style.display = "none";
+		   div_databaseAccess.style.display = "none";
 
 		   anchor_addStudy.style.color = "white";
 		   anchor_updateStudy.style.color = "white";
+		   anchor_databaseAccess.style.color = "white";
 		   anchor_downloadSamples.style.color = "white";
 	   }
 	   else if(anchor.id=="a_updateStudy") {
 		   div_updateStudy.style.display = "block";
 		   div_addStudy.style.display = "none";
 		   div_removeStudy.style.display = "none";
+		   div_databaseAccess.style.display = "none";
 		   div_downloadSamples.style.display = "none";
 
 		   anchor_addStudy.style.color = "white";
 		   anchor_removeStudy.style.color = "white";
+		   anchor_databaseAccess.style.color = "white";
 		   anchor_downloadSamples.style.color = "white";
 	   }
 	   else if(anchor.id=="a_downloadSamples") {
@@ -490,12 +823,41 @@
 		   div_updateStudy.style.display = "none";
 		   div_addStudy.style.display = "none";
 		   div_removeStudy.style.display = "none";
+		   div_databaseAccess.style.display = "none";
+
+		   anchor_addStudy.style.color = "white";
+		   anchor_removeStudy.style.color = "white";
+		   anchor_databaseAccess.style.color = "white";
+		   anchor_updateStudy.style.color = "white";
+	   }
+	   else if(anchor.id=="a_databaseAccess") {
+		   console.log("showing databaseAccess");
+		   div_databaseAccess.style.display = "block";
+		   div_downloadSamples.style.display = "none";
+		   div_updateStudy.style.display = "none";
+		   div_addStudy.style.display = "none";
+		   div_removeStudy.style.display = "none";
 
 		   anchor_addStudy.style.color = "white";
 		   anchor_removeStudy.style.color = "white";
 		   anchor_updateStudy.style.color = "white";
+		   anchor_downloadSamples.style.color = "white";
+	   }
+	   else if(anchor.id=="a_maintainMaps") {
+		   console.log("showing databaseAccess");
+		   div_databaseAccess.style.display = "block";
+		   div_downloadSamples.style.display = "none";
+		   div_updateStudy.style.display = "none";
+		   div_addStudy.style.display = "none";
+		   div_removeStudy.style.display = "none";
+
+		   anchor_addStudy.style.color = "white";
+		   anchor_removeStudy.style.color = "white";
+		   anchor_updateStudy.style.color = "white";
+		   anchor_downloadSamples.style.color = "white";
 	   }
 	   
+	 */  
 	   console.log("handleStudyMenuClicked()...exit");
    }
    
@@ -560,6 +922,18 @@
 	   	div_removeStudyConfirmMessage.style.display = "block";
 	   	
         console.log("handleRemoveStudyConfirmation()...exit.");
+   }
+   
+   function handleUpdateURLResponse(responseText) {
+       console.log("handleUpdateURLResponse()...invoked.");
+       
+       var div_mapProgress = document.getElementById("div_map_progress");
+       div_mapProgress.style.display = "none";
+      
+       doAdminAlert(responseText);
+       
+       console.log("handleUpdateURLResponse()...exit.");
+
    }
    
    function handleRemoveStudyResponse(responseText) {
@@ -1054,9 +1428,6 @@
        else if(startupTrigger) {
         	 selectedNeuralNetworkName = "combined_clusters";
         	 preProcessGetThresholdImages();
-
-      	 //getNeuralNetworkNames();
-    	   //getNetworkFolderNamesConfig();
        }
        else if(networkTypeId.includes("combined_clusters")) {
       	 selectedNeuralNetworkName = "combined_clusters";
@@ -1237,9 +1608,7 @@
 	    	 
 		   	 console.log("preProcessCreateStudyEntry()...exit.");
 		}
-		
-	   
-	   
+			   
 	   function processDataModeChoice(element) {
 	        console.log("processDataModeChoice()...invoked.");
             
@@ -1324,6 +1693,287 @@
 		   console.log("removeChild()...exit, array=" + droppedFileNamesArray);
 	   }
 	   
+	   function sendGetAdminAccessRecordsJSON() {
+
+	        console.log("sendGetAdminAccessRecordsJSON()...invoked.");
+
+	       	var ajaxRequest = getAjaxRequest();
+	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getAdminAccessRecords";	
+	       	var encodedUrl = encodeURI(url);
+	       	ajaxRequest.open('get', encodedUrl, true);
+	      
+	       	ajaxRequest.onreadystatechange=function() {
+	
+	              //console.log(ajaxRequest.responseText);
+	              if(ajaxRequest.responseText.includes("Unexpected Error")) {
+	              	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+	           		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+	           		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+	               	var errorArray = errorData.split("&");
+	              	var msg1 = errorArray[0];
+	              	var msg2 = errorArray[1];
+	              	stackTraceData = errorArray[2];
+	              	var divSubmitNotification = document.getElementById("div_submitNotification");
+	              	divSubmitNotification.style.display = "none";
+	              	console.log("uploadMenuFiles()...onreadystatechange...error");
+	              	console.log("msg1=" + msg1);
+	              	console.log("msg2=" + msg2);
+	              	console.log(stackTraceData);
+	              	doErrorAlert(msg1, msg2, errorAlertOK);
+
+	              	return;
+	              }
+	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+			           	
+	            	  if(ajaxRequest.responseText.includes("Access denied")) {
+	            		  var div_dataBaseProgress = document.getElementById("db_progress");
+	            		  div_dataBaseProgress.style.display = "none";
+	            		  doAdminAlert(ajaxRequest.responseText);
+	            	  }
+	            	  else {
+	            		  buildAdminAccessTable(ajaxRequest.responseText);
+	            	  }
+	   	       	  }
+	       	}
+	   
+      	    ajaxRequest.send();
+	        console.log("sendGetAdminAccessRecordsJSON()...exit.");	   
+	   }
+
+	   
+	   function sendGetEmailAddressesJSON() {
+
+	        console.log("sendGetEmailAddressesJSON()...invoked.");
+
+	       	var ajaxRequest = getAjaxRequest();
+	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getEmailAddresses";	
+	       	var encodedUrl = encodeURI(url);
+	       	ajaxRequest.open('get', encodedUrl, true);
+	      
+	       	ajaxRequest.onreadystatechange=function() {
+	
+	              //console.log(ajaxRequest.responseText);
+	              if(ajaxRequest.responseText.includes("Unexpected Error")) {
+	              	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+	           		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+	           		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+	               	var errorArray = errorData.split("&");
+	              	var msg1 = errorArray[0];
+	              	var msg2 = errorArray[1];
+	              	stackTraceData = errorArray[2];
+	              	var divSubmitNotification = document.getElementById("div_submitNotification");
+	              	divSubmitNotification.style.display = "none";
+	              	console.log("uploadMenuFiles()...onreadystatechange...error");
+	              	console.log("msg1=" + msg1);
+	              	console.log("msg2=" + msg2);
+	              	console.log(stackTraceData);
+	              	doErrorAlert(msg1, msg2, errorAlertOK);
+
+	              	return;
+	              }
+	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+			           	
+	            	  if(ajaxRequest.responseText.includes("Access denied")) {
+	            		  var div_dataBaseProgress = document.getElementById("db_progress");
+	            		  div_dataBaseProgress.style.display = "none";
+	            		  doAdminAlert(ajaxRequest.responseText);
+	            	  }
+	            	  else {
+	            		  buildEmailAddressesTable(ajaxRequest.responseText);
+	            	  }
+	   	       	  }
+	       	}
+	   
+       	    ajaxRequest.send();
+	        console.log("sendGetEmailAddressesJSON()...exit.");	   
+	   }
+	   
+	   
+	   function sendGetFileDownloadsJSON() {
+
+		   console.log("sendGetFileDownloadsJSON()...invoked.");
+
+	       	var ajaxRequest = getAjaxRequest();
+	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getFileDownloadRecords";	
+	       	var encodedUrl = encodeURI(url);
+	       	ajaxRequest.open('get', encodedUrl, true);
+	      
+	       	ajaxRequest.onreadystatechange=function() {
+	
+	              //console.log(ajaxRequest.responseText);
+	              if(ajaxRequest.responseText.includes("Unexpected Error")) {
+	              	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+	           		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+	           		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+	               	var errorArray = errorData.split("&");
+	              	var msg1 = errorArray[0];
+	              	var msg2 = errorArray[1];
+	              	stackTraceData = errorArray[2];
+	              	var divSubmitNotification = document.getElementById("div_submitNotification");
+	              	divSubmitNotification.style.display = "none";
+	              	console.log("uploadMenuFiles()...onreadystatechange...error");
+	              	console.log("msg1=" + msg1);
+	              	console.log("msg2=" + msg2);
+	              	console.log(stackTraceData);
+	              	doErrorAlert(msg1, msg2, errorAlertOK);
+
+	              	return;
+	              }
+	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+	            	  if(ajaxRequest.responseText.includes("Access denied")) {
+	            		  var div_dataBaseProgress = document.getElementById("db_progress");
+	            		  div_dataBaseProgress.style.display = "none";
+	            		  doAdminAlert(ajaxRequest.responseText);
+	            	  } 
+	            	  else {
+	            	  	buildFileDownloadsTable(ajaxRequest.responseText);
+	            	  }
+	   	       	  }
+	       	}
+	   
+      	    ajaxRequest.send();
+ 		    console.log("sendGetFileDownloadsJSON()...exit.");
+	   }
+
+	   
+	   
+	   
+	   function sendGetWebHitsRequest() {
+	        console.log("sendGetWebHitsRequest()...invoked.");
+
+	       	var ajaxRequest = getAjaxRequest();
+	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getWebHits";	
+	       	var encodedUrl = encodeURI(url);
+	       	ajaxRequest.open('get', encodedUrl, true);
+	      
+	       	ajaxRequest.onreadystatechange=function() {
+	
+	              //console.log(ajaxRequest.responseText);
+	              if(ajaxRequest.responseText.includes("Unexpected Error")) {
+	              	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+	           		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+	           		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+	               	var errorArray = errorData.split("&");
+	              	var msg1 = errorArray[0];
+	              	var msg2 = errorArray[1];
+	              	stackTraceData = errorArray[2];
+	              	var divSubmitNotification = document.getElementById("div_submitNotification");
+	              	divSubmitNotification.style.display = "none";
+	              	console.log("uploadMenuFiles()...onreadystatechange...error");
+	              	console.log("msg1=" + msg1);
+	              	console.log("msg2=" + msg2);
+	              	console.log(stackTraceData);
+	              	doErrorAlert(msg1, msg2, errorAlertOK);
+
+	              	return;
+	              }
+	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+	            	  if(ajaxRequest.responseText.includes("Access denied")) {
+	            		  var div_dataBaseProgress = document.getElementById("db_progress");
+	            		  div_dataBaseProgress.style.display = "none";
+	            		  doAdminAlert(ajaxRequest.responseText);
+	            	  }
+	            	  else {
+		            	  buildWebHitsTable(ajaxRequest.responseText);
+	            	  }
+	   	       	  }
+	       	}
+	   
+        	ajaxRequest.send();
+	        console.log("sendRemoveStudyRequest()...exit.");
+
+	   }
+	   
+	   function sendGetWebHitsMapURLRequest() {
+
+	        console.log("sendGetWebHitsMapURLRequest()...invoked.");
+
+	       	var ajaxRequest = getAjaxRequest();
+	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getWebHitsMapURL";	
+	       	var encodedUrl = encodeURI(url);
+	       	ajaxRequest.open('get', encodedUrl, true);
+	      
+	       	ajaxRequest.onreadystatechange=function() {
+	
+	              //console.log(ajaxRequest.responseText);
+	              if(ajaxRequest.responseText.includes("Unexpected Error")) {
+	              	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+	           		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+	           		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+	               	var errorArray = errorData.split("&");
+	              	var msg1 = errorArray[0];
+	              	var msg2 = errorArray[1];
+	              	stackTraceData = errorArray[2];
+	              	var divSubmitNotification = document.getElementById("div_submitNotification");
+	              	divSubmitNotification.style.display = "none";
+	              	console.log("uploadMenuFiles()...onreadystatechange...error");
+	              	console.log("msg1=" + msg1);
+	              	console.log("msg2=" + msg2);
+	              	console.log(stackTraceData);
+	              	doErrorAlert(msg1, msg2, errorAlertOK);
+
+	              	return;
+	              }
+	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+	            	  if(ajaxRequest.responseText.includes("Access denied")) {
+	            		  var div_dataBaseProgress = document.getElementById("db_progress");
+	            		  div_dataBaseProgress.style.display = "none";
+	            		  doAdminAlert(ajaxRequest.responseText);
+	            	  }
+	            	  else {
+		            	  viewWebHitsMap(ajaxRequest.responseText);
+	            	  }
+	   	       	  }
+	       	}
+	   
+	       	ajaxRequest.send();
+	        console.log("sendGetWebHitsMapURLRequest()...exit.");
+	   }
+	   
+	   function sendUpdateMapURLRequest(newURL, targetMap) {
+
+	        console.log("sendUpdateMapURLRequest()...invoked.");
+
+	       	var ajaxRequest = getAjaxRequest();
+	       	var paramString = "&targetMap=" + targetMap;
+	       	paramString += "&newURL=" + newURL;
+	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=updateMapURL"
+	       		    + paramString;
+	
+	       	var encodedUrl = encodeURI(url);
+	       	ajaxRequest.open('get', encodedUrl, true);
+	       	//ajaxRequest.setRequestHeader("enctype","multipart/form-data");
+	       	
+	       	ajaxRequest.onreadystatechange=function() {
+	
+	              //console.log(ajaxRequest.responseText);
+	              if(ajaxRequest.responseText.includes("Unexpected Error")) {
+	              	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+	           		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+	           		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+	               	var errorArray = errorData.split("&");
+	              	var msg1 = errorArray[0];
+	              	var msg2 = errorArray[1];
+	              	stackTraceData = errorArray[2];
+	              	var divSubmitNotification = document.getElementById("div_submitNotification");
+	              	divSubmitNotification.style.display = "none";
+	              	console.log("uploadMenuFiles()...onreadystatechange...error");
+	              	console.log("msg1=" + msg1);
+	              	console.log("msg2=" + msg2);
+	              	console.log(stackTraceData);
+	              	doErrorAlert(msg1, msg2, errorAlertOK);
+
+	              	return;
+	              }
+	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+			           	handleUpdateURLResponse(ajaxRequest.responseText);
+	   	       }
+	       	}
+        	ajaxRequest.send();
+	        console.log("sendUpdateMapURLRequest()...exit.");
+		   
+	   }
+	   
 	   function sendRemoveStudyRequest(study_folder) {
 	        console.log("sendRemoveStudyRequest()...invoked.");
 
@@ -1362,11 +2012,52 @@
 			           	handleRemoveStudyResponse(ajaxRequest.responseText);
 	   	       }
 	       	}
-	        	ajaxRequest.send();
-		        console.log("sendRemoveStudyRequest()...exit.");
-		   
+        	ajaxRequest.send();
+	        console.log("sendRemoveStudyRequest()...exit.");
 	   }
   
+	   function sendResynchWebHitsRequest() {
+
+	        console.log("sendResynchWebHitsRequest()...invoked.");
+
+	       	var ajaxRequest = getAjaxRequest();
+	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=resynchWebHits";
+	
+	       	var encodedUrl = encodeURI(url);
+	       	ajaxRequest.open('get', encodedUrl, true);
+	       	//ajaxRequest.setRequestHeader("enctype","multipart/form-data");
+	       	
+	       	ajaxRequest.onreadystatechange=function() {
+	
+	              //console.log(ajaxRequest.responseText);
+	              if(ajaxRequest.responseText.includes("Unexpected Error")) {
+	              	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+	           		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+	           		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+	               	var errorArray = errorData.split("&");
+	              	var msg1 = errorArray[0];
+	              	var msg2 = errorArray[1];
+	              	stackTraceData = errorArray[2];
+	              	var divSubmitNotification = document.getElementById("div_submitNotification");
+	              	divSubmitNotification.style.display = "none";
+	              	console.log("uploadMenuFiles()...onreadystatechange...error");
+	              	console.log("msg1=" + msg1);
+	              	console.log("msg2=" + msg2);
+	              	console.log(stackTraceData);
+	              	doErrorAlert(msg1, msg2, errorAlertOK);
+
+	              	return;
+	              }
+	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+	      	 			var div_mapProgress = document.getElementById("div_map_progress");
+	      	 			div_mapProgress.style.display = "none"; 	
+	      	 			doAdminAlert(ajaxRequest.responseText);
+	              }
+	       	}
+	       	ajaxRequest.send();
+	        console.log("sendResynchWebHitsRequest()...exit.");
+	   }
+	   
 	   
        function sliceFile(file) {
        		var chunkSize = 1024*1024*100;
@@ -1657,9 +2348,9 @@
 			   console.log(key);
 			}
 
-		   
 		   console.log("validateDroppedFiles()...invoked.");
 
 	   }
+	   
 	   
    

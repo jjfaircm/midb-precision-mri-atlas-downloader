@@ -463,11 +463,14 @@ label {
 } */
 
 input,select {
+	/* jjf
     display: block;
+    */
     font-family: "Open Sans",sans-serif;
     font-size: 1.125em;
 }
 
+/* jjf
 [type='color'],[type='date'],[type='datetime'],[type='datetime-local'],[type='email'],[type='month'],[type='numXber'],[type='password'],[type='search'],[type='tel'],[type='text'],[type='time'],[type='url'],[type='week'],input:not([type]),textarea,select[multiple] {
     background-color: #fff;
     border: 1px solid #d5d6d2;
@@ -481,6 +484,7 @@ input,select {
     transition: border-color 400ms ease-in-out;
     width: 100%;
 }
+*/
 
 [type='color']:hover,[type='date']:hover,[type='datetime']:hover,[type='datetime-local']:hover,[type='email']:hover,[type='month']:hover,[type='numXber']:hover,[type='password']:hover,[type='search']:hover,[type='tel']:hover,[type='text']:hover,[type='time']:hover,[type='url']:hover,[type='week']:hover,input:not([type]):hover,textarea:hover,select[multiple]:hover {
     border-color: #aaaba8;
@@ -998,9 +1002,11 @@ a:hover,a:active {
     background-color: rgba(51,51,51,0.15);
 }
 
+/* jjf
 a:focus {
     background-color: #ffd75f;
 }
+*/
 
 a:visited {
     color: #5a5a5a;

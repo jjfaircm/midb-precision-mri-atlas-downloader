@@ -1,0 +1,305 @@
+/* background colors working with white and #fff */
+
+
+ul li {
+ position: relative;
+ }
+
+
+#ul_atlasMenu {
+	/* position: absolute; */
+	/* left: 272px; */
+	display: inline-block;
+	text-align: center;
+	margin-right: 40%;
+}
+
+
+
+ul.subSubMenu {
+	/* left: 188px; */
+	left: 270px;
+}
+
+
+
+
+ul.submenu {
+	position: absolute;
+	left: 100px;
+}
+
+
+li ul {
+ position: absolute;
+ left: 149px;
+ top: 0;
+ display: none;
+ }
+
+li.menu {
+	left: 89px;
+}
+
+li ul.submenu {
+   /* left: 189px; */
+   left: 189px;
+}
+
+/*
+li.submenu {
+	width: 200px;
+}
+*/
+
+/*
+li ul.subSubmenu {
+ position: absolute;
+ left: 149px;
+ top: 0;
+ display: none;
+ }
+*/
+
+
+li.submenu, ul.ul_submenu {
+   display: none;
+}
+
+a.menu, a.submenu {
+ display: block;
+ text-decoration: none;
+ color: #777;
+ background: #fbf7f5;
+ padding: 5px;
+ border: 1px solid #ccc;
+ border-bottom: 0;
+}
+
+a.menu, a.subSubMenu, a.submenu {
+ display: block;
+ text-decoration: none;
+ color: #777;
+ background: #fbf7f5;
+ padding: 5px;
+ border: 1px solid #ccc;
+ border-bottom: 0;
+}
+
+a.menu {
+    background: #3d85c6 !important;
+    color: white !important;
+}
+
+a.submenu  {
+   color: #777;
+   background: #fbf7f5;
+}
+
+a.submenu:hover, a.subSubMenu:hover {
+	background: #3d85c6 !important;
+	color: white !important;
+}
+
+
+/*
+li.subSubMenu_ABCD:hover ul li a  {
+	background: #3d85c6 !important;
+	color: white !important;
+}
+*/
+
+
+
+ul.submenu {
+ display: table;
+ margin: 0 auto;
+ padding: 0;
+ list-style: none;
+ width: 270px; /*here  was 190 */
+ border-bottom: 1px solid #ccc;
+}
+
+ul.subSubMenu {
+ display: table;
+ margin: 0 auto;
+ padding: 0;
+ list-style: none;
+ width: 220px; /*here  was 190 */
+ border-bottom: 1px solid #ccc;
+ }
+
+ul.menu {
+ display: table;
+ margin: 0 auto;
+ padding: 0;
+ list-style: none;
+ width: 270px; /*here  was 190 */
+ /*
+ border-bottom: 1px solid #ccc;
+ */
+ }
+ 
+ /* original
+ #ul_zipList {
+ 	list-style: none;
+ 	margin: auto;
+ 	width: 62%;
+ }
+ */
+ 
+ #ul_zipList {
+ 	list-style: none;
+ 	margin: 0;
+ 	padding; 0;
+ }
+ 
+ /* added for test */
+ li.zipList {
+ 	float: left;
+ }
+ 
+ figure.zipFigure {
+ 	display: table;
+ 	
+ 
+ }
+ 
+ figcaption.zipList {
+  background-color: black;
+  color: white;
+  font-style: italic;
+  padding: 2px;
+  margin: 2px;
+  text-align: center;
+  font-size: 12px;
+  display: table-caption;
+  caption-side: bottom;
+}
+
+#div_dropZone {
+    width:650px;
+    height:200px;
+    border: 2px dashed gray;
+    display: inline-block;
+    margin: 0 auto;
+    padding: 3px;
+    /* background-color: #fbf7f5; */
+    background-color: #f3e1c0;
+    /* background-image: linear-gradient(#a49561, #474747); */
+  }
+
+#div_dropZone.active {
+    border: 2px dashed red;
+    background-color: #fbf7f5;
+  }
+  
+  /* study horizontal menu */
+  
+  ul.studyMenu {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #7a0019;
+}
+
+li.studyMenu {
+  float: left;
+}
+
+li.studyMenu a {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 16px;
+  text-decoration: none;
+}
+
+li.studyMenu a:hover {
+  text-decoration: underline;;
+}
+
+select.select_networkType, #select_dataType {
+	width:100%;
+}
+
+thead.fixedHead th {
+    position: sticky;
+    top: 0;
+    border: 1px solid black;
+}
+
+.tableFixHead th {
+    box-shadow: inset 1px 1px #000, 0 1px #000;
+}
+
+
+#div_emailAddressesView {
+	overflow-y: auto;
+    height: 296px;
+    width: 31%;
+    margin: auto;
+}
+
+#div_webHitsView {
+	overflow-y: auto;
+    height: 296px;
+    width: 51%;
+    margin: auto;
+}
+
+#div_adminAccessView {
+	overflow-y: auto;
+    height: 296px;
+    width: 68%;
+    margin: auto;
+}
+
+/*
+#div_webHitsView {
+	display: inline-block;
+	position: relative;
+	overflow-y: auto;
+    height: 296px;
+    width: min-width;
+    margin: auto;
+}
+*/
+
+#div_fileDownloadsView {
+	overflow-y: auto;
+    height: 296px;
+    width: 84%;
+    margin: auto;
+}
+
+#fileDownloadsTable td, #emailAddressesTable td, #webHitsTable td, #adminAccessTable td {
+    font-size: 15px;
+}
+  
+
+/*
+ul.menu {
+  width: 200px;
+}
+
+*/
+
+
+/*
+ li.menu:hover ul.submenu, li.submenu { display: block; } 
+
+ #li_ABCD:hover ul.subSubMenu_ABCD, li.subSubMenu_ABCD { display: block; }
+
+ #li_Human:hover ul.subSubMenu_Human, li.subSubMenu_Human { display: block; }
+*/
+
+
+/*
+ li.menu:hover li.submenu { display: block; } 
+*/
+/*
+li:hover li.submenu { display: block; }
+
+*/

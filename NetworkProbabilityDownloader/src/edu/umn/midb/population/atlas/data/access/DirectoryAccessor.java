@@ -15,9 +15,9 @@ import logs.ThreadLocalLogTracker;
 /**
  * DirectoryAccessor provides the functionality for accessing the directories containing the .png files
  * and NII files for the various neural network types.  The root folder for the data is the
- * 'midb/networks_small_package-compressed' folder under the system root folder.  Each neural network
+ * 'midb/studies/study_name/surface_or_volume/' folder under the system root folder.  Each neural network
  * type has its own folder which is a subfolder of the data root folder.  For example, there is a
- * '/midb/networks_small_package-compressed/Aud' folder. 
+ * '/midb/studies/abcd_template_matching/surface/Aud' folder. 
  * 
  * @author jjfair
  *
@@ -27,48 +27,8 @@ public class DirectoryAccessor {
 	private static Logger LOGGER = LogManager.getLogger(DirectoryAccessor.class);
 	
 	/**
-	 * Returns a list of all the neural network types.
-	 * @param rootDirectory The absolute path of the data root
-	 * @return ArrayList Contains all the names of the neural network folders
-	 */
-	public static ArrayList<String> getNeuralNetworkNames(String rootDirectory) {
-		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "getNeuralNetworkNames()...invoked.");
-		
-		File[] directories = new File(rootDirectory).listFiles(new FileFilter() {
-		    @Override
-		    public boolean accept(File file) {
-		    	
-		    	if(file.getName().contains("combined")) {
-		    		return false;
-		    	}
-		    	if(file.getName().contains("overlapping")) {
-		    		return false;
-		    	}
-		    	
-		        return (file.isDirectory()) & !file.isHidden();
-		    }
-		});
-	
-	   Arrays.parallelSort(directories);
-	   String shortName;
-	   	
-
-	    ArrayList<String> neuralNetworkTypes = new ArrayList<String>();
-	    
-		for(File file : directories) {
-			shortName = file.getName();
-			neuralNetworkTypes.add(shortName);
-		}
-
-		LOGGER.trace(loggerId + "getNeuralNetworkNames()...exit.");
-
-		return neuralNetworkTypes;
-	}
-	
-	/**
 	 * Returns the absolute path and image file name for each and every .png file associated with
-	 * each probabilistic threshold for a given neural network type.
+	 * each probabilistic threshold for a given study and neural network type.
 	 *  
 	 * @param fileDirectory String representing the neural network folder that has been selected by the web client
 	 * @return ArrayList of String objects
@@ -146,9 +106,16 @@ public class DirectoryAccessor {
 
 	}
 	
-	public static String getNetworkMapNiiFilePath(String networkPath) {
+	/**
+	 * 
+	 * Returns the absolute file path of the .dscalar.nii file for a given study and network type
+	 * 
+	 * @param studyAndNetworkPath - String
+	 * @return absolutePath - String
+	 */
+	public static String getNetworkMapNiiFilePath(String studyAndNetworkPath) {
 		
-		File[] directories = new File(networkPath).listFiles(new FileFilter() {
+		File[] directories = new File(studyAndNetworkPath).listFiles(new FileFilter() {
 		    @Override
 		    public boolean accept(File file) {
 		    	
@@ -166,11 +133,11 @@ public class DirectoryAccessor {
 	}
 	
 	/**
-	 * Returns the binary byte buffer for the specified .png file.
+	 * Returns the binary byte buffer for the specified file.
 	 * 
-	 * @param filePath  The absolute path and file name of the .png file specified
+	 * @param filePath  The absolute path and file name of the file specified
 	 * 
-	 * @return byte[] A byte array containing the binary data of the .png file 
+	 * @return byte[] A byte array containing the binary data of the file 
 	 */
 	public static byte[] getFileBytes(String filePath) {
 		

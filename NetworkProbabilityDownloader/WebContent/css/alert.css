@@ -1,7 +1,7 @@
 #alertBox, #div_promptAdminPasswordBox
 {
     display: none;
-    z-index:10;
+    z-index:99;
     background-color: #241f20;
     border-radius: 5px;
     border: 3px solid white;
@@ -38,7 +38,7 @@
 #adminAlertBox
 {
     display: none;
-    z-index:10;
+    z-index:99;
     /*background-color: #7a0019;*/
     background-color: #644B26;
    /* background-color: #a49561;*/
@@ -54,6 +54,82 @@
     padding: 6px 8px 8px;
     box-sizing: border-box;
     text-align: center;
+}
+
+#updatesAlertBox
+{
+    display: none;
+    z-index:10;
+    color: white;
+    /*background-color: #7a0019;*/
+    background-color: #575757;
+   /* background-color: #a49561;*/
+   /* background-image: linear-gradient(#a49561ff, #474747ff); */   
+    border-radius: 5px;
+    border: 2px solid white;
+    outline: 2px solid black;
+    position: fixed;
+    width: 320px;
+    left: 50%;
+    top: 50%;
+    margin-left: -150px;
+    padding: 6px 8px 8px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+#div_fileDownloadDialogue
+{
+    display: none;
+    z-index:99;
+    /* background-color: #7a0019; */
+    background-color: #0F52BA;
+    color: white;
+   /* background-color: #a49561;*/
+   /* background-image: linear-gradient(#a49561ff, #474747ff); */   
+    border-radius: 5px;
+    border: 2px solid white;
+    outline: 2px solid black;
+    position: fixed;
+    width: 340px;
+    left: 50%;
+    top: 26%;
+    margin-left: -150px;
+    padding: 6px 8px 8px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+
+#div_updateURLDialogue {
+	display: none;
+    z-index:10;
+    color: white;
+    /*background-color: #7a0019;*/
+    background-color: #644B26;
+   /* background-color: #a49561;*/
+   /* background-image: linear-gradient(#a49561ff, #474747ff); */   
+    border-radius: 5px;
+    border: 2px solid white;
+    outline: 2px solid black;
+    position: fixed;
+    width: 620px;
+    left: 50%;
+    top: 50%;
+    margin-left: -320px;
+    padding: 6px 8px 8px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+hr.updates {
+	color: white;
+	padding: 0px;
+    margin: 0px;    
+}
+
+h6.updatesAlert {
+	color: white;
 }
 
 

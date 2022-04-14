@@ -1,5 +1,13 @@
 package edu.umn.midb.population.atlas.exception;
 
+
+/**
+ * 
+ * Custom application exception.
+ * 
+ * @author jjfair
+ *
+ */
 public class BIDS_FatalException extends RuntimeException  {
 	
 	String className = null; 

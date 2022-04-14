@@ -12,7 +12,16 @@ import logs.ThreadLocalLogTracker;
 
 import java.util.Properties;
 
-
+/**
+ * @deprecated
+ * 
+ * Utility class for sending email notifications when error conditions are encountered.
+ * This is deprecated due to changes in the google mail api which has been switched to
+ * using oAuth. The function of notfications is now handled by the {@link SMSNotifier}
+ * 
+ * @author jjfair
+ *
+ */
 public class EmailNotifier {
 	
     static String sender = null;
@@ -36,10 +45,19 @@ public class EmailNotifier {
         prop.put("mail.smtp.starttls.enable", "true"); //TLS
     }
     
+    /**
+     * @deprecated
+     * 
+     * Kept just for coding sample purposes.
+     * 
+     * @param notificationText - String
+     */
     public static void sendEmailNotification(String notificationText) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendEmailNotification()...invoked.");
-    	
+		LOGGER.warn(loggerId + "sendEmailNotification()...DISABLED DUE TO GOOGLE ENFORCING oAUTH !!!!!!!!!!!!!!!!!!!!!!1");
+
+    	/*
     	PasswordAuthentication pwdAuth = new PasswordAuthentication(sender, password);
     	 Session session = Session.getInstance(prop,
                  new javax.mail.Authenticator() {
@@ -65,6 +83,7 @@ public class EmailNotifier {
             	LOGGER.trace(loggerId + "Error sending email notification");
             	LOGGER.trace(e.getMessage(), e);
             }
+            */
     		LOGGER.trace(loggerId + "sendEmailNotification()...exit.");
     }
     
