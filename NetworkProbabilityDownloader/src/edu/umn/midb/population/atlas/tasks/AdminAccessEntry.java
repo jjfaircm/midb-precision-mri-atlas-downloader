@@ -25,12 +25,25 @@ public class AdminAccessEntry extends TaskEntry {
 	}
 
 	/**
-	 * Sets the action that was requested by the remote client.
+	 * Returns a String ('true' or 'false') indicating if the remote ip address was found
+	 * in the access control list (acl.conf).
 	 * 
-	 * @param action - String
+	 * 
+	 * @return validIPString - String
 	 */
-	public void setAction(String action) {
-		this.action = action;
+	public String getValidIPString() {
+		return validIPString;
+	}
+
+	/**
+	 * 
+	 * Returns a String ('true' or 'false') indicating if the client has input the
+	 * correct password.
+	 * 
+	 * @return validPasswordString - String
+	 */
+	public String getValidPasswordString() {
+		return validPasswordString;
 	}
 
 	/**
@@ -40,6 +53,19 @@ public class AdminAccessEntry extends TaskEntry {
 	 */
 	public boolean isValidIP() {
 		return validIP;
+	}
+
+	public boolean isValidPassword() {
+		return validPassword;
+	}
+
+	/**
+	 * Sets the action that was requested by the remote client.
+	 * 
+	 * @param action - String
+	 */
+	public void setAction(String action) {
+		this.action = action;
 	}
 
 	/**
@@ -57,22 +83,7 @@ public class AdminAccessEntry extends TaskEntry {
 			this.validIPString = "true";
 		}
 	}
-
-	/**
-	 * Returns a String ('true' or 'false') indicating if the remote ip address was found
-	 * in the access control list (acl.conf).
-	 * 
-	 * 
-	 * @return validIPString - String
-	 */
-	public String getValidIPString() {
-		return validIPString;
-	}
-
-	public boolean isValidPassword() {
-		return validPassword;
-	}
-
+	
 	/**
 	 * Sets the validPassword boolean attribute indicating if the client input the correct
 	 * password.
@@ -88,17 +99,6 @@ public class AdminAccessEntry extends TaskEntry {
 			this.validPassword = true;
 			this.validPasswordString = "true";
 		}
-	}
-	
-	/**
-	 * 
-	 * Returns a String ('true' or 'false') indicating if the client has input the
-	 * correct password.
-	 * 
-	 * @return validPasswordString - String
-	 */
-	public String getValidPasswordString() {
-		return validPasswordString;
 	}
 
 }

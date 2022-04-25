@@ -7,8 +7,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import edu.umn.midb.population.atlas.base.ApplicationContext;
+import edu.umn.midb.population.atlas.data.access.AtlasDataCacheManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
-import edu.umn.midb.population.atlas.utils.AtlasDataCacheManager;
 import edu.umn.midb.population.atlas.utils.EmailNotifier;
 import edu.umn.midb.population.atlas.utils.SMSNotifier;
 import edu.umn.midb.population.atlas.utils.Utils;
@@ -31,21 +31,44 @@ public class TokenManager {
 	private static String password = null;
 	private static String encPassword = null;
 	private static String key = null;
-	private String currentToken = null;
-	private long tokenGenerationTime = 0;
-	private boolean tokenExpired = false;
-	private boolean accessDenied = false;
-	private boolean invalidIP = false;
-	private boolean validPassword = false;
-	private ApplicationContext appContext = null;
 	private static long MAX_ELAPSED_TIME_MS = 30000;
 	private static Logger LOGGER = LogManager.getLogger(TokenManager.class);
 	private static String INIT_LOGGER_ID = " ::LOGGERID=TokenManager:: ";
-	private static ArrayList<String> privilegedList = AtlasDataCacheManager.getInstance().getPrivilegedList();
 	
-	static {
-		LOGGER.trace(privilegedList);
+	
+	/**
+	 * 
+	 * Sets the key used to decrypt the password
+	 * 
+	 * @param keyString - String
+	 */
+	public static void setKey(String keyString) {
+		LOGGER.trace(INIT_LOGGER_ID + "setKey()...invoked.");
+		key = keyString;
+		if(password==null && encPassword != null) {
+			password = Utils.convertJcpyt(encPassword, key);
+		}
+		LOGGER.trace(INIT_LOGGER_ID + "setKey()...exit.");
 	}
+	/**
+	 * Sets the current password being used for access to the Admin Console.
+	 * 
+	 * @param encryptedPassword - String
+	 */
+	public static void setPassword(String encryptedPassword) {
+		encPassword = encryptedPassword;
+		
+		if(key != null) {
+			password = Utils.convertJcpyt(encryptedPassword, key);
+		}
+	}
+	private String currentToken = null;
+	private long tokenGenerationTime = 0;
+	
+	private boolean tokenExpired = false;
+	
+	private boolean validPassword = false;
+	private ApplicationContext appContext = null;
 	
 	/**
 	 * Public constructor
@@ -54,13 +77,16 @@ public class TokenManager {
 	 * @param ipAddress - Sting which is the ipAddress of the remote client
 	 */
 	public TokenManager(ApplicationContext appContext, String ipAddress) {
-		this.appContext = appContext;
+		this.setAppContext(appContext);
 		this.generateToken();
 		
+		/*
 		if(!privilegedList.contains(ipAddress)) {
 			this.invalidIP = true;
 		}
+		*/
 	}
+	
 	/**
 	 * 
 	 * Generates a new token which will expire in MAX_ELAPSED_TIME_MS
@@ -82,6 +108,15 @@ public class TokenManager {
 	}
 	
 	/**
+	 * Returns the {@link ApplicationContext}
+	 * 
+	 * @return appContext - ApplicationContext
+	 */
+	public ApplicationContext getAppContext() {
+		return appContext;
+	}
+	
+	/**
 	 * Returns the currentToken.
 	 * 
 	 * @return currentToken - String
@@ -91,9 +126,35 @@ public class TokenManager {
 	}
 	
 	/**
+	 * Returns a boolean indicating if the currentToken is expired.
+	 *  
+	 * @return tokenExpired - boolean
+	 */
+	public boolean isTokenExpired() {
+		return this.tokenExpired;
+	}
+	
+	/**
+	 * Returns a boolean indicating if the password provided is valid.
+	 * 
+	 * @return validPassword - boolean
+	 */
+	public boolean isValidPassword() {
+		return this.validPassword;
+	}
+	
+	/**
+	 * Sets the {@link ApplicationContext}
+	 * 
+	 * @param appContext - ApplicationContext
+	 */
+	public void setAppContext(ApplicationContext appContext) {
+		this.appContext = appContext;
+	}
+	
+	/**
 	 * Examines the token to verify that it is not expired. It also verifies that
-	 * the password entered is valid and that the ipAddress of the client is in the
-	 * access control list (acl.conf).
+	 * the password entered is valid 
 	 * 
 	 * @param token - String
 	 * @param passwordParm - String
@@ -112,20 +173,6 @@ public class TokenManager {
 			if(ipAddress.equals("127.0.0.1")) {
 				isValid = true;
 			}
-		}
-		
-		else if(!privilegedList.contains(ipAddress)) {
-			LOGGER.trace(loggerId + "validateToken()...ipAddress not in acl.conf.");
-			EmailNotifier.sendEmailNotification("Illegal access warning, ip address=" + ipAddress);
-			String currentAction = this.appContext.getCurrentAction();
-			String message = "MIDB_APP_POTENTIAL_HACKER::::" + NetworkProbabilityDownloader.getDomainName();
-			message += "::::IP_ADDRESS=" + ipAddress + "::::";
-			message += "ACTION=" + currentAction;
-			SMSNotifier.sendNotification(message, "TokenManager");
-			
-			this.accessDenied = true;
-			this.invalidIP = true;
-			return false;
 		}
 		
 		if(this.currentToken==null) {
@@ -155,84 +202,6 @@ public class TokenManager {
 		}
 		LOGGER.trace(loggerId + "validateToken()...exit.");
 		return isValid;
-	}
-	
-	/**
-	 * Returns a boolean indicating if the currentToken is expired.
-	 *  
-	 * @return tokenExpired - boolean
-	 */
-	public boolean isTokenExpired() {
-		return this.tokenExpired;
-	}
-	
-	/**
-	 * 
-	 * Returns a boolean indicating if access was denied due to an ip address not in
-	 * the access control list (acl.conf)
-	 * 
-	 * @return accessDenied - boolean
-	 */
-	public boolean isAccessDenied() {
-		return this.accessDenied;
-	}
-	
-	/**
-	 * 
-	 * Sets the key used to decrypt the password
-	 * 
-	 * @param keyString - String
-	 */
-	public static void setKey(String keyString) {
-		LOGGER.trace(INIT_LOGGER_ID + "setKey()...invoked.");
-		key = keyString;
-		if(password==null && encPassword != null) {
-			password = Utils.convertJcpyt(encPassword, key);
-		}
-		LOGGER.trace(INIT_LOGGER_ID + "setKey()...exit.");
-	}
-	
-	/**
-	 * Sets the current password being used for access to the Admin Console.
-	 * 
-	 * @param encryptedPassword - String
-	 */
-	public static void setPassword(String encryptedPassword) {
-		encPassword = encryptedPassword;
-		
-		if(key != null) {
-			password = Utils.convertJcpyt(encryptedPassword, key);
-		}
-	}
-	
-	/**
-	 * Returns a boolean indicating if the ip address of the remote client is invalid, 
-	 * meaning that it is not in the access control list (acl.conf).
-	 * 
-	 * @return invalidIP - boolean
-	 */
-	public boolean isInvalidIP() {
-		return invalidIP;
-	}
-
-	/**
-	 * Returns a boolean indicating if the ip address of the remote client is contained
-	 * in the access control list (acl.conf).
-	 * 
-	 * @return valid - boolean
-	 */
-	public boolean isValidIP() {
-		boolean valid = !this.invalidIP;
-		return valid;
-	}
-	
-	/**
-	 * Returns a boolean indicating if the password provided is valid.
-	 * 
-	 * @return validPassword - boolean
-	 */
-	public boolean isValidPassword() {
-		return this.validPassword;
 	}
 	
 }

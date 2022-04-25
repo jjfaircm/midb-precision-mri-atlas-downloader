@@ -1,10 +1,5 @@
 package edu.umn.midb.population.atlas.tasks;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import edu.umn.midb.population.atlas.base.ApplicationContext;
-
 /**
  * Encapsulates the data necessary to add a record to the file_downloads table in MYSQL.
  * 
@@ -27,44 +22,25 @@ public class FileDownloadEntry extends TaskEntry {
 	
 	/**
 	 * 
-	 * Returns the study name that the downloaded file is associated with.
+	 * Returns the email of the client that downloaded the file. This information may not
+	 * be available if the client chooses not to subscribe.
 	 * 
-	 * @return study - String
+	 * @return emailAddress - String
 	 */
-	public String getStudy() {
-		return study;
+	public String getEmailAddress() {
+		return emailAddress;
 	}
 	
 	/**
+	 * Get the file name (not including path) of the downloaded file.
 	 * 
-	 * Sets the study that the downloaded file is associated with.
-	 * 
-	 * @param study - String
+	 * @return fileName - String
 	 */
-	public void setStudy(String study) {
-		this.study = study;
+	public String getFileName() {
+		return fileName;
 	}
 	
 
-	/**
-	 * Returns the name of the neural network name that the downloaded file is associated with.
-	 * 
-	 * @return neuralNetworkName - String
-	 */
-	public String getNeuralNetworkName() {
-		return neuralNetworkName;
-	}
-	
-	/**
-	 * 
-	 * Sets the neuralNetworkName that the downloaded file is associated with.
-	 * 
-	 * @param neuralNetworkName - String
-	 */
-	public void setNeuralNetworkName(String neuralNetworkName) {
-		this.neuralNetworkName = neuralNetworkName;
-	}
-	
 	/**
 	 * 
 	 * Returns the absolute folder path on the server where the downloaded file is located.
@@ -76,22 +52,41 @@ public class FileDownloadEntry extends TaskEntry {
 	}
 	
 	/**
+	 * Returns the id of this downloaded file action. The id is a timestamp.
 	 * 
-	 * Sets the absolute file path on the server where the downloaded file is located.
-	 * 
-	 * @param filePath - String
+	 * @return id - String that represents a timestamp
 	 */
-	public void setFilePath(String filePath) {
-		this.filePath = filePath;
+	public String getId() {
+		return id;
 	}
 	
 	/**
-	 * Get the file name (not including path) of the downloaded file.
+	 * Returns the name of the neural network name that the downloaded file is associated with.
 	 * 
-	 * @return fileName - String
+	 * @return neuralNetworkName - String
 	 */
-	public String getFileName() {
-		return fileName;
+	public String getNeuralNetworkName() {
+		return neuralNetworkName;
+	}
+	
+	/**
+	 * 
+	 * Returns the study name that the downloaded file is associated with.
+	 * 
+	 * @return study - String
+	 */
+	public String getStudy() {
+		return study;
+	}
+	
+	/**
+	 * 
+	 * Sets the email address of the client who downloaded the file.
+	 * 
+	 * @param emailAddress - String
+	 */
+	public void setEmailAddress(String emailAddress) {
+		this.emailAddress = emailAddress;
 	}
 	
 	/**
@@ -106,32 +101,12 @@ public class FileDownloadEntry extends TaskEntry {
 	
 	/**
 	 * 
-	 * Returns the email of the client that downloaded the file. This information may not
-	 * be available if the client chooses not to subscribe.
+	 * Sets the absolute file path on the server where the downloaded file is located.
 	 * 
-	 * @return emailAddress - String
+	 * @param filePath - String
 	 */
-	public String getEmailAddress() {
-		return emailAddress;
-	}
-	
-	/**
-	 * 
-	 * Sets the email address of the client who downloaded the file.
-	 * 
-	 * @param emailAddress - String
-	 */
-	public void setEmailAddress(String emailAddress) {
-		this.emailAddress = emailAddress;
-	}
-	
-	/**
-	 * Returns the id of this downloaded file action. The id is a timestamp.
-	 * 
-	 * @return id - String that represents a timestamp
-	 */
-	public String getId() {
-		return id;
+	public void setFilePath(String filePath) {
+		this.filePath = filePath;
 	}
 	
 	/**
@@ -141,6 +116,26 @@ public class FileDownloadEntry extends TaskEntry {
 	 */
 	public void setId(String id) {
 		this.id = id;
+	}
+	
+	/**
+	 * 
+	 * Sets the neuralNetworkName that the downloaded file is associated with.
+	 * 
+	 * @param neuralNetworkName - String
+	 */
+	public void setNeuralNetworkName(String neuralNetworkName) {
+		this.neuralNetworkName = neuralNetworkName;
+	}
+	
+	/**
+	 * 
+	 * Sets the study that the downloaded file is associated with.
+	 * 
+	 * @param study - String
+	 */
+	public void setStudy(String study) {
+		this.study = study;
 	}
 
 }

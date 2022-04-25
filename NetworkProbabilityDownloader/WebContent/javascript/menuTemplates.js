@@ -3,6 +3,10 @@
 var template_li_submenu = "<li class=\x22submenu\x22 id=\x22li_${id}\x22><a class=\x22submenu\x22 id=\x22a_${id}\x22  onmouseout=\x22mouseOut(this)\x22 onmouseover=\x22showSubSubMenu(this)\x22>${displayName}</a>";
 var idReplacementMarker = "${id}";
 
+
+var template_webHitsMap = "<iframe id=\"iframe_webHitsMap\" src=\"url\" width=\"100%\" height=\"680\"></iframe>";
+
+
 var displayNameReplacementMarker = "${displayName}";
 var studyReplacementMarker = "${studyName}";
 var studyDisplayReplacementMarker = "${studyDisplayName}";
@@ -15,6 +19,8 @@ var menuIdReplacementMarker = "${menuId}";
 var surfaceVolumeTypeReplacementMarker = "${surface_volume}";
 var summaryEntryReplacementMarker = "${summaryEntry}";
 var formKeyReplacementMarker = "${formKey}";
+var actionTypeReplacementMarker = "${actionType}";
+
 
 
 
@@ -49,14 +55,14 @@ var template_li_surfaceZipImage =   "<li class=\x22zipList\x22 onclick=\x22remov
                   + "</figure>" + newLine
                   + "</li>";
 
-var template_li_volumeZipImage =   "<li class=\x22zipList\x22 onclick=\x22removeDroppedFile(this)\x22 data-formKey=\x22${formKey}\x22 id=\x22volume.zip\x22>" + newLine
+var template_li_volumeZipImage =   "<li class=\x22zipList\x22 onclick=\x22removeDroppedFile(this)\x22 data-actionType=\x22${actionType}\x22 data-formKey=\x22${formKey}\x22 id=\x22volume.zip\x22>" + newLine
 + "<figure class=\x22zipFigure\x22>" + newLine
 + "<img src=\x22/NetworkProbabilityDownloader/images/zip_vice.jpg\x22 height=\x2265\x22 width=\x2265\x22>" + newLine
 + "<figcaption class=\x22zipList\x22>${fileName}</figcaption>" + newLine
 + "</figure>" + newLine
 + "</li>";
 
-var template_li_textImage =   "<li class=\x22zipList\x22 onclick=\x22removeDroppedFile(this)\x22  data-formKey=\x22${formKey}\x22 id=\x22summary.txt\x22>" + newLine
+var template_li_textImage =   "<li class=\x22zipList\x22 onclick=\x22removeDroppedFile(this)\x22 data-actionType=\x22${actionType}\x22 data-formKey=\x22${formKey}\x22 id=\x22summary.txt\x22>" + newLine
 + "<figure class=\x22zipFigure\x22>" + newLine
 + "<img src=\x22/NetworkProbabilityDownloader/images/txt-file.png\x22 height=\x2265\x22 width=\x2265\x22>" + newLine
 + "<figcaption class=\x22zipList\x22>${fileName}</figcaption>" + newLine

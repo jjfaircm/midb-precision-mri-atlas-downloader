@@ -14,6 +14,15 @@ public class EmailAddressEntry extends TaskEntry {
 	private String emailAddress = null;
 	
 	/**
+	 * Default constructor. This is used to send an entry to the {@link EmailTracker} thread
+	 * that shutdown is occuring and the run() should terminate. The {@link #setShutdownTrigger(boolean)}
+	 * must be invoked with a boolean value of true to set the shutdownTrigger.
+	 */
+	public EmailAddressEntry() {
+		//empty constructor when used as shutdown trigger
+	}
+	
+	/**
 	 * Constructor
 	 * 
 	 * @param firstName - String
@@ -38,12 +47,13 @@ public class EmailAddressEntry extends TaskEntry {
 	}
 	
 	/**
-	 * Default constructor. This is used to send an entry to the {@link EmailTracker} thread
-	 * that shutdown is occuring and the run() should terminate. The {@link #setShutdownTrigger(boolean)}
-	 * must be invoked with a boolean value of true to set the shutdownTrigger.
+	 * 
+	 * Returns the email address.
+	 * 
+	 * @return emailAddress - String
 	 */
-	public EmailAddressEntry() {
-		//empty constructor when used as shutdown trigger
+	public String getEmailAddress() {
+		return emailAddress;
 	}
 	
 	/**
@@ -53,6 +63,29 @@ public class EmailAddressEntry extends TaskEntry {
 	 */
 	public String getFirstName() {
 		return firstName;
+	}
+	
+	/**
+	 * 
+	 * Returns the last name associated with this email address.
+	 * 
+	 * @return lastName - String
+	 */
+	public String getLastName() {
+		return lastName;
+	}
+	
+	/**
+	 * 
+	 * Sets the email address
+	 * 
+	 * @param emailAddress - String
+	 */
+	public void setEmailAddress(String emailAddress) {
+		if(emailAddress==null) {
+			throw new IllegalArgumentException("Email address cannot be null.");
+		}
+		this.emailAddress = emailAddress;
 	}
 	
 	/**
@@ -69,16 +102,6 @@ public class EmailAddressEntry extends TaskEntry {
 	}
 	
 	/**
-	 * 
-	 * Returns the last name associated with this email address.
-	 * 
-	 * @return lastName - String
-	 */
-	public String getLastName() {
-		return lastName;
-	}
-	
-	/**
 	 * Sets the last name associated with this email address.
 	 * 
 	 * @param lastName - String
@@ -88,29 +111,6 @@ public class EmailAddressEntry extends TaskEntry {
 			throw new IllegalArgumentException("Last name cannot be null.");
 		}
 		this.lastName = lastName;
-	}
-	
-	/**
-	 * 
-	 * Returns the email address.
-	 * 
-	 * @return emailAddress - String
-	 */
-	public String getEmailAddress() {
-		return emailAddress;
-	}
-	
-	/**
-	 * 
-	 * Sets the email address
-	 * 
-	 * @param emailAddress - String
-	 */
-	public void setEmailAddress(String emailAddress) {
-		if(emailAddress==null) {
-			throw new IllegalArgumentException("Email address cannot be null.");
-		}
-		this.emailAddress = emailAddress;
 	}
 
 }

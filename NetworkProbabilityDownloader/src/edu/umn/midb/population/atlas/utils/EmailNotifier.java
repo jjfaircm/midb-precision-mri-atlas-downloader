@@ -113,16 +113,6 @@ public class EmailNotifier {
     	LOGGER.trace("setPassword()...exit");
     }
     
-    public static void setSender(String encSender) {
-    	LOGGER.trace("setSender()...invoked");
-    	encryptedSender = encSender;
-    	if(key != null) {
-    		sender = Utils.convertJcpyt(encSender, key);
-    		sender += "@gmail.com";
-    	}
-    	LOGGER.trace("setSender()...exit");
-    }
-    
     public static void setRecipient(String encRecipient) {
     	LOGGER.trace("setRecipient()...invoked");
     	encryptedRecipient = encRecipient;
@@ -131,6 +121,16 @@ public class EmailNotifier {
     		recipient += "@gmail.com";
     	}
     	LOGGER.trace("setRecipient()...exit");
+    }
+    
+    public static void setSender(String encSender) {
+    	LOGGER.trace("setSender()...invoked");
+    	encryptedSender = encSender;
+    	if(key != null) {
+    		sender = Utils.convertJcpyt(encSender, key);
+    		sender += "@gmail.com";
+    	}
+    	LOGGER.trace("setSender()...exit");
     }
     
 }

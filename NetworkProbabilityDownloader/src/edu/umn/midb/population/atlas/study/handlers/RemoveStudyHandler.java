@@ -1,4 +1,4 @@
-package edu.umn.midb.population.atlas.utils;
+package edu.umn.midb.population.atlas.study.handlers;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,8 +15,15 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import edu.umn.midb.population.atlas.data.access.AtlasDataCacheManager;
 import logs.ThreadLocalLogTracker;
 
+/**
+ * Handles the tasks involved in removing a study.
+ * 
+ * @author jjfair
+ *
+ */
 public class RemoveStudyHandler {
 
 	private static final String ROOT_STUDY_PATH = "/midb/studies/";
@@ -36,6 +43,11 @@ public class RemoveStudyHandler {
 
 
 	
+	/**
+	 * Public constructor.
+	 * 
+	 * @param studyFolder - String representing the folder which contains the study data.
+	 */
 	public RemoveStudyHandler(String studyFolder) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "RemoveStudyHandler()...invoked.");
@@ -43,6 +55,11 @@ public class RemoveStudyHandler {
 		LOGGER.trace(loggerId + "RemoveStudyHandler()...exit.");
 	}
 	
+	/**
+	 * Loads network folder names configuration that contains the entries for all studies.
+	 * These entries are stored in the /midb/network_folder_names.conf file.
+	 * 
+	 */
 	protected void cacheExistingFolderNamesEntries() {
 
 		String loggerId = ThreadLocalLogTracker.get();
@@ -90,7 +107,11 @@ public class RemoveStudyHandler {
 		LOGGER.trace(loggerId + "cacheExistingMenuEntries()...exit.");
 	}
 
-		
+	/**
+	 * 
+	 * Loads the menu entries for all studies from the /midb/menu.conf file.
+	 * 
+	 */
 	protected void cacheExistingMenuEntries() {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "cacheExistingMenuEntries()...invoked.");
@@ -138,6 +159,11 @@ public class RemoveStudyHandler {
 		LOGGER.trace(loggerId + "cacheExistingMenuEntries()...exit.");
 	}
 	
+	/**
+	 * Removes the study identified by the studyFolder attribute.
+	 * 
+	 * @throws IOException - Unhandled exception
+	 */
 	public void removeStudy() throws IOException {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "removeStudy()...invoked.");
@@ -153,6 +179,12 @@ public class RemoveStudyHandler {
 		LOGGER.trace(loggerId + "removeStudy()...exit.");
 	}
 	
+	/**
+	 * 
+	 * Removes the directory containing the data for the study.
+	 * 
+	 * @throws IOException - Unhandled exception
+	 */
 	protected void removeStudyDirectory() throws IOException {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "removeStudyDirectory()...invoked.");
@@ -163,9 +195,16 @@ public class RemoveStudyHandler {
 		LOGGER.trace(loggerId + "removeStudyDirectory()...exit.");
 	}
 	
+	/**
+	 * 
+	 * Updates the /midb/network_folder_names.conf file by removing the entry for
+	 * the study.
+	 * 
+	 * @throws IOException - Unhandled exception
+	 */
 	protected void updateFolderNamesConfig() throws IOException {
 		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "updateMenuConfig()...invoked.");
+		LOGGER.trace(loggerId + "updateFolderNamesConfig()...invoked.");
 
 		PrintWriter pw = new PrintWriter(new FileWriter(FOLDER_NAMES_CONFIG_FILE));
 		 
@@ -178,9 +217,15 @@ public class RemoveStudyHandler {
 		pw.close();
 		
 		AtlasDataCacheManager.getInstance().reloadMenuConfig();
-		LOGGER.trace(loggerId + "updateMenuConfig()...exit.");
+		LOGGER.trace(loggerId + "updateFolderNamesConfig()...exit.");
 	}
 	
+	/**
+	 * 
+	 * Updates the /midb/menu.conf file by removing the entry for the study.
+	 * 
+	 * @throws IOException - Unhandled exception
+	 */
 	protected void updateMenuConfig() throws IOException {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "updateMenuConfig()...invoked.");
@@ -199,6 +244,11 @@ public class RemoveStudyHandler {
 		LOGGER.trace(loggerId + "updateMenuConfig()...exit.");
 	}
 	
+	/**
+	 * Updates the /midb/summary.conf file by removing the entry for the study.
+	 * 
+	 * @throws IOException - Unhandled exception
+	 */
 	protected void updateSummaryConfig() throws IOException {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "updateMenuConfig()...invoked.");
@@ -223,7 +273,11 @@ public class RemoveStudyHandler {
 	}
 	
 	
-	
+	/**
+	 * 
+	 * Loads all summary entries from the /midb/summary.conf file.
+	 * 
+	 */
 	protected void cacheExistingSummaryEntries() {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "cacheExistingMenuEntries()...invoked.");

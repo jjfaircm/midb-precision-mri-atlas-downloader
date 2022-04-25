@@ -1,5 +1,11 @@
 package edu.umn.midb.population.atlas.data.access;
 
+/**
+ * Encapsulates data retrieved from the web_hits table in MYSQL.
+ * 
+ * @author jjfair
+ *
+ */
 public class WebHitRecord extends BaseRecord {
 	
 	private String hitCount = null;

@@ -25,6 +25,20 @@ public class WebHitsTracker extends Tracker {
 	private static WebHitsTracker instance = null;
 
 	/**
+	 * Returns the Singleton instance.
+	 * 
+	 * @return instance - {@link WebHitsTracker}
+	 */
+	public static synchronized WebHitsTracker getInstance() {
+		
+		if(instance==null) {
+			instance = new WebHitsTracker();
+			instance.start();
+		}
+		return instance;
+	}
+	
+	/**
 	 * 
 	 * Hides the default constructor since this class adheres to the Singleton pattern which
 	 * means that only one instance of this class will exist in the JVM. The instance is an
@@ -42,20 +56,6 @@ public class WebHitsTracker extends Tracker {
 		
 		this.jdbcInsertString = "INSERT INTO web_hits (timestamp_id, ip_address, user_agent, city, state, country, latitude, longitude) VALUES(?,?,?,?,?,?,?,?)";
 		initializeJDBCConnection();
-	}
-	
-	/**
-	 * Returns the Singleton instance.
-	 * 
-	 * @return instance - {@link WebHitsTracker}
-	 */
-	public static synchronized WebHitsTracker getInstance() {
-		
-		if(instance==null) {
-			instance = new WebHitsTracker();
-			instance.start();
-		}
-		return instance;
 	}
 	
 	public void addWebHitEntry(WebHitEntry whEntry) {

@@ -154,6 +154,14 @@ ul.menu {
  	padding; 0;
  }
  
+
+ #ul_updateStudyFileList {
+  list-style: none;
+  display: table;
+  margin-left:10%;
+}
+
+ 
  /* added for test */
  li.zipList {
  	float: left;
@@ -179,7 +187,7 @@ ul.menu {
 
 #div_dropZone {
     width:650px;
-    height:200px;
+    height:185px;
     border: 2px dashed gray;
     display: inline-block;
     margin: 0 auto;
@@ -188,8 +196,21 @@ ul.menu {
     background-color: #f3e1c0;
     /* background-image: linear-gradient(#a49561, #474747); */
   }
+  
+  #div_dropZoneUpdateStudy {
+    width:300px;
+    height:210px;
+    border: 2px dashed gray;
+    display: inline-block;
+    text-align: center;
+    margin: 0 auto;
+    padding: 3px;
+    /* background-color: #fbf7f5; */
+    background-color: #f3e1c0;
+    /* background-image: linear-gradient(#a49561, #474747); */
+  }
 
-#div_dropZone.active {
+#div_dropZone.active, #div_dropZoneUpdateStudy.active {
     border: 2px dashed red;
     background-color: #fbf7f5;
   }
@@ -199,7 +220,8 @@ ul.menu {
   ul.studyMenu {
   list-style-type: none;
   margin: 0;
-  padding: 0;
+  /*padding: 0;*/
+  padding: 4px 3%;
   overflow: hidden;
   background-color: #7a0019;
 }

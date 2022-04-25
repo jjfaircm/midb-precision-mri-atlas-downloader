@@ -70,8 +70,10 @@ public class DiagnosticsReporter {
 	 * thread, it is preferable to invoke {@link #createDiagnosticsEntry(ApplicationContext, HttpServletRequest, HttpServletResponse, Exception)}.
 	 * 
 	 * @param e - Exception
+	 * 
+	 * @return incidentId - String
 	 */
-	public static void createDiagnosticsEntry(Exception e) {
+	public static String createDiagnosticsEntry(Exception e) {
 		LOGGER.fatal(LOGGER_ID + "createDiagnosticsEntry(e)...invoked");
 		
 		StackTraceElement[] stackTraceEntries = e.getStackTrace();
@@ -94,7 +96,9 @@ public class DiagnosticsReporter {
 	    addDiagnosticEntryToFile(stackTraceData);
 		EmailNotifier.sendEmailNotification("APP_ERROR::INCIDENT_ID=" + timeStringID);
 		String domainName = NetworkProbabilityDownloader.getDomainName();
-		SMSNotifier.sendNotification("APP_ERROR::DOMAIN_NAME=" + domainName + "::INCIDENT_ID=" + timeStringID, CLASS_NAME);	    		
+		SMSNotifier.sendNotification("APP_ERROR::DOMAIN_NAME=" + domainName + "::INCIDENT_ID=" + timeStringID, CLASS_NAME);	 
+		
+		return timeStringID;
 	}
 
 	/**
@@ -114,7 +118,7 @@ public class DiagnosticsReporter {
 		LOGGER.fatal(loggerId + "createDiagnosticsEntry(...)...invoked");
 
 	    String timeString = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-		String id = appContext.getSessionId();
+		String id = appContext.getLoggerId();
 		id += "__";
 		id += timeString;
 		appContext.setIncidenceId(id);

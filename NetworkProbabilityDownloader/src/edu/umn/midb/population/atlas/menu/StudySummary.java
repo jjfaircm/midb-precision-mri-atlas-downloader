@@ -16,6 +16,16 @@ public class StudySummary {
 	private ArrayList<String> entryList = new ArrayList<String>();
 	
 	/**
+	 * Adds an entry to the entryList. Each entry will appear as a list item in the 
+	 * browser.
+	 *  
+	 * @param entry - String
+	 */
+	public void addEntry(String entry) {
+		this.entryList.add(entry);
+	}
+	
+	/**
 	 * Returns the id which is the name of the study, such as abcd_template_matching
 	 * 
 	 * 
@@ -27,32 +37,22 @@ public class StudySummary {
 	
 	/**
 	 * 
-	 * Sets the id, which maps to the study name containing this summary.
-	 * 
-	 * @param id - String
-	 */
-	public void setId(String id) {
-		this.id = id;
-	}
-	
-	/**
-	 * Adds an entry to the entryList. Each entry will appear as a list item in the 
-	 * browser.
-	 *  
-	 * @param entry - String
-	 */
-	public void addEntry(String entry) {
-		this.entryList.add(entry);
-	}
-	
-	/**
-	 * 
 	 * Returns the entryList which is an ArrayList of String.
 	 * 
 	 * @return entryList - ArrayList of String
 	 */
 	public ArrayList<String> getSummaryEntries() {
 		return this.entryList;
+	}
+	
+	/**
+	 * 
+	 * Sets the id, which maps to the study name containing this summary.
+	 * 
+	 * @param id - String
+	 */
+	public void setId(String id) {
+		this.id = id;
 	}
 	
 	/**

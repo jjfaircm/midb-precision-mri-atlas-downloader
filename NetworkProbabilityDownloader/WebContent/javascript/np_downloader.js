@@ -1,4 +1,4 @@
-		 var version_buildString = BUILD_DATE =  "Version beta_82.0  0414_A_2022:00:00__war=NPDownloader_0414_A_2022.war"; 
+		 var version_buildString = BUILD_DATE = "Version beta_88.0  0424_B_2022:17:24__war=NPDownloader_0424_B_2022.war"; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;
@@ -142,7 +142,10 @@
         	 button_dscalar.style.right = new_button_dscalar_x_offset;
         	 
         	 
-        	 initializeDragDrop();
+        	 initializeDragDropAddStudy();
+        	 initializeDragDropUpdateStudy();
+
+        	 
 
        	     //registerScrollEventListener();
         	 resetAddStudyForm()
@@ -236,9 +239,9 @@
 
          }
          
-         function buildMenuIdDropdown() {
-        	 console.log("buildMenuIdDropdown()...invoked...");
-        	 var dropdown_menuIDs = document.getElementById("select_menuId");
+         function buildMenuIdDropdownForRemoveStudy() {
+        	 console.log("buildMenuIdDropdownForRemoveStudy()...invoked...");
+        	 var dropdown_menuIDs = document.getElementById("select_menuId_removeStudy");
         	 //dropdown_menuIDs.length = 0;
         	 
 		     var j = 0;
@@ -261,7 +264,36 @@
         	 	 option.value = studyMenuIDArray[i];
         	 	 dropdown_menuIDs.add(option);
          	 }
-        	 console.log("buildMenuIdDropdown()...exit...");
+        	 console.log("buildMenuIdDropdownForRemoveStudy()...exit...");
+        	
+         }
+         
+         function buildMenuIdDropdownForUpdateStudy() {
+        	 console.log("buildMenuIdDropdownForUpdateStudy()...invoked...");
+        	 var dropdown_menuIDs = document.getElementById("select_menuId_updateStudy");
+        	 //dropdown_menuIDs.length = 0;
+        	 
+		     var j = 0;
+		     var maxIndex = dropdown_menuIDs.options.length-1;
+		     for(j=maxIndex; j>=0; j--) {
+		    	 dropdown_menuIDs.remove(j);
+		     }
+
+        	 var option = null;
+        	 option = document.createElement('option');
+        	 option.text = "choose a study id";
+        	 option.classList.add("menuIdOption");
+        	 option.value = "none selected";
+    	 	 dropdown_menuIDs.add(option);
+
+        	 for(let i=0; i<studyMenuIDArray.length; i++) {
+        		 option = document.createElement('option');
+        	 	 option.text = studyMenuIDArray[i];
+        	 	 option.classList.add("menuIdOption");
+        	 	 option.value = studyMenuIDArray[i];
+        	 	 dropdown_menuIDs.add(option);
+         	 }
+        	 console.log("buildMenuIdDropdownForUpdateStudy()...exit...");
         	
          }
          
@@ -366,7 +398,9 @@
         		 menuInnerHTML += buildSubmenuOptionEntries(submenuOptionsArray, studyId, surfaceVolumeType, studyDisplayName);
         	 }
 
-        	buildMenuIdDropdown();
+        	buildMenuIdDropdownForRemoveStudy();
+        	buildMenuIdDropdownForUpdateStudy();
+
         	
         	var targetMenuParent = document.getElementById("ul_submenu");
         	targetMenuParent.innerHTML = menuInnerHTML; 
@@ -762,8 +796,24 @@
          
          function downloadAdminFile(fileNameAndPath) {
            	 console.log("downloadAdminFile()...invoked.");
+           	 
+           	 var docName = null;
+           	 
+           	 if(fileNameAndPath) {
+           		 docName = fileNameAndPath;
+           	 }
+           	 else {
+	             var select_DocId = document.getElementById("select_downloadAdminDocsDropdown");
+	             docName = select_DocId.options[select_DocId.selectedIndex].value;
+           	 }
+	             
+             if(docName == "unselected") {
+            	 doAdminAlert("Please select a document");
+            	 return;
+             }
+             
         	 var anchor_downloadAdminFiles = document.getElementById("anchor_downloadAdminFile");
-        	 anchor_downloadAdminFiles.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + fileNameAndPath;
+        	 anchor_downloadAdminFiles.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + docName;
         	 anchor_downloadAdminFiles.click();
         	 console.log("downloadAdminFile()...exit.");
          }
@@ -1149,7 +1199,9 @@
              if(responseText.includes("success")) {
             	 console.log("adding new study to studyMenuIDArray:" + newStudy.folderName);
             	 studyMenuIDArray.push(newStudy.studyFolder);
-            	 buildMenuIdDropdown();
+            	 buildMenuIdDropdownForRemoveStudy();
+             	 buildMenuIdDropdownForUpdateStudy();
+
             	 console.log("studyMenuIDArray=" + studyMenuIDArray);
                  resetAddStudyForm();
             	 //getMenuData();
@@ -1175,6 +1227,7 @@
              console.log("handleAddStudyResponse()...exit.");
 
          }
+         
          
          function handleTabSelected(id) {
 
@@ -1211,105 +1264,75 @@
              
              div_home.style.display = "none";
              div_overview.style.display = "none";
-             div_resources.style.display = "none";
              div_download.style.display = "none";
              div_downloadWrapper.style.display = "none";
+             div_resources.style.display = "none";
              div_midbAtlas.style.display = "none";
-             div_contactUs.style.display = "block";
+             div_contactUs.style.display = "none";
+             div_admin.style.display = "none";
+             div_mobileDownload.style.display = "none";
+             div_mobileDownload.style.display = "none";
 
-
-             //var id = element.id;
              
-             if(id.includes("tab_home")) {
+             switch(id) {
+             case "tab_home":
             	 tab_home.checked = true;
+            	 var header_umn = document.getElementById("mandatory-header-wrapper");
+            	 header_umn.scrollIntoView({behavior: 'smooth', block: 'start'});
             	 div_home.style.display = "block";
-                 div_overview.style.display = "none";
-                 div_download.style.display = "none";
-                 div_downloadWrapper.style.display = "none";
-                 div_resources.style.display = "none";
-                 div_midbAtlas.style.display = "none";
-                 div_contactUs.style.display = "none"; 
-                 div_admin.style.display = "none";
-             }
-             else if(id.includes("tab_overview")) {
-               tab_overview.checked = true;
-               div_overview.style.display = "block";
-               div_download.style.display = "none";
-               div_downloadWrapper.style.display = "none";
-               div_resources.style.display = "none";
-               div_midbAtlas.style.display = "none";
-               div_contactUs.style.display = "none";
-          	   div_home.style.display = "none";
-               div_admin.style.display = "none";
-               //heading_sitename.scrollIntoView();
-             }
-             else if(id.includes("tab_download")) {
-               tab_download.checked = true;
-               div_overview.style.display = "none";
-               div_resources.style.display = "none";
-               if(!mobileDeviceActive) {
-	               div_downloadWrapper.style.display = "block";
-	               if(readyToDisplayDownloadDiv) {
-	            	   div_download.style.display = "block";
-	               }
-               }
-               else {
-            	   div_mobileDownload.style.display = "block";
-               }
-               div_midbAtlas.style.display = "none";
-               div_contactUs.style.display = "none";
-               div_admin.style.display = "none";
-          	   div_home.style.display = "none";
-             }
-             else if(id.includes("tab_resources")) {
-            	 tab_resources.checked = true;
-                 div_overview.style.display = "none";
+            	 break;
+             case "tab_overview":
+                 tab_overview.checked = true;
+                 div_overview.style.display = "block";
+            	 //div_overview.scrollIntoView({behavior: 'smooth', block: 'center'});
+                 //div_overview.scrollIntoView(false);
+                 var divTop = div_overview.offsetTop;
+                 window.scrollTo(0,divTop);
+                 break;
+             case "tab_download":
+            	 tab_download.checked = true;
+                 if(!mobileDeviceActive) {
+  	               div_downloadWrapper.style.display = "block";
+  	               if(readyToDisplayDownloadDiv) {
+  	            	   div_download.style.display = "block";
+  	               }
+  	               var button_downloadAll = document.getElementById("button_downloadAll");
+  	               button_downloadAll.scrollIntoView(false);
+                 }
+                 else {
+              	   div_mobileDownload.style.display = "block";
+                 }
+                 break;
+             case "tab_resources":
+               	 tab_resources.checked = true;
+                 //div_overview.style.display = "none";
                  div_resources.style.display = "block";
-                 div_downloadWrapper.style.display = "none";
-                 div_download.style.display = "none";
-                 div_midbAtlas.style.display = "none";
-                 div_contactUs.style.display = "none";
-                 div_admin.style.display = "none";
-            	 div_home.style.display = "none";
-
-             }
-             else if(id.includes("tab_midbAtlas")) {
+               	 var rsTop = div_resources.offsetTop;
+                 window.scrollTo(0, rsTop);
+                 break;
+             case "tab_midbAtlas":
             	 tab_midbAtlas.checked = true;
-                 div_overview.style.display = "none";
-                 div_resources.style.display = "none";
-                 div_downloadWrapper.style.display = "none";
-                 div_download.style.display = "none";
                  div_midbAtlas.style.display = "block";
-                 div_contactUs.style.display = "none";
-                 div_admin.style.display = "none";
-            	 div_home.style.display = "none";
-             }
-             else if(id.includes("tab_contactUs")) {
+                 var maTop = div_midbAtlas.offsetTop;
+                 window.scrollTo(0, maTop);
+                 break;
+             case "tab_contactUs":
             	 tab_contactUs.checked = true;
-                 div_overview.style.display = "none";
-                 div_resources.style.display = "none";
-                 div_downloadWrapper.style.display = "none";
-                 div_download.style.display = "none";
-                 div_midbAtlas.style.display = "none";
-                 div_admin.style.display = "none";
-            	 div_home.style.display = "none";
+            	 var div_tabs = document.getElementById("div_tabs");
+            	 //div_tabs.scrollIntoView({behavior: 'smooth', block: 'start'});
                  div_contactUs.style.display = "block";
-             }
-             else if(id.includes("div_admin")) {
-                 div_overview.style.display = "none";
-                 div_resources.style.display = "none";
-                 div_downloadWrapper.style.display = "none";
-                 div_download.style.display = "none";
-                 div_midbAtlas.style.display = "none";
-                 div_contactUs.style.display = "none";
-            	 div_home.style.display = "none";
-          	     var anchor_addStudy = document.getElementById("a_addStudy");
-          	     anchor_addStudy.style.color = "#FFC300";
-                 //div_dropZone.style.display = "block";
+            	 var cuTop = div_contactUs.offsetTop;
+                 window.scrollTo(0, cuTop);           
+                 break;
+             case "div_admin":
                  div_admin.style.display = "block";
                  div_addStudy.style.display = "block";
+          	   	 var anchor_addStudy = document.getElementById("a_addStudy");
+          	     anchor_addStudy.style.color = "#FFC300";
+          	     var ul_studyMenu = document.getElementById("ul_studyMenu");
+          	     ul_studyMenu.scrollIntoView({behavior: 'smooth', block: 'start'});
+                 break;
              }
-             
              console.log("handleTabSelected()...exit.");
         }
 
@@ -1399,24 +1422,28 @@
         	div_urlDialogue.style.display = "none";
         	
         	var newURL = document.getElementById("newURLEntry").value;
+        	newURL = newURL.replace("&", "!!!");
+        	var beginText1 = "<ifram";
+        	var beginText2 = "https";
+        	
         	if(newURL.trim().length==0) {
         		doAdminAlert("The url field must not be blank");
             	div_urlDialogue.style.display = "block";
             	return;
         	}
-        	else if(!newURL.startsWith("https://")) {
-        		doAdminAlert("The url must start with https://");
+        	else if(!newURL.startsWith(beginText1) && !newURL.startsWith(beginText2)) {
+        		doAdminAlert("The url must start with " + "&lt;" + "iframe or https");
+            	div_urlDialogue.style.display = "block";
         		return;
         	}
 
-        	
  			var div_mapProgress = document.getElementById("div_map_progress");
 			div_mapProgress.style.display = "block";
         	        	
  	 		sendUpdateMapURLRequest(newURL.trim(), "WEB_HITS_MAP");
          }
          
-         
+      
  		
  		function processMapsRequest() {
  		   	 console.log("processMapsRequest()...invoked.");
@@ -1428,13 +1455,12 @@
         	 
         	switch(selection) {
         	
-     	 	case "viewWebHitsMap":
-     	 		sendGetWebHitsMapURLRequest()
-     	 		break;
      	 	case "updateWebHitsMapURL":
      	 		var div_urlDialogue = document.getElementById("div_updateURLDialogue");
      	 		div_urlDialogue.style.display = "block";
      	 		document.getElementById("newURLEntry").focus();
+     	 		var button_maps = document.getElementById("button_maps");
+     	 		button_maps.style.display = "none";
      	 		break;
      	 	case "downloadWebHitsGeoLoc":
      	 		downloadAdminFile("/midb/web_hits_geoloc.csv");
@@ -1445,7 +1471,7 @@
      	 		sendResynchWebHitsRequest();
      	 		break;
      	 	case "downloadCreateMapDoc":
-     	 		downloadAdminFile("/midb/Create_New_Web_Hits_Map.rtf");
+     	 		downloadAdminFile("Create_New_Web_Hits_Map.rtf");
         	}
  		   	 
  		   	 console.log("processMapsRequest()...exit.");
@@ -1937,6 +1963,25 @@
         	 }
         	 console.log("toggleEmailInfo()...exit.");
          }
+         
+         function updateStudyEntry() {
+        	 console.log("updateStudyEntry()...invoked.");
+        	 
+        	 var div_updateStudyDetails = document.getElementById("div_updateStudyDetails");
+        	 div_updateStudyDetails.style.display = "none";
+
+        	 //var div_updateStudyProgress = document.getElementById("div_updateStudyProgress");
+    		 //div_updateStudyProgress.style.display = "block";
+        	 
+        	 updateStudy.div_progressUpload.style.display = "block";
+        	 
+    		 var fileSize = updateStudy.uploadFilesArray[0].size;
+        	 uploadUpdateStudyFile(fileSize);
+        	 
+        	 console.log("updateStudyEntry()...exit.");
+
+         }
+         
                   
          function uploadStudyFile(zipFormData, fileName, fileSize) {
 
@@ -2063,10 +2108,115 @@
           	console.log("uploadStudyFile()...exit.");
          }
          
-         function updateWebHitsMapURL(newURL) {
-        	 
-         }
          
+         function uploadUpdateStudyFile(fileSize) {
+
+
+         	console.log("uploadUpdateStudyFile()...invoked.");
+         	 
+           	var ajaxRequest = getAjaxRequest();
+          	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=uploadUpdateStudyFile";
+          	
+          	var paramString = "&studyFolderName=" + updateStudy.studyId;
+          	paramString += "&updateAction=" + updateStudy.actionName;
+          	paramString += "&fileSize=" + fileSize;
+
+          	
+          	url += paramString;
+
+          	var encodedUrl = encodeURI(url);
+          	ajaxRequest.open('post', encodedUrl, true);
+          	ajaxRequest.timeout = 600000*10;
+          	
+          	
+      		newStudy.span_progress_0.style.display = "none";
+      		newStudy.span_progress_1.style.display = "none";
+    	
+
+          	if(updateStudy.currentFileNumber == 1) {
+ 				div_uploadProgress.style.display = "block";
+ 			}
+        
+          	ajaxRequest.onreadystatechange=function() {
+          		console.log("onreadystatechange, responseText=" + ajaxRequest.responseText);
+          		console.log("onreadystatechange, readyState=" + ajaxRequest.readyState);
+          		console.log("onreadystatechange, status=" + ajaxRequest.status);
+
+                 //console.log(ajaxRequest.responseText);
+                 if(ajaxRequest.responseText.includes("Unexpected Error")) {
+                 	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+              		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+              		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+                  	var errorArray = errorData.split("&");
+                 	var msg1 = errorArray[0];
+                 	var msg2 = errorArray[1];
+                 	stackTraceData = errorArray[2];
+                 	var divSubmitNotification = document.getElementById("div_submitNotification");
+                 	divSubmitNotification.style.display = "none";
+                    	var incidentIdIndex = ajaxRequest.responseText.indexOf("INCIDENT_ID");
+                    	var incidentId = ajaxRequest.responseText.substring(incidentIdIndex, incidentIdIndex+54);
+                    	var headerElement = document.getElementById("stackTraceHeader");
+                    	headerElement.innerHTML = incidentId;
+                 	doErrorAlert(msg1, msg2, errorAlertOK);
+                 	console.log("uploadMenuFiles()...onreadystatechange...error");
+                 	console.log("msg1=" + msg1);
+                 	console.log("msg2=" + msg2);
+                 	console.log(stackTraceData);
+                 	return;
+                 }
+                 if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+                 	 
+                	 var lastFile = true; // there is only 1 file to upload in updateStudy
+                 	
+                     if(lastFile) {
+                     	handleUpdateStudyResponse(ajaxRequest.responseText);
+                     }
+ 
+          	    }
+                 //handle nginx hiccup from server
+                 if (ajaxRequest.readyState == 4 && ajaxRequest.status == 404) {
+                 	div_uploadProgress.style.display = "none";
+                 	div_unzipProgress.style.display = "none";
+                 	var inferredResponse = "Study created, please refresh page to view new menu";
+                    handleUpdateStudyResponse(inferredResponse);
+          	    }
+
+          	}
+          	
+          	ajaxRequest.upload.onprogress = function(e) {
+          		
+          		console.log("progress update...received.");
+          		// https://stackoverflow.com/questions/32045093/xmlhttprequest-upload-addeventlistenerprogress-not-working
+                 //div_uploadProgress.style.display = "block";
+ 				// if the file upload length is known, then show progress bar
+ 				if (e.lengthComputable) {
+ 	          		console.log("progress update...e.lengthComputable=true");
+ 					//uploadProgress.classList.remove("hide-me");
+ 					// total number of bytes being uploaded
+ 	          		updateStudy.progress_updateUpload.setAttribute("max", e.total);
+ 					// total number of bytes that have been uploaded
+ 	          		updateStudy.progress_updateUpload.setAttribute("value", e.loaded);
+ 					var done = false;
+ 					if(updateStudy.currentIndex==updateStudy.totalFileNumber) {
+ 						done = true;
+ 					}
+ 					if((e.total == e.loaded) && done) {
+ 					   if(updateStudy.actionName == "addVolumeData" ||
+ 						  updateStudy.actionName == "addSurfaceData") {
+ 						   	updateStudy.div_progressUpload.style.display = "none";
+ 						   	updateStudy.div_unzipProgress.style.display = "block";
+ 					   }
+ 					}
+ 					//console.log(e.loaded);
+ 				}
+
+ 			};
+ 			
+           	ajaxRequest.send(updateStudy.formData);
+           	console.log("uploadStudyFile()...exit.");
+	 
+         }
+
          
          function validateEmail(email) {
              var re = /\S+@\S+\.\S+/;

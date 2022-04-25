@@ -1,13 +1,6 @@
 package edu.umn.midb.population.atlas.tasks;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import org.apache.logging.log4j.LogManager;
-
 import logs.ThreadLocalLogTracker;
 
 

@@ -46,15 +46,6 @@ public class EmailAddressRecord {
 	}
 	
 	/**
-	 * Sets the emailAddress
-	 * 
-	 * @param emailAddress - String
-	 */
-	public void setEmailAddress(String emailAddress) {
-		this.emailAddress = emailAddress;
-	}
-	
-	/**
 	 * Returns the firstName
 	 * 
 	 * @return firstName - String
@@ -65,22 +56,31 @@ public class EmailAddressRecord {
 	
 	/**
 	 * 
-	 * Sets the firstName
-	 * 
-	 * @param firstName - String
-	 */
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
-	
-	/**
-	 * 
 	 * Returns the lastName
 	 * 
 	 * @return lastName - String
 	 */
 	public String getLastName() {
 		return lastName;
+	}
+	
+	/**
+	 * Sets the emailAddress
+	 * 
+	 * @param emailAddress - String
+	 */
+	public void setEmailAddress(String emailAddress) {
+		this.emailAddress = emailAddress;
+	}
+	
+	/**
+	 * 
+	 * Sets the firstName
+	 * 
+	 * @param firstName - String
+	 */
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
 	}
 	
 	/**

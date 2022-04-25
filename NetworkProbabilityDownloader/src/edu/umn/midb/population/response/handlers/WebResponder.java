@@ -3,6 +3,7 @@ package edu.umn.midb.population.response.handlers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -21,22 +22,25 @@ import com.google.gson.JsonPrimitive;
 
 import edu.umn.midb.population.atlas.base.ApplicationContext;
 import edu.umn.midb.population.atlas.data.access.AdminAccessRecord;
+import edu.umn.midb.population.atlas.data.access.AtlasDataCacheManager;
 import edu.umn.midb.population.atlas.data.access.DBManager;
 import edu.umn.midb.population.atlas.data.access.EmailAddressRecord;
 import edu.umn.midb.population.atlas.data.access.FileDownloadRecord;
 import edu.umn.midb.population.atlas.data.access.WebHitRecord;
 import edu.umn.midb.population.atlas.menu.Menu;
 import edu.umn.midb.population.atlas.menu.MenuEntry;
+import edu.umn.midb.population.atlas.menu.NetworkMapData;
 import edu.umn.midb.population.atlas.menu.SingleNetworkFoldersConfig;
 import edu.umn.midb.population.atlas.menu.StudySummary;
 import edu.umn.midb.population.atlas.security.TokenManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
+import edu.umn.midb.population.atlas.study.handlers.CreateStudyHandler;
+import edu.umn.midb.population.atlas.study.handlers.UpdateStudyHandler;
 import edu.umn.midb.population.atlas.tasks.AdminAccessEntry;
-import edu.umn.midb.population.atlas.utils.AtlasDataCacheManager;
-import edu.umn.midb.population.atlas.utils.CreateStudyHandler;
-import edu.umn.midb.population.atlas.utils.NetworkMapData;
 import edu.umn.midb.population.atlas.utils.SMSNotifier;
 import edu.umn.midb.population.atlas.utils.Utils;
+import edu.umn.midb.population.atlas.webresponses.AdminValidationResponse;
+import edu.umn.midb.population.atlas.webresponses.UpdateWebHitsMapResponse;
 import logs.ThreadLocalLogTracker;
 
 //import javax.json.*;
@@ -73,8 +77,8 @@ public class WebResponder {
 		CreateStudyHandler csHandler = appContext.getCreateStudyHandler();	
 		
 		
-		if(csHandler.createStudyHasError()) {
-				responseString = csHandler.getCreateStudyErrorMessage();
+		if(csHandler.isErrorEncountered()) {
+				responseString = csHandler.getErrorMessage();
 		}
 
 		try {
@@ -356,6 +360,32 @@ public class WebResponder {
 		 return fileDownloadsJSON;
 	}
 	
+	protected static String buildAdminValidationResponse(String validationMessage) {
+		 String loggerId = ThreadLocalLogTracker.get();
+		 LOGGER.trace(loggerId + "buildAdminValidationResponse()...invoked.");
+
+		 AdminValidationResponse avr = new AdminValidationResponse();
+		 avr.setValidationMessage(validationMessage);
+		 
+		 String webHitsMapURL = "/HTML/map_error.html";
+		 
+		 try {
+			 webHitsMapURL = DBManager.getInstance().getWebHitsMapURL();
+		 }
+		 catch(SQLException sqlE) {
+			 LOGGER.error(loggerId + "buildAdminValidationResponse()....unable to retrieve webHitsMapURL.");
+		 }
+		 
+		 avr.setWebHitsMapURL(webHitsMapURL);
+		 
+		 Gson gson = new Gson();
+		 String jsonResponse = gson.toJson(avr);
+		
+		 LOGGER.trace(loggerId + "buildAdminValidationResponse()...exit.");
+		 return jsonResponse;
+
+	}
+	
 	protected static String buildAdminAccessRecordsResponse(ArrayList<AdminAccessRecord> aaRecords) {
 		 String loggerId = ThreadLocalLogTracker.get();
 		 LOGGER.trace(loggerId + "buildAdminAccessRecordsResponse()...invoked.");
@@ -378,6 +408,27 @@ public class WebResponder {
 		 
 		 return emailAddressesJSON;
 	}
+	
+	protected static String buildUpdateWHMapURL(String messageToDisplay, String targetMap, String newURL) {
+		
+
+		 String loggerId = ThreadLocalLogTracker.get();
+		 LOGGER.trace(loggerId + "buildUpdateWHMapURL()...invoked.");
+
+		 UpdateWebHitsMapResponse uwhResponse = new UpdateWebHitsMapResponse();
+		 uwhResponse.setMessage(messageToDisplay);
+		 
+		 String webHitsMapURL = "/HTML/map_error.html";
+		  
+		 uwhResponse.setMapURL(newURL);
+		 
+		 Gson gson = new Gson();
+		 String jsonResponse = gson.toJson(uwhResponse);
+		
+		 LOGGER.trace(loggerId + "buildUpdateWHMapURL()...exit.");
+		 return jsonResponse;		
+	}
+	
 	
 	protected static String buildWebHitsResponse(ArrayList<WebHitRecord> webHits) {
 		 String loggerId = ThreadLocalLogTracker.get();
@@ -496,11 +547,6 @@ public class WebResponder {
 		else {
 			aaEntry = new AdminAccessEntry();
 			responseString = "Access denied.";
-			boolean invalidIP = appContext.getTokenManager().isInvalidIP();
-			if(invalidIP) {
-				aaEntry.setValidIP(false);
-			}
-			
 			aaEntry.setAction(appContext.getCurrentAction());
 			aaEntry.setRequestorIPAddress(appContext.getRemoteAddress());
 			aaEntry.setFormattedTimeStamp(appContext.getCurrentActionFormattedTimestamp());
@@ -508,17 +554,9 @@ public class WebResponder {
 			aaEntry.setRequest(appContext.getCurrentReguest());
 			aaEntry.setResponse(response);	
 			TokenManager tokenMgr = appContext.getTokenManager();
-			if(!tokenMgr.isValidIP()) {
-				aaEntry.setValidIP(false);
-			}
+
 			if(!tokenMgr.isValidPassword()) {
 				aaEntry.setValidPassword(false);
-			}
-			
-			if(!aaEntry.isValidIP()) {
-				String message = "MIDB_APP::::HACK_ATTEMPT:::" + NetworkProbabilityDownloader.getDomainName();
-				message += "::::IP_ADDRESS=" + aaEntry.getRequestorIPAddress();
-				SMSNotifier.sendNotification(message, "DBManager");
 			}
 			
 			DBManager.getInstance().insertAdminAccessRecord(aaEntry, appContext);
@@ -541,7 +579,6 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendAdminValidationResponse()...invoked.");
 
 		boolean isValid = false;
-		boolean isValidIP = true;
 		boolean isExpired = false;
 		boolean isAccessDenied = false;
 		TokenManager tokenManager = null;
@@ -555,14 +592,8 @@ public class WebResponder {
 				if(tokenManager.isTokenExpired()) {
 					isExpired = true;
 				}
-				if(tokenManager.isAccessDenied()) {
-					isAccessDenied = true;
-					if(tokenManager.isInvalidIP()) {
-						isValidIP = false;
-
-					}
-				}
 			}
+
 			if(!isExpired) {
 				AdminAccessEntry aaEntry = new AdminAccessEntry();
 				aaEntry.setAction(appContext.getCurrentAction());
@@ -573,9 +604,7 @@ public class WebResponder {
 				aaEntry.setResponse(response);
 				TokenManager tokenMgr = appContext.getTokenManager();
 				boolean validPassword = tokenMgr.isValidPassword();
-				if(!isValidIP) {
-					aaEntry.setValidIP(false);
-				}
+
 				if(!validPassword) {
 					aaEntry.setValidPassword(false);
 				}
@@ -590,14 +619,11 @@ public class WebResponder {
 		if(isExpired) {
 			responseString += ":expired";
 		}
-		else if(isAccessDenied) {
-			responseString += ":access_denied";
-		}
 		
-		
+		String jsonResponse = buildAdminValidationResponse(responseString);
+	
 		try {
-		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
-			  response.getWriter().println(responseString);
+			  response.getWriter().println(jsonResponse);
 		      Thread.sleep(1000);
 		}
 	    catch(Exception e) {
@@ -661,7 +687,7 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendResynchWebHitsResponse()...exit.");
 	}
 	
-	public static void sendUpdateMapURLResponse(HttpServletResponse response, int updatedRowCount, String targetMap) {
+	public static void sendUpdateMapURLResponse(HttpServletResponse response, int updatedRowCount, String targetMap, String newURL) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendUpdateMapURLResponse()...invoked");
@@ -669,10 +695,38 @@ public class WebResponder {
 		String responseString = null;
 
 		if(updatedRowCount==1) {
-			responseString = "Successfully updated " + targetMap + " url";
+			responseString = "Successfully updated " + targetMap;
 		}
 		else {
-			responseString = "Unable to update " + targetMap + " url";
+			responseString = "Unable to update " + targetMap;
+		}
+		
+		String jsonResponse = buildUpdateWHMapURL(responseString, targetMap, newURL);
+		
+		
+		try {
+			  response.getWriter().println(jsonResponse);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		
+		LOGGER.trace(loggerId + "sendUpdateMapURLResponse()...exit");
+	}
+	
+	public static void sendUpdateStudyResponse(ApplicationContext appContext, HttpServletResponse response, UpdateStudyHandler updateHandler) {
+		
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendUpdateStudyResponse()...invoked");
+
+		String studyId = updateHandler.getStudyId();
+		
+		String responseString = "Successfully updated study: " + studyId + "<br>" +
+		                        "Refresh page to view changes";
+		
+		if(updateHandler.isErrorEncountered()) {
+			responseString = updateHandler.getErrorMessage();
 		}
 		
 		try {
@@ -683,7 +737,7 @@ public class WebResponder {
 	    	  LOGGER.error(e.getMessage(), e);
 	     }
 		
-		LOGGER.trace(loggerId + "sendUpdateMapURLResponse()...exit");
+		LOGGER.trace(loggerId + "sendUpdateStudyResponse()...exit");
 	}
 
 	

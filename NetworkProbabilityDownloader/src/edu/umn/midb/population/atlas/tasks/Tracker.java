@@ -1,7 +1,6 @@
 package edu.umn.midb.population.atlas.tasks;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -12,7 +11,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -21,7 +19,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.Logger;
 
 import edu.umn.midb.population.atlas.data.access.DBManager;
-import edu.umn.midb.population.atlas.data.access.FileDownloadRecord;
 import edu.umn.midb.population.atlas.exception.DiagnosticsReporter;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import edu.umn.midb.population.atlas.utils.EmailNotifier;
@@ -50,83 +47,60 @@ public class Tracker extends Thread {
 	protected static final String DOWNLOAD_ENTRY_CSV_TEMPLATE = "ID,IP_ADDRESS,TIMESTAMP,DOWNLOAD_REQUESTED_FILE";
 	protected static final String WEB_HITS_CSV_FILE = "/midb/tracking/web_hits.csv";
 	protected static final String WEB_HIT_ENTRY_TEMPLATE = "ID,IP_ADDRESS,TIMESTAMP,USER_AGENT";
+	private static String DOUBLE_QUOTE = "\"";
 	protected Logger LOGGER = null;
 	protected String LOGGER_ID = "UNASSIGNED";
 	private long pollingTimeoutSeconds = 300;
 	protected BlockingQueue<TaskEntry> blockingQueue = new LinkedBlockingDeque<TaskEntry>();
 	private TaskEntry currentTaskEntry = null;
 	private PreparedStatement preparedInsertStatement = null;
-	protected String jdbcInsertString = null;
-    private Connection jdbcConnection = null;
-    private AtomicReference<String> failedConnectionMessageRef = new AtomicReference<String>();;
+    protected String jdbcInsertString = null;
+    private Connection jdbcConnection = null;;
+    private AtomicReference<String> failedConnectionMessageRef = new AtomicReference<String>();
     private long lastExecutionTimeMS = 0;
     private long autoConnectionCheckTimeout = 1000*60*120;
     private boolean firstHealthCheckSent = false;
     private int healthCheckTargetHour1 = 8;
     private int healthCheckTargetHour2 = 20;
-    private static String DOUBLE_QUOTE = "\"";
 	protected FileReader fileReader = null;
 	protected BufferedReader bufReader = null;
-	private ArrayList<String> existingEmails = new ArrayList<String>();
 	protected String subclassName = null;
 	
 
 	/**
 	 * 
-	 * Returns the number of seconds remaining until a health check notification
-	 * should be sent via the {@link SMSNotifier#sendNotification(String, String)}.
-	 * The value returned informs the run() method how long to sleep before sending
-	 * an SMS health check notification. If the remaining seconds is greater than
-	 * the normal polling time for waiting on the queue, then -1 is returned indicating
-	 * that the normal polling time should be used. Otherwise, the value returned 
-	 * represents an alternate polling time that should override the normal polling
-	 * time.
+	 * Adds a {@link FileDownloadEntry} to the /midb/tracking/download_requests.csv file.
+	 * This occurs when the attempt to add the entry to the database has failed.
 	 * 
-	 * @return remainingSeconds - long
+	 * @param fdEntry - {@link FileDownloadEntry}
 	 */
-		protected long getRemainingNotificationTime() {
+	private void addDownloadEntryToCSVFile(FileDownloadEntry fdEntry) {
+
+		LOGGER.info(LOGGER_ID + "addDownloadEntryToCSVFile()...invoked.");
 		
-		//LOGGER.trace(LOGGER_ID + "getRemainingNotificationTime()...invoked.");
+	    String downloadEntry = DOWNLOAD_ENTRY_CSV_TEMPLATE.replace("ID", fdEntry.getId());
+		downloadEntry = downloadEntry.replace("IP_ADDRESS", fdEntry.getRequestorIPAddress());
+		downloadEntry = downloadEntry.replace("DOWNLOAD_REQUESTED_FILE", fdEntry.getFilePath());
+		downloadEntry = downloadEntry.replace("TIMESTAMP", fdEntry.getFormattedTimeStamp());
 		
-		long remainingNotificationSeconds = -1;
-		LocalTime currentTime = LocalTime.now();
-		int hour = currentTime.getHour();
-		int seconds = currentTime.getSecond();
-		int minutes = currentTime.getMinute();
-		int remainingMinutes = 60 - minutes;
-		int adjustedTargetHour1 = 0;
-		int adjustedTargetHour2 = 0;
-		
-		
-		if(this.healthCheckTargetHour1 == 0) {
-			adjustedTargetHour1 = 23;
+		LOGGER.info(LOGGER_ID + "addDownloadEntryToCSVFile()...exit");
+				
+		try {
+			FileWriter fw = new FileWriter(DOWNLOAD_REQUESTS_CSV_FILE, true);
+			PrintWriter pw = new PrintWriter(fw);
+			pw.println(downloadEntry);
+			pw.close();
 		}
-		else {
-			adjustedTargetHour1 = healthCheckTargetHour1-1;
+		catch(IOException ioE) {
+			LOGGER.error(LOGGER_ID + "Failed to add downloadEntry to csv file=>>" + downloadEntry);
+    	    LOGGER.error(ioE.getMessage(), ioE);
 		}
-		if(this.healthCheckTargetHour2 == 0) {
-			adjustedTargetHour2 = 23;
+		catch(Exception e) {
+			LOGGER.error(LOGGER_ID + "Failed to add downloadEntry to csv file=>>" + downloadEntry);
+    	    LOGGER.error(e.getMessage(), e);
 		}
-		else {
-			adjustedTargetHour2 = healthCheckTargetHour2-1;
-		}
-		
-		
-		if(!this.firstHealthCheckSent) {
-			remainingNotificationSeconds = 0;
-		}
-		
-		else if(hour == adjustedTargetHour1 || hour == adjustedTargetHour2) {
-			//LOGGER.trace("Entering calculation section...");
-			if(remainingMinutes <= this.pollingTimeoutSeconds/60) {
-				//LOGGER.trace("Entering minutes section...");
-				remainingNotificationSeconds = remainingMinutes * 60;
-				remainingNotificationSeconds = remainingNotificationSeconds - seconds;
-			}
-		}
-		//LOGGER.trace(LOGGER_ID + "getRemainingNotificationTime()...exit, remainingSeconds=" + remainingNotificationSeconds);
-		return remainingNotificationSeconds;
-}
+		LOGGER.info(LOGGER_ID + "addDownloadEntryToCSVFile()...exit.");
+	}
 	
 	
 	/**
@@ -217,120 +191,31 @@ public class Tracker extends Thread {
 	}
 		
 	/**
-	 * Adds a {@link WebHitEntry} to the web_hits table in MYSQL.
-	 * 
-	 * @param whEntry - {@link WebHitEntry}
-	 */
-	protected void addWebHitEntryToDatabase(WebHitEntry whEntry) {
-
-
-		LOGGER.info(LOGGER_ID + "addWebHitEntryToDatabase()...invoked.");
-		
-		//IPLocator gets more specific city information.
-		//However, it sometimes can not resolve certain ip addresses,
-		//especially in countries like China, etc.
-		//In that case, we use IPInfoRequestor
-		IPLocator.locateIP(whEntry);	
-		
-		String resolvedCountry = whEntry.getCountry();
-		String resolvedState = whEntry.getState();
-		String resolvedCity = whEntry.getCity();
-		
-		if(resolvedCountry.equalsIgnoreCase("unknown") || 
-		   resolvedState.equalsIgnoreCase("unknown") ||
-		   resolvedCity.equalsIgnoreCase("unknown")) {
-			
-				IPInfoRequestor.getIPInfo(whEntry);	
-		}	
-		
-		int updateCount = -1;
-		boolean connectionOK = true;
-		
-		//if last usage is greater than 30 minutes then check connection
-		long currentTimeMS = System.currentTimeMillis();
-		long elapsedTime = currentTimeMS - this.lastExecutionTimeMS;
-		
-		if(elapsedTime >= DBManager.MAX_IDLE_TIME) {
-			connectionOK = checkDatabaseConnection(1);
-		}
-		
-		if(!connectionOK) {
-			initializeJDBCConnection();
-			connectionOK = checkDatabaseConnection(2);
-			
-			if(!connectionOK) {
-				LOGGER.fatal(LOGGER_ID + "run()...Unable to successfully check database connection.");
-				String message = "MIDB_APP_ERROR: UNABLE TO SUCCESSFULLY CHECK CONNECTION AFTER RETRY";
-				SMSNotifier.sendNotification(message, this.subclassName);
-			}
-		}
-		
-		if(connectionOK) {
-			try {
-				this.preparedInsertStatement.clearParameters();
-				this.preparedInsertStatement.setString(1, whEntry.getId());
-				this.preparedInsertStatement.setString(2, whEntry.getRequestorIPAddress());
-				this.preparedInsertStatement.setString(3, whEntry.getUserAgent());
-				this.preparedInsertStatement.setString(4, whEntry.getCity());
-				this.preparedInsertStatement.setString(5, whEntry.getState());
-				this.preparedInsertStatement.setString(6, whEntry.getCountry());
-				this.preparedInsertStatement.setString(7, whEntry.getLatitude());
-				this.preparedInsertStatement.setString(8, whEntry.getLongitude());
-
-
-				this.preparedInsertStatement.execute();
-				this.lastExecutionTimeMS = System.currentTimeMillis();
-				updateCount = preparedInsertStatement.getUpdateCount();
-				if(updateCount == 0) {
-					throw new SQLException("Failed to insert web hit record into database");
-				}
-				else {
-					LOGGER.trace(LOGGER_ID + "Added hitEntry to database");
-				}
-			}
-			catch(SQLException sqlE) {
-				DiagnosticsReporter.createDiagnosticsEntry(whEntry.getAppContext(), whEntry.getRequest(), null, sqlE);
-				LOGGER.fatal(sqlE.getMessage(), sqlE);
-				connectionOK = false;
-			}
-		} 
-		
-		if(!connectionOK) {
-			addWebHitEntryToCSVFile(whEntry);
-		}
-		LOGGER.info(LOGGER_ID + "addWebHitEntryToDatabase()...exit.");
-	}
-	
-	/**
-	 * Adds a {@link WebHitEntry} to the /midb/tracking/web_hits.csv file.
+	 * Adds a {@link EmailAddressEntry} to the /midb/email_addresses_backup.csv file.
 	 * This occurs when the attempt to add the entry to the database fails.
 	 * 
-	 * @param whEntry - {@link WebHitEntry}
+	 * 
+	 * @param eaEntry - {@link EmailAddressEntry}
 	 */
-	protected void addWebHitEntryToCSVFile(WebHitEntry whEntry) {
+	private void addEmailAddressToBackupCSVFile(EmailAddressEntry eaEntry) {
 
-		LOGGER.info(LOGGER_ID + "addHitEntryToFile()...invoked");
-		
-		String hitEntry = WEB_HIT_ENTRY_TEMPLATE.replace("ID", whEntry.getId());
-		hitEntry = hitEntry.replace("IP_ADDRESS", whEntry.getRequestorIPAddress());
-		hitEntry = hitEntry.replace("TIMESTAMP", whEntry.getFormattedTimeStamp());
-		hitEntry = hitEntry.replace("USER_AGENT", whEntry.getUserAgent());
-		
 		try {
-			FileWriter fw = new FileWriter(WEB_HITS_CSV_FILE, true);
+			FileWriter fw = new FileWriter(EMAIL_ADDRESSES_BACKUP_CSV_FILE, true);
 			PrintWriter pw = new PrintWriter(fw);
-			pw.println(hitEntry);
-			pw.close();		
+			String entryLine = EMAIL_ADDRESS_CSV_TEMPLATE;
+			entryLine = entryLine.replace("EMAIL_ADDRESS", eaEntry.getEmailAddress());
+			entryLine = entryLine.replace("FIRST_NAME", eaEntry.getFirstName());
+			entryLine = entryLine.replace("LAST_NAME", eaEntry.getLastName());
+			pw.println(entryLine);
+			pw.close();
 		}
 		catch(IOException ioE) {
-			LOGGER.error(LOGGER_ID + "Failed to add hitEntry=>>" + hitEntry);
-    	    LOGGER.error(ioE.getMessage(), ioE);
+			LOGGER.fatal(LOGGER_ID + "Unable to write emailAddress to " + EMAIL_ADDRESSES_BACKUP_CSV_FILE);
+			String details = eaEntry.getFirstName() + "::" + eaEntry.getLastName() + "::" + eaEntry.getEmailAddress();
+			LOGGER.fatal(LOGGER_ID + details);
+			DiagnosticsReporter.createDiagnosticsEntry(ioE);
 		}
-		catch(Exception e) {
-			LOGGER.error(LOGGER_ID + "Failed to add hitEntry=>>" + hitEntry);
-    	    LOGGER.error(e.getMessage(), e);
-		}
-		LOGGER.info(LOGGER_ID + "addHitEntryToFile()...exit.");
+	
 	}
 	
 	/**
@@ -423,42 +308,6 @@ public class Tracker extends Thread {
 	    	addDownloadEntryToCSVFile(fdEntry);
 	    }
 	}
-
-	/**
-	 * 
-	 * Adds a {@link FileDownloadEntry} to the /midb/tracking/download_requests.csv file.
-	 * This occurs when the attempt to add the entry to the database has failed.
-	 * 
-	 * @param fdEntry - {@link FileDownloadEntry}
-	 */
-	private void addDownloadEntryToCSVFile(FileDownloadEntry fdEntry) {
-
-		LOGGER.info(LOGGER_ID + "addDownloadEntryToCSVFile()...invoked.");
-		
-	    String downloadEntry = DOWNLOAD_ENTRY_CSV_TEMPLATE.replace("ID", fdEntry.getId());
-		downloadEntry = downloadEntry.replace("IP_ADDRESS", fdEntry.getRequestorIPAddress());
-		downloadEntry = downloadEntry.replace("DOWNLOAD_REQUESTED_FILE", fdEntry.getFilePath());
-		downloadEntry = downloadEntry.replace("TIMESTAMP", fdEntry.getFormattedTimeStamp());
-		
-		LOGGER.info(LOGGER_ID + "addDownloadEntryToCSVFile()...exit");
-				
-		try {
-			FileWriter fw = new FileWriter(DOWNLOAD_REQUESTS_CSV_FILE, true);
-			PrintWriter pw = new PrintWriter(fw);
-			pw.println(downloadEntry);
-			pw.close();
-		}
-		catch(IOException ioE) {
-			LOGGER.error(LOGGER_ID + "Failed to add downloadEntry to csv file=>>" + downloadEntry);
-    	    LOGGER.error(ioE.getMessage(), ioE);
-		}
-		catch(Exception e) {
-			LOGGER.error(LOGGER_ID + "Failed to add downloadEntry to csv file=>>" + downloadEntry);
-    	    LOGGER.error(e.getMessage(), e);
-		}
-		LOGGER.info(LOGGER_ID + "addDownloadEntryToCSVFile()...exit.");
-	}
-
 	
 	/**
 	 * 
@@ -488,6 +337,124 @@ public class Tracker extends Thread {
 			addFileDownloadEntryToDatabase(fdEntry);
 		}
 		LOGGER.trace(LOGGER_ID + "addTaskEntryToDatabase()...exit, entryType=" + tEntry.getSubclassName());
+	}
+
+	/**
+	 * Adds a {@link WebHitEntry} to the /midb/tracking/web_hits.csv file.
+	 * This occurs when the attempt to add the entry to the database fails.
+	 * 
+	 * @param whEntry - {@link WebHitEntry}
+	 */
+	protected void addWebHitEntryToCSVFile(WebHitEntry whEntry) {
+
+		LOGGER.info(LOGGER_ID + "addHitEntryToFile()...invoked");
+		
+		String hitEntry = WEB_HIT_ENTRY_TEMPLATE.replace("ID", whEntry.getId());
+		hitEntry = hitEntry.replace("IP_ADDRESS", whEntry.getRequestorIPAddress());
+		hitEntry = hitEntry.replace("TIMESTAMP", whEntry.getFormattedTimeStamp());
+		hitEntry = hitEntry.replace("USER_AGENT", whEntry.getUserAgent());
+		
+		try {
+			FileWriter fw = new FileWriter(WEB_HITS_CSV_FILE, true);
+			PrintWriter pw = new PrintWriter(fw);
+			pw.println(hitEntry);
+			pw.close();		
+		}
+		catch(IOException ioE) {
+			LOGGER.error(LOGGER_ID + "Failed to add hitEntry=>>" + hitEntry);
+    	    LOGGER.error(ioE.getMessage(), ioE);
+		}
+		catch(Exception e) {
+			LOGGER.error(LOGGER_ID + "Failed to add hitEntry=>>" + hitEntry);
+    	    LOGGER.error(e.getMessage(), e);
+		}
+		LOGGER.info(LOGGER_ID + "addHitEntryToFile()...exit.");
+	}
+
+	
+	/**
+	 * Adds a {@link WebHitEntry} to the web_hits table in MYSQL.
+	 * 
+	 * @param whEntry - {@link WebHitEntry}
+	 */
+	protected void addWebHitEntryToDatabase(WebHitEntry whEntry) {
+
+
+		LOGGER.info(LOGGER_ID + "addWebHitEntryToDatabase()...invoked.");
+		
+		//IPLocator gets more specific city information.
+		//However, it sometimes can not resolve certain ip addresses,
+		//especially in countries like China, etc.
+		//In that case, we use IPInfoRequestor
+		IPLocator.locateIP(whEntry);	
+		
+		String resolvedCountry = whEntry.getCountry();
+		String resolvedState = whEntry.getState();
+		String resolvedCity = whEntry.getCity();
+		
+		if(resolvedCountry.equalsIgnoreCase("unknown") || 
+		   resolvedState.equalsIgnoreCase("unknown") ||
+		   resolvedCity.equalsIgnoreCase("unknown")) {
+			
+				IPInfoRequestor.getIPInfo(whEntry);	
+		}	
+		
+		int updateCount = -1;
+		boolean connectionOK = true;
+		
+		//if last usage is greater than 30 minutes then check connection
+		long currentTimeMS = System.currentTimeMillis();
+		long elapsedTime = currentTimeMS - this.lastExecutionTimeMS;
+		
+		if(elapsedTime >= DBManager.MAX_IDLE_TIME) {
+			connectionOK = checkDatabaseConnection(1);
+		}
+		
+		if(!connectionOK) {
+			initializeJDBCConnection();
+			connectionOK = checkDatabaseConnection(2);
+			
+			if(!connectionOK) {
+				LOGGER.fatal(LOGGER_ID + "run()...Unable to successfully check database connection.");
+				String message = "MIDB_APP_ERROR: UNABLE TO SUCCESSFULLY CHECK CONNECTION AFTER RETRY";
+				SMSNotifier.sendNotification(message, this.subclassName);
+			}
+		}
+		
+		if(connectionOK) {
+			try {
+				this.preparedInsertStatement.clearParameters();
+				this.preparedInsertStatement.setString(1, whEntry.getId());
+				this.preparedInsertStatement.setString(2, whEntry.getRequestorIPAddress());
+				this.preparedInsertStatement.setString(3, whEntry.getUserAgent());
+				this.preparedInsertStatement.setString(4, whEntry.getCity());
+				this.preparedInsertStatement.setString(5, whEntry.getState());
+				this.preparedInsertStatement.setString(6, whEntry.getCountry());
+				this.preparedInsertStatement.setString(7, whEntry.getLatitude());
+				this.preparedInsertStatement.setString(8, whEntry.getLongitude());
+
+
+				this.preparedInsertStatement.execute();
+				this.lastExecutionTimeMS = System.currentTimeMillis();
+				updateCount = preparedInsertStatement.getUpdateCount();
+				if(updateCount == 0) {
+					throw new SQLException("Failed to insert web hit record into database");
+				}
+				else {
+					LOGGER.trace(LOGGER_ID + "Added hitEntry to database");
+				}
+			}
+			catch(SQLException sqlE) {
+				DiagnosticsReporter.createDiagnosticsEntry(whEntry.getAppContext(), whEntry.getRequest(), null, sqlE);
+				LOGGER.fatal(sqlE.getMessage(), sqlE);
+				connectionOK = false;
+			}
+		} 
+		
+		if(!connectionOK) {
+			addWebHitEntryToCSVFile(whEntry);
+		}
+		LOGGER.info(LOGGER_ID + "addWebHitEntryToDatabase()...exit.");
 	}
 	
 	/**
@@ -523,31 +490,80 @@ public class Tracker extends Thread {
 	
 	/**
 	 * 
-	 * Sends a health check notification via the {@link SMSNotifier#sendNotification(String, String)}
+	 * Returns the number of seconds remaining until a health check notification
+	 * should be sent via the {@link SMSNotifier#sendNotification(String, String)}.
+	 * The value returned informs the run() method how long to sleep before sending
+	 * an SMS health check notification. If the remaining seconds is greater than
+	 * the normal polling time for waiting on the queue, then -1 is returned indicating
+	 * that the normal polling time should be used. Otherwise, the value returned 
+	 * represents an alternate polling time that should override the normal polling
+	 * time.
 	 * 
-	 * @param connectionOK - boolean
+	 * @return remainingSeconds - long
 	 */
-	protected void sendHealthCheckNotification(boolean connectionOK) {
-		LOGGER.trace(LOGGER_ID + "sendHealthCheckNotification()...invoked");
-		LocalTime now = LocalTime.now();
-		int hour = now.getHour();
-		int minutes = now.getMinute();
-		String minutesStr = null;
-		if(minutes<10) {
-			minutesStr = "0" + minutes;
+		protected long getRemainingNotificationTime() {
+		
+		//LOGGER.trace(LOGGER_ID + "getRemainingNotificationTime()...invoked.");
+		
+		long remainingNotificationSeconds = -1;
+		LocalTime currentTime = LocalTime.now();
+		int hour = currentTime.getHour();
+		int seconds = currentTime.getSecond();
+		int minutes = currentTime.getMinute();
+		int remainingMinutes = 60 - minutes;
+		int adjustedTargetHour1 = 0;
+		int adjustedTargetHour2 = 0;
+		
+		
+		if(this.healthCheckTargetHour1 == 0) {
+			adjustedTargetHour1 = 23;
 		}
 		else {
-			minutesStr = "" + minutes;
+			adjustedTargetHour1 = healthCheckTargetHour1-1;
 		}
-		String time = hour +":" + minutesStr;
-		time = "time=" + time;
-		String domainName = NetworkProbabilityDownloader.getDomainName();
-		String message = "MIDB_APP_HEALTH_CHECK::::" + domainName + "::::";
-		message += this.subclassName + "::::" + time + "::::";
-		message += "connectionOK=" + connectionOK;
-		SMSNotifier.sendNotification(message, this.subclassName);
-		firstHealthCheckSent = true;
-		LOGGER.trace(LOGGER_ID + "sendHealthCheckNotification()...exit");
+		if(this.healthCheckTargetHour2 == 0) {
+			adjustedTargetHour2 = 23;
+		}
+		else {
+			adjustedTargetHour2 = healthCheckTargetHour2-1;
+		}
+		
+		
+		if(!this.firstHealthCheckSent) {
+			remainingNotificationSeconds = 0;
+		}
+		
+		else if(hour == adjustedTargetHour1 || hour == adjustedTargetHour2) {
+			//LOGGER.trace("Entering calculation section...");
+			if(remainingMinutes <= this.pollingTimeoutSeconds/60) {
+				//LOGGER.trace("Entering minutes section...");
+				remainingNotificationSeconds = remainingMinutes * 60;
+				remainingNotificationSeconds = remainingNotificationSeconds - seconds;
+			}
+		}
+		//LOGGER.trace(LOGGER_ID + "getRemainingNotificationTime()...exit, remainingSeconds=" + remainingNotificationSeconds);
+		return remainingNotificationSeconds;
+}
+	
+	/**
+	 * 
+	 * Gets a JDBC Connection from the {@link DBManager} and prepares the insert statement
+	 * that will be used to insert a record into the appropriate table. This is handled
+	 * by the inheriting subclass such as {@link WebHitsTracker};
+	 * 
+	 */
+	protected void initializeJDBCConnection() {
+		try {
+			jdbcConnection = DBManager.getInstance().getDBConnection();
+			preparedInsertStatement = jdbcConnection.prepareStatement(jdbcInsertString);
+			LOGGER.info(LOGGER_ID + "initializeJDBCConnection()...successfully retrieved JDBC connection and prepared statement.");
+		} 
+		catch (SQLException e) {
+			DiagnosticsReporter.createDiagnosticsEntry(e);
+			LOGGER.fatal(LOGGER_ID + "Unable to get connection and/or prepare statement with new connection.");
+			LOGGER.fatal(e.getMessage(), e);
+		}
+	
 	}
 	
 	/**
@@ -643,51 +659,31 @@ public class Tracker extends Thread {
 	
 	/**
 	 * 
-	 * Gets a JDBC Connection from the {@link DBManager} and prepares the insert statement
-	 * that will be used to insert a record into the appropriate table. This is handled
-	 * by the inheriting subclass such as {@link WebHitsTracker};
+	 * Sends a health check notification via the {@link SMSNotifier#sendNotification(String, String)}
 	 * 
+	 * @param connectionOK - boolean
 	 */
-	protected void initializeJDBCConnection() {
-		try {
-			jdbcConnection = DBManager.getInstance().getDBConnection();
-			preparedInsertStatement = jdbcConnection.prepareStatement(jdbcInsertString);
-			LOGGER.info(LOGGER_ID + "initializeJDBCConnection()...successfully retrieved JDBC connection and prepared statement.");
-		} 
-		catch (SQLException e) {
-			DiagnosticsReporter.createDiagnosticsEntry(e);
-			LOGGER.fatal(LOGGER_ID + "Unable to get connection and/or prepare statement with new connection.");
-			LOGGER.fatal(e.getMessage(), e);
+	protected void sendHealthCheckNotification(boolean connectionOK) {
+		LOGGER.trace(LOGGER_ID + "sendHealthCheckNotification()...invoked");
+		LocalTime now = LocalTime.now();
+		int hour = now.getHour();
+		int minutes = now.getMinute();
+		String minutesStr = null;
+		if(minutes<10) {
+			minutesStr = "0" + minutes;
 		}
-	
-	}
-	
-	/**
-	 * Adds a {@link EmailAddressEntry} to the /midb/email_addresses_backup.csv file.
-	 * This occurs when the attempt to add the entry to the database fails.
-	 * 
-	 * 
-	 * @param eaEntry - {@link EmailAddressEntry}
-	 */
-	private void addEmailAddressToBackupCSVFile(EmailAddressEntry eaEntry) {
-
-		try {
-			FileWriter fw = new FileWriter(EMAIL_ADDRESSES_BACKUP_CSV_FILE, true);
-			PrintWriter pw = new PrintWriter(fw);
-			String entryLine = EMAIL_ADDRESS_CSV_TEMPLATE;
-			entryLine = entryLine.replace("EMAIL_ADDRESS", eaEntry.getEmailAddress());
-			entryLine = entryLine.replace("FIRST_NAME", eaEntry.getFirstName());
-			entryLine = entryLine.replace("LAST_NAME", eaEntry.getLastName());
-			pw.println(entryLine);
-			pw.close();
+		else {
+			minutesStr = "" + minutes;
 		}
-		catch(IOException ioE) {
-			LOGGER.fatal(LOGGER_ID + "Unable to write emailAddress to " + EMAIL_ADDRESSES_BACKUP_CSV_FILE);
-			String details = eaEntry.getFirstName() + "::" + eaEntry.getLastName() + "::" + eaEntry.getEmailAddress();
-			LOGGER.fatal(LOGGER_ID + details);
-			DiagnosticsReporter.createDiagnosticsEntry(ioE);
-		}
-	
+		String time = hour +":" + minutesStr;
+		time = "time=" + time;
+		String domainName = NetworkProbabilityDownloader.getDomainName();
+		String message = "MIDB_APP_HEALTH_CHECK::::" + domainName + "::::";
+		message += this.subclassName + "::::" + time + "::::";
+		message += "connectionOK=" + connectionOK;
+		SMSNotifier.sendNotification(message, this.subclassName);
+		firstHealthCheckSent = true;
+		LOGGER.trace(LOGGER_ID + "sendHealthCheckNotification()...exit");
 	}
 	
 	

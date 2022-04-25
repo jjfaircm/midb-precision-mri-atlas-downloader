@@ -1,11 +1,5 @@
 package edu.umn.midb.population.atlas.tasks;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import org.apache.logging.log4j.LogManager;
 
 import logs.ThreadLocalLogTracker;
@@ -21,11 +15,23 @@ import logs.ThreadLocalLogTracker;
  */
 public class DownloadTracker extends Tracker {
 	
-	private static final String TRACKING_DOWNLOAD_REQUESTS_FILE = "/midb/tracking/download_requests.csv";
-	public static final String DOWNLOAD_ENTRY_TEMPLATE = "ID,IP_ADDRESS,TIMESTAMP,DOWNLOAD_REQUESTED_FILE";
 	
 	private static DownloadTracker instance = null;
 
+	/**
+	 * Returns the Singleton instance.
+	 * 
+	 * @return instance - DownloadTracker
+	 */
+	public static synchronized DownloadTracker getInstance() {
+		
+		if(instance==null) {
+			instance = new DownloadTracker();
+			instance.start();
+		}
+		return instance;
+	}
+	
 	/**
 	 * Hides the constructor since the Singleton pattern is being implemented.
 	 * 
@@ -40,20 +46,6 @@ public class DownloadTracker extends Tracker {
 		this.jdbcInsertString = "INSERT INTO file_downloads (study, network, file_name, file_path, email_address, ip_address, city, state, country, latitude, longitude) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
 		initializeJDBCConnection();
 
-	}
-	
-	/**
-	 * Returns the Singleton instance.
-	 * 
-	 * @return instance - DownloadTracker
-	 */
-	public static synchronized DownloadTracker getInstance() {
-		
-		if(instance==null) {
-			instance = new DownloadTracker();
-			instance.start();
-		}
-		return instance;
 	}
 	
 	/**

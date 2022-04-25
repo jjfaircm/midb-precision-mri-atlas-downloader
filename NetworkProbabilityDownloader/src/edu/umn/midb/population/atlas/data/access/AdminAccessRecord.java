@@ -7,28 +7,9 @@ package edu.umn.midb.population.atlas.data.access;
  */
 public class AdminAccessRecord extends BaseRecord {
 	
-	private String validIP = "true";
 	private String action = "undefined";
 	private String validPassword = "undefined";
 	
-	/**
-	 * Returns a boolean indicating if the user input the correct password.
-	 * 
-	 * @return validPassword boolean
-	 */
-	public String getValidPassword() {
-		return validPassword;
-	}
-
-	/**
-	 * Sets the validPassword attribute.
-	 * 
-	 * @param validPassword - boolean
-	 */
-	public void setValidPassword(String validPassword) {
-		this.validPassword = validPassword;
-	}
-
 	/**
 	 * Hides the default constructor
 	 * 
@@ -36,7 +17,7 @@ public class AdminAccessRecord extends BaseRecord {
 	private AdminAccessRecord() {
 		
 	}
-	
+
 	/**
 	 * Constructor 
 	 * @param ipAddress - String, ipAddress of the client that was accessing the admin console
@@ -48,16 +29,6 @@ public class AdminAccessRecord extends BaseRecord {
 	}
 
 	/**
-	 *
-	 * Returns a boolean indicating if the ip address of the remote user was in the acl.conf file
-	 *
-	 * @param isInvalidIP - boolean
-	 */
-	public void isValidIP(String isInvalidIP) {
-		this.validIP = isInvalidIP;
-	}
-
-	/**
 	 * Returns the action that was requested (such as addStudy)
 	 * 
 	 * @return action - String
@@ -65,6 +36,16 @@ public class AdminAccessRecord extends BaseRecord {
 	public String getAction() {
 		return action;
 	}
+	
+	/**
+	 * Returns a boolean indicating if the user input the correct password.
+	 * 
+	 * @return validPassword boolean
+	 */
+	public String getValidPassword() {
+		return validPassword;
+	}
+
 
 	/**
 	 * Sets the requested action (such as addStudy)
@@ -74,15 +55,16 @@ public class AdminAccessRecord extends BaseRecord {
 	public void setAction(String action) {
 		this.action = action;
 	}
-	
+
 	/**
-	 * Sets boolean indicating if the requestor ip address was found in the acl.conf
+	 * Sets the validPassword attribute.
 	 * 
-	 * @param trueOrFalse - boolean
+	 * @param validPassword - boolean
 	 */
-	public void setValidIP(String trueOrFalse) {
-		this.validIP = trueOrFalse;
+	public void setValidPassword(String validPassword) {
+		this.validPassword = validPassword;
 	}
 	
+
 
 }

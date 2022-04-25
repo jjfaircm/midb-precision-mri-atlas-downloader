@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +26,92 @@ import logs.ThreadLocalLogTracker;
 public class DirectoryAccessor {
 	
 	private static Logger LOGGER = LogManager.getLogger(DirectoryAccessor.class);
+	
+	/**
+	 * Returns a boolean indicating if the file name should be included in the list of .png files returned
+	 * to the client browser.  Only files representing a whole percentile from 1% to 100% are included. Therefore,
+	 * a file with the name of 'Aud_thresh0.005.png' would be excluded since it represents a value of 0.5%.
+	 * 
+	 * @param thresholdName String representing the name of the .png file being interrogated
+	 * 
+	 * @return boolean indicating if the file name represents a whole percentage value from 1% to 100%
+	 */
+	private static boolean fraction_GTE_3_DEC(String thresholdName) {
+		
+		boolean is_GTE_3_DEC = false;
+		
+		int beginIndex = thresholdName.indexOf(".") + 1;
+		int endIndex = thresholdName.lastIndexOf(".");
+		
+		if(endIndex < beginIndex) {
+			LOGGER.error("Error for fraction_GTE_3_DEC()...fileName=" + thresholdName);
+		}
+		
+		String fractionPortion = thresholdName.substring(beginIndex, endIndex);
+		
+		
+		if(fractionPortion.length()>=3) {
+			is_GTE_3_DEC = true;
+		}
+
+		return is_GTE_3_DEC;
+	}
+	
+	/**
+	 * Returns the binary byte buffer for the specified file.
+	 * 
+	 * @param filePath  The absolute path and file name of the file specified
+	 * 
+	 * @return byte[] A byte array containing the binary data of the file 
+	 */
+	public static byte[] getFileBytes(String filePath) {
+		
+		//String loggerId = ThreadLocalLogTracker.get();
+		//LOGGER.trace(loggerId + "getFileBytes()...invoked.");
+
+		
+		byte[] allBytes = null;
+		
+		try {
+			InputStream inputStream = new FileInputStream(filePath);
+			allBytes = inputStream.readAllBytes();
+			inputStream.close();
+		}
+		catch(Exception e) {
+			throw new BIDS_FatalException(e.getMessage(), e.getStackTrace());
+		}
+		
+		//LOGGER.trace(loggerId + "getFileBytes()...exit.");
+
+		return allBytes;
+
+	}
+	
+	/**
+	 * 
+	 * Returns the absolute file path of the .dscalar.nii file for a given study and network type
+	 * 
+	 * @param studyAndNetworkPath - String
+	 * @return absolutePath - String
+	 */
+	public static String getNetworkMapNiiFilePath(String studyAndNetworkPath) {
+		
+		File[] directories = new File(studyAndNetworkPath).listFiles(new FileFilter() {
+		    @Override
+		    public boolean accept(File file) {
+		    	
+		    	if(file.getName().contains(".dscalar.nii")) {
+		    		return true;
+		    	}
+		        return false;
+		    }
+		});
+		
+		File aFile = directories[0]; 
+		
+		String path = aFile.getAbsolutePath();
+		return path;
+	}
 	
 	/**
 	 * Returns the absolute path and image file name for each and every .png file associated with
@@ -85,8 +172,7 @@ public class DirectoryAccessor {
 		});
 		
 		Arrays.sort(directories);
-		LOGGER.trace(directories);
-		
+
 		for(int i=0; i<directories.length; i++ ) {
 			aFile = directories[i];
 			anImagePath = aFile.getAbsolutePath();
@@ -104,92 +190,6 @@ public class DirectoryAccessor {
 		
 		return imagePaths;
 
-	}
-	
-	/**
-	 * 
-	 * Returns the absolute file path of the .dscalar.nii file for a given study and network type
-	 * 
-	 * @param studyAndNetworkPath - String
-	 * @return absolutePath - String
-	 */
-	public static String getNetworkMapNiiFilePath(String studyAndNetworkPath) {
-		
-		File[] directories = new File(studyAndNetworkPath).listFiles(new FileFilter() {
-		    @Override
-		    public boolean accept(File file) {
-		    	
-		    	if(file.getName().contains(".dscalar.nii")) {
-		    		return true;
-		    	}
-		        return false;
-		    }
-		});
-		
-		File aFile = directories[0]; 
-		
-		String path = aFile.getAbsolutePath();
-		return path;
-	}
-	
-	/**
-	 * Returns the binary byte buffer for the specified file.
-	 * 
-	 * @param filePath  The absolute path and file name of the file specified
-	 * 
-	 * @return byte[] A byte array containing the binary data of the file 
-	 */
-	public static byte[] getFileBytes(String filePath) {
-		
-		String loggerId = ThreadLocalLogTracker.get();
-		//LOGGER.trace(loggerId + "getFileBytes()...invoked.");
-
-		
-		byte[] allBytes = null;
-		
-		try {
-			InputStream inputStream = new FileInputStream(filePath);
-			allBytes = inputStream.readAllBytes();
-			inputStream.close();
-		}
-		catch(Exception e) {
-			throw new BIDS_FatalException(e.getMessage(), e.getStackTrace());
-		}
-		
-		//LOGGER.trace(loggerId + "getFileBytes()...exit.");
-
-		return allBytes;
-
-	}
-	
-	/**
-	 * Returns a boolean indicating if the file name should be included in the list of .png files returned
-	 * to the client browser.  Only files representing a whole percentile from 1% to 100% are included. Therefore,
-	 * a file with the name of 'Aud_thresh0.005.png' would be excluded since it represents a value of 0.5%.
-	 * 
-	 * @param thresholdName String representing the name of the .png file being interrogated
-	 * 
-	 * @return boolean indicating if the file name represents a whole percentage value from 1% to 100%
-	 */
-	private static boolean fraction_GTE_3_DEC(String thresholdName) {
-		
-		boolean is_GTE_3_DEC = false;
-		
-		int beginIndex = thresholdName.indexOf(".") + 1;
-		int endIndex = thresholdName.lastIndexOf(".");
-		
-		if(endIndex < beginIndex) {
-			LOGGER.error("Error for fraction_GTE_3_DEC()...fileName=" + thresholdName);
-		}
-		
-		String fractionPortion = thresholdName.substring(beginIndex, endIndex);
-		
-		
-		if(fractionPortion.length()>=3) {
-			is_GTE_3_DEC = true;
-		}
-
-		return is_GTE_3_DEC;
 	}
 
 }

@@ -32,15 +32,6 @@ public class WebHitEntry extends TaskEntry {
 	}
 	
 	/**
-	 * Sets the timestampId
-	 * 
-	 * @param id - String
-	 */
-	public void setId(String id) {
-		this.timestampId = id;
-	}
-	
-	/**
 	 * 
 	 * Returns the type of browser (user-agent) that the remote requestor used.
 	 * 
@@ -48,6 +39,15 @@ public class WebHitEntry extends TaskEntry {
 	 */
 	public String getUserAgent() {
 		return userAgent;
+	}
+	
+	/**
+	 * Sets the timestampId
+	 * 
+	 * @param id - String
+	 */
+	public void setId(String id) {
+		this.timestampId = id;
 	}
 	
 	/**

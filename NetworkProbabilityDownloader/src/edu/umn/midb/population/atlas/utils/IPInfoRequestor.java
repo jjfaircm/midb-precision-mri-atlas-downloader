@@ -11,7 +11,14 @@ import io.ipinfo.api.model.IPResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
+/**
+ * Utility class for retrieving geo-location data for an ip address. This is a service
+ * of ipinfo.io
+ * 
+ * 
+ * @author jjfair
+ *
+ */
 public class IPInfoRequestor {
 	
 	
@@ -22,6 +29,14 @@ public class IPInfoRequestor {
 	private static String KEY = null;
 	private static String TOKEN = null;
 	
+	
+	/**
+	 * Retrieves geo-location data for the requestorIPAddress contained in the {@link TaskEntry}
+	 * instance. This information is used to set the relevant TaskEntry attributes such as latitude, and
+	 * longitude.
+	 * 
+	 * @param tEntry - {@link TaskEntry}
+	 */
 	public static void getIPInfo(TaskEntry tEntry) {
 		
         IPInfo ipInfo = new IPInfoBuilder()
@@ -50,6 +65,8 @@ public class IPInfoRequestor {
             tEntry.setCity(city);
             tEntry.setState(state);
             tEntry.setCountry(countryName);
+            tEntry.setLatitude(latitude);
+            tEntry.setLongitude(longitude);
             
             if(city==null && SMS_NOTIFY_COUNT<4) {
             	String domainName = NetworkProbabilityDownloader.getDomainName();
@@ -76,29 +93,35 @@ public class IPInfoRequestor {
         }        
 	}
 	
+	/**
+	 * Initializes the authorization token necessary for retrieving data through the
+	 * web service.
+	 * 
+	 * @param key - encryption key
+	 * @param encToken - encrypted authorization token
+	 */
 	public static void initAuthentication(String key, String encToken) {
 		LOGGER.trace(LOGGER_ID + "initAuthentication()...invoked.");
 		KEY = key;
 		TOKEN = Utils.convertJcpyt(encToken, KEY);
 	}
 	
+	/**
+	 * Updates the ERROR_REPORT_COUNT which is used to prevent redundant invocations
+	 * of {@link DiagnosticsReporter#createDiagnosticsEntry(Exception)}
+	 * 
+	 */
 	private static synchronized void updateErrorCount() {
 		ERROR_REPORT_COUNT++;
 	}
 	
+	/**
+	 * Updates the SMS_NOTIFY_COUNT which is used to prevent redundant invocations
+	 * of {@link SMSNotifier#sendNotification(String, String)}
+	 * 
+	 */
 	private static synchronized void updateNotifyCount() {
 		SMS_NOTIFY_COUNT++;
-	}
-	
-	public static void main(String args[]) {
-		
-		CountryNamesResolver.getInstance();
-		
-		TaskEntry tEntry = new TaskEntry();
-		tEntry.setRequestorIPAddress("66.249.70.100");
-		getIPInfo(tEntry);
-		System.out.println(tEntry.getLatitude());
-
 	}
 
 }

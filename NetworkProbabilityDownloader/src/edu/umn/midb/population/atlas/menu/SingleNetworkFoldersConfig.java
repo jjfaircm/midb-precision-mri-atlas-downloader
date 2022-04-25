@@ -25,27 +25,6 @@ public class SingleNetworkFoldersConfig {
 	private ArrayList<String> folderNamesConfig = new ArrayList<String>();
 	
 	/**
-	 * Returns the id of the folderNamesConfig. The id maps to the study name, such as
-	 * abcd_template_matching.
-	 * 
-	 * @return id - String
-	 */
-	public String getId() {
-		return id;
-	}
-	
-	/**
-	 * 
-	 * Sets the id of the folderNamesConfig, The id maps to the study, such as
-	 * abcd_template_matching.
-	 * 
-	 * @param id - String
-	 */
-	public void setId(String id) {
-		this.id = id;
-	}
-	
-	/**
 	 * 
 	 * Returns the folderNamesConfig which is an ArrayList of available Single Network names
 	 * and the folder that each network name maps to.
@@ -57,6 +36,16 @@ public class SingleNetworkFoldersConfig {
 	}
 	
 	/**
+	 * Returns the id of the folderNamesConfig. The id maps to the study name, such as
+	 * abcd_template_matching.
+	 * 
+	 * @return id - String
+	 */
+	public String getId() {
+		return id;
+	}
+	
+	/**
 	 * Sets the folderNamesConfig which is an ArrayList of String. Each String will resemble an entry
 	 * such as:  Auditory=Aud
 	 * 
@@ -64,6 +53,17 @@ public class SingleNetworkFoldersConfig {
 	 */
 	public void setFolderNamesConfig(ArrayList<String> folderNamesConfig) {
 		this.folderNamesConfig = folderNamesConfig;
+	}
+	
+	/**
+	 * 
+	 * Sets the id of the folderNamesConfig, The id maps to the study, such as
+	 * abcd_template_matching.
+	 * 
+	 * @param id - String
+	 */
+	public void setId(String id) {
+		this.id = id;
 	}
 
 }

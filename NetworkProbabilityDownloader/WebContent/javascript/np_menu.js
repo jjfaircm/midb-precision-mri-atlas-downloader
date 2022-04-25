@@ -29,6 +29,7 @@
    var global_studyToRemove = null;
    var adminLoginFocusPending = false;
    var global_networkTypeId = "combined_clusters";
+   var webHitsMapURL = null;
    var newStudy = {
 		   studyFolder: null,
 		   selectedDataTypes: null,
@@ -40,6 +41,23 @@
 		   span_progress_1: null
    
        }
+   
+   var updateStudy = {
+		   studyId: null,
+		   actionName: null,
+		   currentIndex: 1,
+		   totalFileNumber: 1,
+		   uploadFileNamesArray: new Array(),
+		   uploadFilesArray: new Array(),
+		   ul_uploadFileList: null,
+   		   div_dropZone: null,
+   		   div_progressUpload: null,
+   		   div_unzipProgress: null,
+   		   progress_updateUpload: null,
+   		   formData: new FormData()
+   }
+   
+   var lastAdminActionRequest = null;
 
 
    function startupMenu() {
@@ -55,9 +73,15 @@
        
        div_dropZone = document.getElementById("div_dropZone");
        zipFormData.id = "form_uploadZipFiles";
+       updateStudy.formData.id ="form_uploadUpdateFiles";
        
        ul_zipList = document.getElementById("ul_zipList");
-   
+       
+       updateStudy.div_dropZone = document.getElementById("div_dropZoneUpdateStudy");
+       updateStudy.ul_uploadFileList = document.getElementById("ul_updateStudyFileList");
+       updateStudy.div_progressUpload = document.getElementById("div_updateStudyProgress");
+       updateStudy.progress_updateUpload = document.getElementById("progress_updateUpload");
+       updateStudy.div_unzipProgress = document.getElementById("div_updateUnzipProgress");
        
        console.log("startUpMenu()...exit.");
    }
@@ -100,17 +124,18 @@
     	var div_adminAlertBox = document.getElementById("adminAlertBox");
     	var div_adminAlertBoxMessage = document.getElementById("adminAlertBoxMessage");
     	div_adminAlertBoxMessage.innerHTML = responseText;
-    	div_adminAlertBox.style.display = "block";
+    	//div_adminAlertBox.style.display = "block";
     	
     	if(isDownloadAlert) {
+    		div_adminAlertBox.classList.remove("admin_gradient");
     		div_adminAlertBox.style.backgroundColor = "#0F52BA";
     	}
     	else {
-    		div_adminAlertBox.style.backgroundColor = "#644B26";
+    		div_adminAlertBox.classList.add("admin_gradient");
     	}
     	
-    	//#644B26 #483d8b #0f52ba #536895 #000080 #191970.OK
-    	// GRAY: #808080 #696969.ok #575757
+    	div_adminAlertBox.style.display = "block";
+
     	console.log("doAdminAlert()...exit");
     }
     
@@ -203,11 +228,6 @@
 			 td = document.createElement("td");
 			 td.className = "admin";
 			 td.innerHTML = currentAdminAccessRecord.ipAddress;
-			 tr.appendChild(td);
-			 
-			 td = document.createElement("td");
-			 td.className = "admin";
-			 td.innerHTML = currentAdminAccessRecord.validIP;
 			 tr.appendChild(td);
 			 
 			 td = document.createElement("td");
@@ -338,6 +358,7 @@
 			 
 			 td = document.createElement("td");
 			 td.className = "admin";
+			 //td.innerHTML = i+1;
 			 td.innerHTML = currentWebHit.hitCount;
 			 tr.appendChild(td);
 			 
@@ -383,8 +404,30 @@
 		console.log("cancelUpdateURL()...invoked.");
 		var div_updateURL = document.getElementById("div_updateURLDialogue");
 		div_updateURL.style.display = "none";
+		var button_maps = document.getElementById("button_maps");
+	 	button_maps.style.display = "inline-block";
 		console.log("cancelUpdateURL()...exit.");
 	}
+	
+	   function convertStudyNameToFolderId(studyNameTextInput) {
+	       console.log("convertStudyNameToFolderId()...invoked.");
+
+		   var studyName = studyNameTextInput.value;
+		   var studyFolderName = studyName.replaceAll("  ", " ");
+		   studyFolderName = studyFolderName.trim();
+		   studyFolderName = studyFolderName.replaceAll(" - ", "_");
+		   studyFolderName = studyFolderName.replaceAll(" ", "_");
+		   studyFolderName = studyFolderName.replaceAll("__", "_");
+		   studyFolderName = studyFolderName.trim();
+		   
+		   var textInput_studyFolderName = document.getElementById("input_studyFolderName");
+		   textInput_studyFolderName.readonly = false;
+		   textInput_studyFolderName.value = studyFolderName.toLowerCase();
+		   textInput_studyFolderName.readonly = true;
+		   
+	       console.log("convertStudyNameToFolderId()...exit.");
+	   }
+	   
 	
 
 	function createStudyEntry(createButton) {
@@ -526,30 +569,6 @@
 
 	   	 console.log(menuEntry); 
 	   	 
-	   	 /*
-	   	 for(var i=0; i<filesArray.length; i++) {
-	   		 sliceFile(filesArray[i]);
-	   	 }
-	   	 //uploadFileChunks();
-	   	 //processFileChunks();
-	   	 */
-	   	 
-	   	 //var currentFile = null;
-	   	 //var currentFileName = null;
-	   	 //var currentFileNumber = 1;
-	   	 //var totalFileNumber = droppedFileNamesArray.length;
-	   	 
-	   	 //uploadMenuFiles(studyFolderName, selectedDataTypes, menuEntry);
-	   	 /*
-	   	newStudy = {
-	 		   studyFolder: null,
-	 		   selectedDataTypes: null,
-	 		   menuEntry: null,
-	 		   currentFileNumber: 0,
-	 		   totalFileNumber: 0
-	        }
-         */
-	   	 
 	   	 newStudy.studyFolder = studyFolderName;
 	   	 newStudy.selectedDataTypes = selectedDataTypes;
 	   	 newStudy.menuEntry = menuEntry;
@@ -585,20 +604,7 @@
         grandParent.style.display = "block";  
         selectedSubmenu = parent;   
         parent.style.display = "block";
-        
-        //jjf
-        //var thresholdImagePanel = document.getElementById("img_threshold");
-        //thresholdImagePanel.style.visibility = "visible";
-        //thresholdImagePanel.style.opacity = "1.0";
-        
-        //var header = document.getElementById("roi_image_slides_header");
-        //header.style.visibility = "visible";
-        //header.style.opacity = "1.0";
-        
-        //var div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
-        //div_selectNeuralNetworkName.style.visibility = "visible";
-        //div_selectNeuralNetworkName.style.opacity = "1.0";
-
+ 
         var div_thresholdImageWrapper = document.getElementById("thresholdImageWrapper");
         div_thresholdImageWrapper.style.display = "none";
         
@@ -606,14 +612,8 @@
         if(global_networkTypeId.includes("single")) {
         	var div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
         	div_selectNeuralNetworkName.style.visibility = "visible";
-        	/*
-        	var div_select_neuralNetworkNameWrapper = document.getElementById("select_neuralNetworkNameWrapper");
-        	div_select_neuralNetworkNameWrapper.style.display = block;
-        	*/
         }
-  	   
-
-        
+      
 	    console.log("displaySelectedMenu()...exit.");
    }
 
@@ -628,10 +628,11 @@
             currentElement.style.background = "#fbf7f5";
         } 
         
-	selectedSubmenuAnchor.style.color = "#777";
-	selectedSubmenuAnchor.style.background = "#fbf7f5"; 
-	selectedSubmenu.style.background = "#fbf7f5";
-        console.log("resetMenuColors()...exit.");
+		selectedSubmenuAnchor.style.color = "#777";
+		selectedSubmenuAnchor.style.background = "#fbf7f5"; 
+		selectedSubmenu.style.background = "#fbf7f5";
+		
+	    console.log("resetMenuColors()...exit.");
    }
    
   	function handleAdminPasswordEnterKey(event) {
@@ -658,8 +659,8 @@
    	   console.log("handleAdminLogin()...exit.");
    }
    
-   function handleAdminRequest() {
-          console.log("handleAdminRequest()...invoked.");
+   function handleAdminLoginRequest() {
+          console.log("handleAdminLoginRequest()...invoked.");
 
           //var div_admin = document.getElementById("div_promptAdmin");
           //div_admin.style.display = "block";
@@ -679,13 +680,16 @@
       	passwordInputField.value = "";
       	passwordInputField.focus();
       	
-        console.log("handleAdminRequest()...exit.");
+        console.log("handleAdminLoginRequest()...exit.");
 
    }
    
-   function handleAdminValidationResponse(responseText) {
-	   console.log("handleAdminValidationResponse()...invoked, valid=" + responseText);
+   function handleAdminValidationResponse(responseJSONString) {
+	   console.log("handleAdminValidationResponse()...invoked.");
 	   
+	   var jsonResponseObject = JSON.parse(responseJSONString);
+	   var responseText = jsonResponseObject.validationMessage;
+	 	   
 	   if(responseText.includes("true")) {
 		   handleTabSelected("div_admin");
 	   }
@@ -698,8 +702,11 @@
 		   return;
 	   }
 	   else if(responseText.includes("false") && !responseText.includes("expired")) {
-		   handleAdminRequest();
+		   handleAdminLoginRequest();
 	   }
+	   
+	   webHitsMapURL = jsonResponseObject.webHitsMapURL; 
+	   console.log(webHitsMapURL);
 	   console.log("handleAdminValidationResponse()...exit");
 
 
@@ -718,8 +725,8 @@
 	   anchor.style.backgroundColor = "#7a0019";
 	   anchor.style.color = "#FFC300";
 	   
-	   	var div_removeStudyProgress = document.getElementById("div_removeStudyProgress");
-	   	div_removeStudyProgress.style.display = "none";
+	   var div_removeStudyProgress = document.getElementById("div_removeStudyProgress");
+	   div_removeStudyProgress.style.display = "none";
 
 	   
 	   var div_addStudy = document.getElementById("div_addStudy");
@@ -727,21 +734,25 @@
 	   var div_updateStudy = document.getElementById("div_updateStudy");
 	   var div_databaseAccess = document.getElementById("div_databaseAccess");
 	   var div_downloadSamples = document.getElementById("div_downloadSamples");
-	   var div_maps = document.getElementById("div_maps");
+	   var div_updateMaps = document.getElementById("div_updateMaps");
+	   var div_viewMaps = document.getElementById("div_viewMapsWrapper");
+
 	   
 	   div_addStudy.style.display = "none";
 	   div_removeStudy.style.display = "none";
 	   div_updateStudy.style.display = "none";
 	   div_databaseAccess.style.display = "none";
 	   div_downloadSamples.style.display = "none";
-	   div_maps.style.display = "none";
+	   div_updateMaps.style.display = "none";
+	   div_viewMaps.style.display = "none";
 
 	   var anchor_addStudy = document.getElementById("a_addStudy");
 	   var anchor_removeStudy = document.getElementById("a_removeStudy");
 	   var anchor_updateStudy = document.getElementById("a_updateStudy");
 	   var anchor_databaseAccess = document.getElementById("a_databaseAccess");
 	   var anchor_downloadSamples = document.getElementById("a_downloadSamples");
-	   var anchor_maps = document.getElementById("a_maps");
+	   var anchor_updateMaps = document.getElementById("a_updateMaps");
+	   var anchor_viewMaps = document.getElementById("a_viewMaps");
 
 	   
 	   anchor_addStudy.style.color = "white";
@@ -749,12 +760,15 @@
 	   anchor_updateStudy.style.color = "white";
 	   anchor_databaseAccess.style.color = "white";
 	   anchor_downloadSamples.style.color = "white";
-	   anchor_maps.style.color = "white";
-	   
+	   anchor_updateMaps.style.color = "white";
+	   anchor_viewMaps.style.color = "white";
+
 	   
 	   switch (anchor.id) {
 	   case "a_addStudy":
 		   div_addStudy.style.display = "block";
+		   var ul_studyMenu = document.getElementById("ul_studyMenu");
+		   ul_studyMenu.scrollIntoView({behavior: 'smooth', block: 'start'});
 		   anchor_addStudy.style.color = "#FFC300";
 		   break;
 	   case "a_removeStudy":
@@ -773,91 +787,24 @@
 		   div_downloadSamples.style.display = "block";
 		   anchor_downloadSamples.style.color = "#FFC300";
 		   break;
-	   case "a_maps":
-		   div_maps.style.display = "block";
-		   anchor_maps.style.color = "#FFC300";
+	   case "a_viewMaps":
+		   //use this technique rather than changing the src attribute
+		   //for the iframe tag. Otherwise, the zoom on the map will
+		   //default to an incorrect value
+		   div_viewMaps.style.display = "block";
+		   var newInnerHTML = template_webHitsMap;
+		   newInnerHTML = newInnerHTML.replace("url", webHitsMapURL);
+		   div_viewMaps.innerHTML = newInnerHTML;
+		   var ul_studyMenu = document.getElementById("ul_studyMenu");
+		   ul_studyMenu.scrollIntoView({behavior: 'smooth', block: 'start'});
+		   anchor_viewMaps.style.color = "#FFC300";
+		   break;
+	   case "a_updateMaps":
+		   div_updateMaps.style.display = "block";
+		   anchor_updateMaps.style.color = "#FFC300";
 		   break;
 	   }
 
-/*
-	   
-	   if(anchor.id=="a_addStudy") {
-		   div_addStudy.style.display = "block";
-		   div_removeStudy.style.display = "none";
-		   div_updateStudy.style.display = "none";
-		   div_databaseAccess.style.display = "none";
-		   div_downloadSamples.style.display = "none";
-
-		   anchor_removeStudy.style.color = "white";
-		   anchor_updateStudy.style.color = "white";
-		   anchor_databaseAccess.style.color = "white";
-		   anchor_downloadSamples.style.color = "white";
-	   }
-	   
-	   else if(anchor.id=="a_removeStudy") {
-		   div_removeStudy.style.display = "block";
-		   div_addStudy.style.display = "none";
-		   div_updateStudy.style.display = "none";
-		   div_downloadSamples.style.display = "none";
-		   div_databaseAccess.style.display = "none";
-
-		   anchor_addStudy.style.color = "white";
-		   anchor_updateStudy.style.color = "white";
-		   anchor_databaseAccess.style.color = "white";
-		   anchor_downloadSamples.style.color = "white";
-	   }
-	   else if(anchor.id=="a_updateStudy") {
-		   div_updateStudy.style.display = "block";
-		   div_addStudy.style.display = "none";
-		   div_removeStudy.style.display = "none";
-		   div_databaseAccess.style.display = "none";
-		   div_downloadSamples.style.display = "none";
-
-		   anchor_addStudy.style.color = "white";
-		   anchor_removeStudy.style.color = "white";
-		   anchor_databaseAccess.style.color = "white";
-		   anchor_downloadSamples.style.color = "white";
-	   }
-	   else if(anchor.id=="a_downloadSamples") {
-		   div_downloadSamples.style.display = "block";
-		   div_updateStudy.style.display = "none";
-		   div_addStudy.style.display = "none";
-		   div_removeStudy.style.display = "none";
-		   div_databaseAccess.style.display = "none";
-
-		   anchor_addStudy.style.color = "white";
-		   anchor_removeStudy.style.color = "white";
-		   anchor_databaseAccess.style.color = "white";
-		   anchor_updateStudy.style.color = "white";
-	   }
-	   else if(anchor.id=="a_databaseAccess") {
-		   console.log("showing databaseAccess");
-		   div_databaseAccess.style.display = "block";
-		   div_downloadSamples.style.display = "none";
-		   div_updateStudy.style.display = "none";
-		   div_addStudy.style.display = "none";
-		   div_removeStudy.style.display = "none";
-
-		   anchor_addStudy.style.color = "white";
-		   anchor_removeStudy.style.color = "white";
-		   anchor_updateStudy.style.color = "white";
-		   anchor_downloadSamples.style.color = "white";
-	   }
-	   else if(anchor.id=="a_maintainMaps") {
-		   console.log("showing databaseAccess");
-		   div_databaseAccess.style.display = "block";
-		   div_downloadSamples.style.display = "none";
-		   div_updateStudy.style.display = "none";
-		   div_addStudy.style.display = "none";
-		   div_removeStudy.style.display = "none";
-
-		   anchor_addStudy.style.color = "white";
-		   anchor_removeStudy.style.color = "white";
-		   anchor_updateStudy.style.color = "white";
-		   anchor_downloadSamples.style.color = "white";
-	   }
-	   
-	 */  
 	   console.log("handleStudyMenuClicked()...exit");
    }
    
@@ -901,7 +848,7 @@
 		  return;
 	   }
        
-       var select_MenuId = document.getElementById("select_menuId");
+       var select_MenuId = document.getElementById("select_menuId_removeStudy");
        var studyToRemove = select_MenuId.options[select_MenuId.selectedIndex].value;
        
        if(studyToRemove.includes("abcd_template_matching")) {
@@ -924,16 +871,23 @@
         console.log("handleRemoveStudyConfirmation()...exit.");
    }
    
-   function handleUpdateURLResponse(responseText) {
-       console.log("handleUpdateURLResponse()...invoked.");
+   function handleUpdateMapURLResponse(responseText) {
+       console.log("handleUpdateMapURLResponse()()...invoked.");
        
        var div_mapProgress = document.getElementById("div_map_progress");
        div_mapProgress.style.display = "none";
+              
+       var jsonResponseObject = JSON.parse(responseText);
+	   var newMapURL = jsonResponseObject.mapURL;	   
+	   webHitsMapURL = newMapURL;
+	   console.log(webHitsMapURL);
+	   var alertMessage = jsonResponseObject.message;
+	   
+		var button_maps = document.getElementById("button_maps");
+	 	button_maps.style.display = "inline-block";
       
-       doAdminAlert(responseText);
-       
-       console.log("handleUpdateURLResponse()...exit.");
-
+       doAdminAlert(alertMessage);
+       console.log("handleUpdateMapURLResponse()()...exit.");
    }
    
    function handleRemoveStudyResponse(responseText) {
@@ -943,7 +897,8 @@
         if (index > -1) {
         	studyMenuIDArray.splice(index, 1);
         }
-        buildMenuIdDropdown();
+        buildMenuIdDropdownForRemoveStudy();
+        buildMenuIdDropdownForUpdateStudy();
 
 	   	var div_removeStudy = document.getElementById("div_removeStudy");
 	   	div_removeStudy.style.display = "block";
@@ -969,7 +924,7 @@
 	   		return;
 	   	}
 	   	
-   		select_MenuId = document.getElementById("select_menuId");
+   		select_MenuId = document.getElementById("select_menuId_removeStudy");
         studyToRemove = select_MenuId.options[select_MenuId.selectedIndex].value;
        
 	   	var div_removeStudy = document.getElementById("div_removeStudy");
@@ -983,6 +938,18 @@
 
         console.log("handleRemoveStudyRequest()...exit.");
    }
+   
+   function handleUpdateStudyResponse(responseText) {
+	   	console.log("handleUpdateStudyResponse()...invoked.");
+	   	
+	   	updateStudy.div_unzipProgress.style.display = "none";
+	   	updateStudy.div_progressUpload.style.display = "none";
+	   	
+	    resetUpdateStudyForm();
+		doAdminAlert(responseText);
+	   	console.log("handleUpdateStudyResponse()...exit.");
+    }
+    
    
 
 
@@ -1008,9 +975,16 @@
        console.log("hideSubmenu_All()...exit");
    }
    
-   function initializeDragDrop() {
+   function hideUpdateStudyHelp() {
+	   console.log("showUpdateStudyHelp()...invoked.");
+	   var div_updateStudyHelp = document.getElementById("div_updateStudyHelp");
+	   div_updateStudyHelp.style.display = "none";
+	   console.log("showUpdateStudyHelp()...exit.");
+   }
+   
+   function initializeDragDropAddStudy() {
 	  	 //alert("drag and drop init...");
-	  	 console.log("initializeDragDrop()...invoked.");
+	  	 console.log("initializeDragDropAddStudy()...invoked.");
 	  	 
 	  	ul_zipList.addEventListener("dblclick", function(e) {
 	  		console.log("ul_zipList event handler");
@@ -1073,18 +1047,6 @@
 						return;
 					}
 
-					/*
-					if(fileName.includes("surface")) {
-						keyName = "surfaceFile";
-					}
-					else if(fileName.includes("volume")) {
-						keyName = "volumeFile";
-					}
-					else if(fileName.includes("summary")) {
-						keyName = "summaryFile";
-					}
-					*/
-					
 					console.log("fileName=" + fileName);
 					droppedFileNamesArray.push(fileName);
 					//zipFormData.append(fileName, e.dataTransfer.files[x]);
@@ -1118,10 +1080,130 @@
 											
 			});
 			
-	 	    console.log("initializeDragDrop()...exit.");
+	 	    console.log("initializeDragDropAddStudy()...exit.");
 	   
 	   
    }
+   
+   function initializeDragDropUpdateStudy() {
+	   
+
+	  	 //alert("drag and drop init...");
+	  	 console.log("initializeDragDropUpdateStudy()...invoked.");
+	  	 
+	  	updateStudy.ul_uploadFileList.addEventListener("dblclick", function(e) {
+	  		console.log("ul_zipListUpdateStudy event handler");
+	  		event.preventDefault();
+	  		event.stopPropagation();
+	  		return false;
+	  	});
+	  	 
+	  	updateStudy.div_dropZone.addEventListener("dragenter", function(e) {
+	  		 this.classList.add("active");
+	  	});
+
+	  	updateStudy.div_dropZone.addEventListener("dragleave", function(e) {
+			  this.classList.remove("active");
+			});
+
+	  	updateStudy.div_dropZone.addEventListener("dragover", function(e) {
+			    e.preventDefault();
+			});
+			
+	  	updateStudy.div_dropZone.addEventListener("drop", function(e) {
+				e.preventDefault();
+				this.classList.remove("active");
+				var fileName = null;
+				var keyName = null;
+				var additionalHTML = null;
+				
+			   	 var select_updateStudyId = document.getElementById("select_menuId_updateStudy");
+			   	 var studyId = select_updateStudyId.options[select_updateStudyId.selectedIndex].value;
+			   	 updateStudy.studyId = studyId;
+			   	 
+			   	 var select_updateStudyAction = document.getElementById("select_action_updateStudy");
+			   	 var selectedActionType = select_updateStudyAction.options[select_updateStudyAction.selectedIndex].value;
+			   	 updateStudy.actionName = selectedActionType;
+
+			   	 if(selectedActionType == "unselected" || studyId == "none selected" ) {
+			   		 doAdminAlert("Please select a study and an action first");
+			   		 return;
+			   	 }
+				
+				for (var x=0; x < e.dataTransfer.files.length; x++) {
+					fileName = e.dataTransfer.files[x].name;
+										
+					if(selectedActionType == "updateSummary") {
+						if(!(fileName == "summary.txt")) {
+							doAdminAlert("only summary.txt file allowed for update summary action");
+							return;
+						}
+					}
+					else if(selectedActionType === "addVolumeData") {
+						if(!(fileName == "volume.zip")) {
+							doAdminAlert("only volume.zip file allowed for add volume data action");
+							return;
+						}
+					}
+					else if(selectedActionType === "addSurfaceData") {
+						if(!(fileName == "surface.zip")) {
+							doAdminAlert("only surface.zip file allowed for add surface data action");
+							return;
+						}
+					}
+					
+					
+					if(updateStudy.uploadFileNamesArray.includes(fileName)) {
+						doAdminAlert("duplicate file name");
+						return;
+					}
+					
+					if(fileName != "volume.zip" && fileName != "summary.txt" && fileName != "surface.zip") {
+						doAdminAlert("file name must be volume.zip, surface.zip, or summary.txt");
+						return;
+					}
+					
+					console.log("fileName=" + fileName);
+					updateStudy.uploadFileNamesArray.push(fileName);
+					updateStudy.formData.append(fileName, e.dataTransfer.files[x]);
+					updateStudy.uploadFilesArray.push(e.dataTransfer.files[x]);
+				}
+		
+				if(fileName.includes("surface.zip")){
+					var innerHTML = ul_zipList.innerHTML;
+					additionalHTML = template_li_surfaceZipImage;
+					additionalHTML = additionalHTML.replace(fileNameReplacementMarker, fileName);
+					additionalHTML = additionalHTML.replace(formKeyReplacementMarker, fileName);
+					additionalHTML = additionalHTML.replace(actionTypeReplacementMarker, "updateStudy");				
+					var newInnerHTML = innerHTML + additionalHTML;
+					updateStudy.ul_uploadFileList.innerHTML = newInnerHTML
+				}
+				if(fileName.includes("volume.zip")){
+					var innerHTML = updateStudy.ul_uploadFileList.innerHTML;
+					additionalHTML = template_li_volumeZipImage;
+					additionalHTML = additionalHTML.replace(fileNameReplacementMarker, fileName);
+					additionalHTML = additionalHTML.replace(formKeyReplacementMarker, fileName);
+					additionalHTML = additionalHTML.replace(actionTypeReplacementMarker, "updateStudy");				
+					var newInnerHTML = innerHTML + additionalHTML;
+					updateStudy.ul_uploadFileList.innerHTML = newInnerHTML
+				}
+				if(fileName.includes("summary.txt")){
+					var innerHTML = updateStudy.ul_uploadFileList.innerHTML;
+					additionalHTML = template_li_textImage;
+					additionalHTML = additionalHTML.replace(fileNameReplacementMarker, fileName);
+					additionalHTML = additionalHTML.replace(formKeyReplacementMarker, fileName);
+					additionalHTML = additionalHTML.replace(actionTypeReplacementMarker, "updateStudy");
+					var newInnerHTML = innerHTML + additionalHTML;
+					updateStudy.ul_uploadFileList.innerHTML = newInnerHTML
+				}
+														
+			});
+			
+	 	    console.log("initializeDragDropUpdateStudy()...exit.");
+  
+   }
+
+   
    
    
    function initializeDragDropOld() {
@@ -1292,18 +1374,7 @@
    function menuClicked(element, startupTrigger, actionRequired) {
 	          console.log("menuClicked()...invoked, id=" + element.id);
 	          console.log("menuClicked()...invoked, actionRequired=" + actionRequired);
-	          /*
-	          var surfaceVolumeType = element.getAttribute("data-surfaceVolumeType");
-	          var studyDisplayName = element.getAttribute("data-studyDisplayName");
 
-	          if(selectedDataType=="volume") {
-	        	  if(surfaceVolumeType=="surface") {
-	        		  //console.log(studyName);
-	        		  doAlert("volume data not available for " + studyDisplayName);
-	        		  return;
-	        	  }
-	          }
-	      	  */
               var study = element.getAttribute("data-study");
               selectedStudy = study; //ie: abcd_template_matching
               console.log("menuClicked()...invoked, study=" + study);
@@ -1320,7 +1391,6 @@
               if(element.id.includes("uman")) {
             	  doAlert("Sorry, the Human Connectome study is not available yet", alertOK);
             	  return;
-                  //selectedStudy = "human";
 	      }
              
 	      if(menuHasBeenClicked) { //menu has been previously clicked
@@ -1404,20 +1474,12 @@
       
        if(networkTypeId.includes("single")) {
     	 global_networkTypeId = "single";
-      	 /*
-      	 var div_thresholdImagePanel = document.getElementById("div_thresholdImage");
-      	 div_thresholdImagePanel.style.display = "none";
-      	 var div_selectNeuralNetwork = document.getElementById("div_selectNeuralNetworkName");
-      	 div_selectNeuralNetwork.style.display = "block";
-      	 */
     	 buildNeuralNetworkDropdownList();
     	 if(selectedStudy != priorSelectedStudy) {
     		 firstTimeSelectingSingle = true;
     	 }
       	 var select_neuralNetworkName = document.getElementById("select_neuralNetworkName");
       	 if(firstTimeSelectingSingle) {
-      		 //select_neuralNetworkName.selectedIndex = 3;
-      		 //selectedNeuralNetworkName = selectElement.options[selectElement.selectedIndex].value;
       		 firstTimeSelectingSingle = false;
       	 }
       	 else {
@@ -1439,10 +1501,7 @@
       	 preProcessGetThresholdImages();
       	 global_networkTypeId = "overlapping_networks";
        }
-
-       
        console.log("menuClickedAction()...exit.");
-   
    }
 
   function mouseOut(element) {
@@ -1588,10 +1647,17 @@
 		   
 	   }
 	   
-		function preProcessCreateStudyEntry(button_createStudy) {
-		   	 console.log("preProcessCreateStudyEntry()...invoked.");
+		function preProcessUpdateStudyRequest(button, actionRequest) {
+		   	 console.log("preProcessUpdateStudyRequest()...invoked.");
 		   	 
-		   	 button_createStudy.disabled = true;
+		   	 if(updateStudy.uploadFileNamesArray.length==0) {
+		   		 doAdminAlert("You must drag/drop a file to upload.");
+		   		 return;
+		   	 }
+		  
+		   	 button.disabled = true;
+		   	 lastAdminActionRequest = actionRequest;
+		   	 
 	     	 var nowDate = new Date();
 	    	 var currentTimeSec = nowDate.getTime()/1000;
 	    	 var lastTokenActionTimeSec = lastTokenActionTime/1000;
@@ -1606,8 +1672,9 @@
 	    	 
 	    	 validateAdminAccessStatus();
 	    	 
-		   	 console.log("preProcessCreateStudyEntry()...exit.");
+		   	 console.log("preProcessUpdateStudyRequest()...exit.");
 		}
+
 			   
 	   function processDataModeChoice(element) {
 	        console.log("processDataModeChoice()...invoked.");
@@ -1656,20 +1723,41 @@
 		   console.log("removeDroppedFile()...invoked, event=" + event);
 		   		   
 		   console.log("before array=" + droppedFileNamesArray);
+		   
+		   var isUpdateStudyAction = false;
+		   var actionType = liElement.getAttribute("data-actionType");
+		   
+		   if(actionType == "updateStudy") {
+			   isUpdateStudyAction = true;
+		   }
 
 		   event.stopPropagation();
 		   if(droppedFileRemovalPending) {
 			   console.log("removeDroppedFile()...aborting, array=" + droppedFileNamesArray);
 			   return;
 		   }
+		   
 		   var fileName = liElement.getAttribute("data-formKey");
-		   var index = droppedFileNamesArray.indexOf(fileName);
+		   var arrayIndex = 0;
+		   
+		   if(isUpdateStudyAction) {
+			   arrayIndex = updateStudy.uploadFileNamesArray.indexOf(fileName);
+		   }
+		   else {
+		       arrayIndex = droppedFileNamesArray.indexOf(fileName);
+		   }
 		   
 		   droppedFileRemovalPending = true;
 		   
-		   droppedFileNamesArray.splice(index, 1);
-		   uploadFilesArray.splice(index, 1);
-		   //zipFormData.delete(fileName);
+		   if(isUpdateStudyAction) {
+			   updateStudy.uploadFileNamesArray.splice(arrayIndex, 1);
+			   updateStudy.uploadFilesArray.splice(arrayIndex, 1);
+		   }
+		   else {
+			   droppedFileNamesArray.splice(arrayIndex, 1);
+			   uploadFilesArray.splice(arrayIndex, 1);
+		   }
+		   
 		   var parent = liElement.parentElement;
 		   parent.removeChild(liElement);
 		   //setTimeout(removeChild, 500, parent, liElement);
@@ -1691,6 +1779,35 @@
 		   parent.removeChild(child);
 		   droppedFileRemovalPending = false;
 		   console.log("removeChild()...exit, array=" + droppedFileNamesArray);
+	   }
+	   
+	   function resetUpdateStudyForm() {
+		   
+		   	console.log("resetUpdateStudyForm()...invoked.");
+	   		updateStudy.ul_uploadFileList.innerHTML = "";
+	   	   	
+	   		updateStudy.uploadFileNamesArray = new Array();
+	   		updateStudy.uploadFilesArray = new Array();
+	   		
+	   		updateStudy.formData = new FormData();
+
+		   	var select_updateStudyId = document.getElementById("select_menuId_updateStudy");
+		   	select_updateStudyId.selectedIndex = 0;
+		   	 
+		   	var select_updateStudyAction = document.getElementById("select_action_updateStudy");
+		   	select_updateStudyAction.selectedIndex = 0;
+		   	
+		   	var button_updateStudy = document.getElementById("button_updateStudy");
+		   	button_updateStudy.disabled = false;
+		   	
+	      	var div_updateStudyDetails = document.getElementById("div_updateStudyDetails");
+	      	div_updateStudyDetails.style.display = "block";
+	   	 
+	      	var div_updateStudyProgress = document.getElementById("div_updateStudyProgress");
+			div_updateStudyProgress.style.display = "none";
+			
+		   	console.log("resetUpdateStudyForm()...exit.");
+
 	   }
 	   
 	   function sendGetAdminAccessRecordsJSON() {
@@ -1921,7 +2038,9 @@
 	            		  doAdminAlert(ajaxRequest.responseText);
 	            	  }
 	            	  else {
-		            	  viewWebHitsMap(ajaxRequest.responseText);
+	            		  webHitsMapURL = responseText;
+	            		  var anchor_viewMaps = document.getElementById("a_viewMaps");
+		            	  viewWebHitsMap(anchor_viewMaps);
 	            	  }
 	   	       	  }
 	       	}
@@ -1966,7 +2085,7 @@
 	              	return;
 	              }
 	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
-			           	handleUpdateURLResponse(ajaxRequest.responseText);
+			           	handleUpdateMapURLResponse(ajaxRequest.responseText);
 	   	       }
 	       	}
         	ajaxRequest.send();
@@ -2058,6 +2177,12 @@
 	        console.log("sendResynchWebHitsRequest()...exit.");
 	   }
 	   
+	   function showUpdateStudyHelp() {
+		   console.log("showUpdateStudyHelp()...invoked.");
+		   var div_updateStudyHelp = document.getElementById("div_updateStudyHelp");
+		   div_updateStudyHelp.style.display = "block";
+		   console.log("showUpdateStudyHelp()...exit.");
+	   }
 	   
        function sliceFile(file) {
        		var chunkSize = 1024*1024*100;
@@ -2083,26 +2208,7 @@
         }
        
 	   
-	   function updateStudyFolderName(studyNameTextInput) {
-	       console.log("updateStudyFolderName()...invoked.");
 
-		   var studyName = studyNameTextInput.value;
-		   var studyFolderName = studyName.replaceAll("  ", " ");
-		   studyFolderName = studyFolderName.trim();
-		   studyFolderName = studyFolderName.replaceAll(" - ", "_");
-		   studyFolderName = studyFolderName.replaceAll(" ", "_");
-		   studyFolderName = studyFolderName.replaceAll("__", "_");
-		   studyFolderName = studyFolderName.trim();
-		   
-		   var textInput_studyFolderName = document.getElementById("input_studyFolderName");
-		   textInput_studyFolderName.readonly = false;
-		   textInput_studyFolderName.value = studyFolderName.toLowerCase();
-		   textInput_studyFolderName.readonly = true;
-		   
-	       console.log("updateStudyFolderName()...exit.");
-
-	   }
-	   
 	   function uploadFileChunk(chunkForm, indexNumber) {
 	        console.log("uploadChunk()...invoked.");
 
@@ -2249,8 +2355,13 @@
 	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
 	      	            console.log("validateAdminAccessStatus()...ajaxRequest.responseText=" + ajaxRequest.responseText);
 			           	if(ajaxRequest.responseText.includes("true")) {
-			           		var button_createStudy = document.getElementById("button_createStudy");
-			           		createStudyEntry(button_createStudy);
+			           		if(lastAdminActionRequest == "createStudy") {
+			           			var button_createStudy = document.getElementById("button_createStudy");
+			           			createStudyEntry(button_createStudy);
+			           		}
+			           		else if(lastAdminActionRequest == "updateStudy") {
+			           			updateStudyEntry();
+			           		}
 			           		return;
 			           	}
 			           	else {
@@ -2265,7 +2376,7 @@
 	   }
 	   
 	   function validateCreateStudyFormData() {
-		   
+		   console.log("validateCreateStudyFormData()...invoked");
 		   var selectElement = document.getElementById("select_dataType");
 		   var selectedDataType = selectElement.options[selectElement.selectedIndex].value; 
 		   
@@ -2308,6 +2419,7 @@
 			   }
 			   selectedNetworkTypeArray.push(selectedNetworkType);
 		   }
+		   console.log("validateCreateStudyFormData()...exit");
 		   return true;
 		   
 	   }
@@ -2347,9 +2459,7 @@
 		   for (var key of zipFormData.keys()) {
 			   console.log(key);
 			}
-
 		   console.log("validateDroppedFiles()...invoked.");
-
 	   }
 	   
 	   

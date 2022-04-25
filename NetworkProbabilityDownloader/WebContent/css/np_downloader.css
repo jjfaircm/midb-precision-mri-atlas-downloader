@@ -714,8 +714,9 @@ hr.footer {
 #div_confirm {
     display: none;
     z-index:10;
-    /* background-color: #241f20;*/
-    background-color: #644B26;
+    /* background-color: #241f20; */
+    /* background-color: #644B26; */
+    background-image: linear-gradient(slategrey, #36454F);
     border-radius: 5px;
     border: 2px solid white;
     outline: 2px solid black;
@@ -819,8 +820,17 @@ select.admin {
 	margin-bottom: 1px;
 	font-size: 16px;
 	background-color: slategrey;
-    color: white;	
+    color: white;
 }
+
+select.adminUpdateStudy {
+	margin-bottom: 1px;
+	font-size: 16px;
+	background-color: slategrey;
+    color: white;
+    width: 250px;
+}
+
 
 
 [type="text"].admin {

@@ -23,19 +23,12 @@ import org.apache.logging.log4j.Logger;
  */
 public class CountryNamesResolver {
 	
-	private JSONObject data = null;
 	private static CountryNamesResolver instance = null;
 	private static Logger LOGGER = null;
 	private static final String LOGGER_ID = " ::LOGGER_ID=CountryNamesResolver:: ";
 	private static final String COUNTRY_NAMES_FILE = "country_names.json";
-	
 	static {
 		LOGGER = LogManager.getLogger(CountryNamesResolver.class);
-	}
-	
-	//hide empty constructor
-	private CountryNamesResolver() {
-		
 	}
 	
 	/**
@@ -49,6 +42,31 @@ public class CountryNamesResolver {
 			instance.loadCountryNames();
 		}
 		return instance;
+	}
+	
+	private JSONObject data = null;
+	
+	//hide empty constructor
+	private CountryNamesResolver() {
+		
+	}
+	
+	/**
+	 * Returns the full country name mapped to country code parameter.
+	 * 
+	 * @param countryCode - String
+	 * 
+	 * @return countryName - String
+	 */
+	public String getCountryName(String countryCode) {
+		if(countryCode == null) {
+			return null;
+		}
+		String countryName = this.data.get(countryCode).toString();
+		if(countryName == null) {
+			countryName = "unknown";
+		}
+		return countryName;
 	}
 	
 	/**
@@ -72,24 +90,6 @@ public class CountryNamesResolver {
 			DiagnosticsReporter.createDiagnosticsEntry(e);
 		}	
 		LOGGER.trace(LOGGER_ID + "loadCountryNames()...exit.");
-	}
-	
-	/**
-	 * Returns the full country name mapped to country code parameter.
-	 * 
-	 * @param countryCode - String
-	 * 
-	 * @return countryName - String
-	 */
-	public String getCountryName(String countryCode) {
-		if(countryCode == null) {
-			return null;
-		}
-		String countryName = this.data.get(countryCode).toString();
-		if(countryName == null) {
-			countryName = "unknown";
-		}
-		return countryName;
 	}
 
 }
