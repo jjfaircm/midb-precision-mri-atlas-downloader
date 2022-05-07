@@ -7,16 +7,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import edu.umn.midb.population.atlas.base.ApplicationContext;
 import edu.umn.midb.population.atlas.exception.BIDS_FatalException;
 import edu.umn.midb.population.atlas.exception.DiagnosticsReporter;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
-import edu.umn.midb.population.atlas.utils.EmailNotifier;
+import edu.umn.midb.population.atlas.utils.CommandRunner;
 import edu.umn.midb.population.atlas.utils.SMSNotifier;
+import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 
 /**
  * Base class for handling creating (adding), removing, or updating a study. The subclasses are:
@@ -30,7 +29,7 @@ import edu.umn.midb.population.atlas.utils.SMSNotifier;
  * @author jjfair
  *
  */
-public class StudyHandler {
+ public class StudyHandler {
 	
 	private static final Logger LOGGER = LogManager.getLogger(CreateStudyHandler.class);
 	protected static final String ROOT_DESTINATION_PATH = "/midb/studies/";
@@ -54,6 +53,8 @@ public class StudyHandler {
 	protected boolean combinedClustersFolderExists = false;
 	protected boolean overlappingNetworksFolderExists = false;
 	protected String menuEntry;
+	protected String availableDataTypes = null;
+
 
 
 	protected String studyFolder = null;
@@ -61,6 +62,58 @@ public class StudyHandler {
 	protected String volumeZipFilePath = null;
 	protected boolean errorEncountered = false;
 	protected String errorMessage = null;
+	protected AsyncRunner asyncRunner = null;
+
+	
+	/**
+	 * Inner class used for asynchronously completing the creation of a new study. Since it
+	 * is a protected inner member, it is not possible for external classes to start this
+	 * thread.
+	 * 
+	 * @author jjfair
+	 *
+	 */
+	protected class AsyncRunner extends Thread {
+		
+		/**
+		 * Invokes the {@link StudyHandler#createSubFolderZips()} method to asynchronously
+		 * complete the addition of the study so the client does not have to wait for this
+		 * process.
+		 */
+		public void run() {
+			createSubFolderZips();
+		}
+		
+	}
+	/**
+	 * Constructor
+	 */
+	protected StudyHandler() {
+		asyncRunner = new AsyncRunner();
+	}
+	
+	protected boolean checkSufficientServerStorage() {
+		
+		boolean sufficientStorage = false;
+		float requiredStorage = 0;
+		
+		ServerStorageStats freeStorageStats = CommandRunner.getFreeStorageStats();
+		
+		if(this.availableDataTypes.equals("surface_volume")) {
+			requiredStorage = 2*5;
+		}
+		else {
+			requiredStorage = 5;
+		}
+		
+		if(freeStorageStats.getUnitOfMeasure().equals("TB")) {
+			sufficientStorage = true;
+		}
+		else if(freeStorageStats.getAmount()>requiredStorage) {
+			sufficientStorage = true;
+		}
+		return sufficientStorage;
+	}
 
 	
 	/**
@@ -163,8 +216,6 @@ public class StudyHandler {
 	 * Creates zip files for the various types of available network data. This is done
 	 * so that the user can download the files for all 'thresholds' if desired.
 	 * 
-	 * @param volumeOnly - boolean indicating to generate zips only for volume data
-	 * 
 	 * @return success - boolean indicating if the subfolders were zipped successfully
 	 */
 	protected boolean createSubFolderZips() {
@@ -261,7 +312,6 @@ public class StudyHandler {
 	public boolean isErrorEncountered() {
 		return this.errorEncountered;
 	}
-	
 	
 	/**
      * 
@@ -408,6 +458,7 @@ public class StudyHandler {
 				String messageDetail = this.studyFolder + ": bad unzip return code for fileName=" + fileName;
 				String message = "MIDB_APP_CREATE_STUDY_WARNING::::" + domainName + messageDetail;
 				SMSNotifier.sendNotification(message, "CreateStudyHandler");
+
 			}
     	}
     	catch(IOException ioE) {
@@ -434,7 +485,9 @@ public class StudyHandler {
     
 	/**
 	 * 
-	 * Executes the bash command 'zip'.
+	 * Executes the bash command 'zip'. This method is utilized by {@link #createSubFolderZips()}.
+	 * The zip files are created so that a remote client can download all of the threshold files
+	 * for a given network.
 	 * 
 	 * @param folderName - String that is the folder to zip
 	 * @param workingDirectoryPath - what the working directory should be
@@ -503,7 +556,6 @@ public class StudyHandler {
 				this.errorMessage = message;
 				LOGGER.fatal(message);
 				success = false;
-				EmailNotifier.sendEmailNotification(message + "\n" + errorDetails);
 			}
     	}
     	catch(IOException ioE) {

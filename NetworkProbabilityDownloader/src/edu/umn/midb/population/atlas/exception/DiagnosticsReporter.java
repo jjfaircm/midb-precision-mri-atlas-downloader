@@ -7,22 +7,18 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Enumeration;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
 import edu.umn.midb.population.atlas.base.ApplicationContext;
 import edu.umn.midb.population.atlas.data.access.DBManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import edu.umn.midb.population.atlas.tasks.DownloadTracker;
 import edu.umn.midb.population.atlas.tasks.EmailTracker;
 import edu.umn.midb.population.atlas.tasks.WebHitsTracker;
-import edu.umn.midb.population.atlas.utils.EmailNotifier;
 import edu.umn.midb.population.atlas.utils.SMSNotifier;
 import logs.ThreadLocalLogTracker;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -70,11 +66,12 @@ public class DiagnosticsReporter {
 	 * thread, it is preferable to invoke {@link #createDiagnosticsEntry(ApplicationContext, HttpServletRequest, HttpServletResponse, Exception)}.
 	 * 
 	 * @param e - Exception
+	 * @param sendSMS - boolean indicating if an SMS notification should be sent
 	 * 
 	 * @return incidentId - String
 	 */
-	public static String createDiagnosticsEntry(Exception e) {
-		LOGGER.fatal(LOGGER_ID + "createDiagnosticsEntry(e)...invoked");
+	public static String createDiagnosticsEntry(Exception e, boolean sendSMS) {
+		LOGGER.fatal(LOGGER_ID + "createDiagnosticsEntry(e)...invoked.");
 		
 		StackTraceElement[] stackTraceEntries = e.getStackTrace();
 	    int stackEntriesCount = stackTraceEntries.length;
@@ -94,12 +91,21 @@ public class DiagnosticsReporter {
 	    }
 	    
 	    addDiagnosticEntryToFile(stackTraceData);
-		EmailNotifier.sendEmailNotification("APP_ERROR::INCIDENT_ID=" + timeStringID);
-		String domainName = NetworkProbabilityDownloader.getDomainName();
-		SMSNotifier.sendNotification("APP_ERROR::DOMAIN_NAME=" + domainName + "::INCIDENT_ID=" + timeStringID, CLASS_NAME);	 
 		
+		if(sendSMS) {
+			String domainName = NetworkProbabilityDownloader.getDomainName();
+			String message = "APP_ERROR::DOMAIN_NAME=" + domainName + "::INCIDENT_ID=" + timeStringID;
+			SMSNotifier.sendNotification(message, CLASS_NAME);	
+		}
 		return timeStringID;
 	}
+	
+	public static String createDiagnosticsEntry(Exception e) {
+		
+		return createDiagnosticsEntry(e, true);
+		
+	}
+
 
 	/**
 	 * Creates a diagnostic entry for an exception that will be inserted into
@@ -187,7 +193,6 @@ public class DiagnosticsReporter {
 			}
 		}
 
-		EmailNotifier.sendEmailNotification("INCIDENT_ID=" + id);
 		String message = "MIDB_APP_ERROR::INCIDENT_ID=" + id + "::::DOMAIN_NAME=" + NetworkProbabilityDownloader.getDomainName();
 		SMSNotifier.sendNotification(message, CLASS_NAME);
 		LOGGER.fatal(loggerId + "createDiagnosticsEntry(...)...exit");

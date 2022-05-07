@@ -27,7 +27,7 @@ public final class PropertyManager {
 	      //to enable log4j2 initialization tracing/debug
 	  	  //System.setProperty("log4j2.debug", "");
 	      configureLOG4J2();
-	      String loggerId = null;
+	      String loggerId = " ::LOGGERID=PropertyManager:: ";
 	      //String loggerId = ThreadLocalLogTracker.get();
 	      LOGGER = LogManager.getLogger(PropertyManager.class);
 	      LOGGER.info(loggerId + "Class PropertyManager just loaded. Build date = " + NetworkProbabilityDownloader.BUILD_DATE);

@@ -70,7 +70,8 @@ public class ApplicationContext {
 	}
 
 	/**
-	 * Returns the ArrayList of String representing action requests that have been received.
+	 * Returns the ArrayList of String representing action requests that have been received for the
+	 * life of the particular client session that is tied to this ApplicationContext.
 	 * 
 	 * @return actionList - ArrayList of String
 	 */
@@ -79,7 +80,7 @@ public class ApplicationContext {
 	}
 
 	/**
-	 * Returns the encapsulated {@link CreateStudyHandler}. If not handler has been set
+	 * Returns the encapsulated {@link CreateStudyHandler}. If the handler has been set
 	 * then null is returned.
 	 * 
 	 * @return createStudyHandler - {@link CreateStudyHandler}
@@ -89,7 +90,8 @@ public class ApplicationContext {
 	}
 	
 	/**
-	 * Returns the name of the most current action that was received by the {@link NetworkProbabilityDownloader} servlet.
+	 * Returns the name of the most current action that was received by the {@link NetworkProbabilityDownloader} servlet
+	 * for the client session that is tied to this ApplicationContext.
 	 * 
 	 * @return currentAction - String
 	 */
@@ -107,7 +109,7 @@ public class ApplicationContext {
 	}
 
 	/**
-	 * Returns the last request that was received from the client.
+	 * Returns the last (a.k.a. current) request that was received from the client.
 	 * 
 	 * @return currentReguest - HttpServletRequest
 	 * 
@@ -154,8 +156,7 @@ public class ApplicationContext {
 	
 	
 	/**
-	 * Returns the session id. This is a combination of the requestor's ip address and
-	 * the sessionId created by the servlet container.
+	 * Returns the session id. This is the sessionId created by the servlet container.
 	 * 
 	 * @return sessionId - String
 	 */
@@ -164,7 +165,9 @@ public class ApplicationContext {
 	}
 
 	/**
-	 * Returns the {@link TokenManager} 
+	 * Returns the {@link TokenManager} associated with the client servlet session
+	 * associated with this ApplicationContext. The tokenManager is only used when
+	 * a client attempts to access the Admin Console in the browser.
 	 * 
 	 * @return tokenManager - {@link TokenManager}
 	 */
@@ -211,7 +214,8 @@ public class ApplicationContext {
 	}
 
 	/**
-	 * Sets the {@link CreateStudyHandler}
+	 * Sets the {@link CreateStudyHandler}. Since adding/creating a study spans multiple
+	 * requests of uploading files, the handler must be persisted throughout all the requests.
 	 * 
 	 * @param createStudyHandler - {@link CreateStudyHandler}
 	 */
@@ -237,14 +241,24 @@ public class ApplicationContext {
 	}
 
 	/**
-	 * Sets the current/last request received by the {@link NetworkProbabilityDownloader} servlet.
+	 * Sets the current/last HttpServletRequest received by the {@link NetworkProbabilityDownloader} servlet for
+	 * the session associated with this ApplicationContext.
 	 * 
 	 * @param currentReguest - HttpServletRequest
 	 */
 	public void setCurrentReguest(HttpServletRequest currentReguest) {
 		this.currentReguest = currentReguest;
 	}
-
+	
+	/**
+	 * Sets a boolean indicating if an email address has already be inserted into the
+	 * email_addresses table in MYSQL for this client when downloading one of the .nii files.
+	 * This minimizes unnecessary database access since email addresses are unique in the
+	 * database.
+	 * 
+	 * 
+	 * @param emailAlreadyTracked - boolean
+	 */
 	public void setEmailAlreadyTracked(boolean emailAlreadyTracked) {
 		this.emailAddressAlreadyTracked = emailAlreadyTracked;
 	}
@@ -261,7 +275,8 @@ public class ApplicationContext {
 	}
 
 	/**
-	 * Sets the loggerId for the current session.
+	 * Sets the loggerId for the current session. The loggerId is a combination of 
+	 * the sessionId and the ipAddress.
 	 * 
 	 * @param sessionId - String representing the current session's logger id
 	 * @param ipAddress - String representing ip address of the remote requestor

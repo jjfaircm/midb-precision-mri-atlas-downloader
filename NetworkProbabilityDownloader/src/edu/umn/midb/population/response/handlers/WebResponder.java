@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Hashtable;
 import java.util.Iterator;
+
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
@@ -40,7 +42,7 @@ import edu.umn.midb.population.atlas.tasks.AdminAccessEntry;
 import edu.umn.midb.population.atlas.utils.SMSNotifier;
 import edu.umn.midb.population.atlas.utils.Utils;
 import edu.umn.midb.population.atlas.webresponses.AdminValidationResponse;
-import edu.umn.midb.population.atlas.webresponses.UpdateWebHitsMapResponse;
+import edu.umn.midb.population.atlas.webresponses.UpdateMapUrlsResponse;
 import logs.ThreadLocalLogTracker;
 
 //import javax.json.*;
@@ -137,8 +139,7 @@ public class WebResponder {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendNetworkFolderNamesConfigResponse()...invoked.");
 
-		ArrayList<String> configLines = AtlasDataCacheManager.getInstance().getNeuralNetworkFolderNamesConfig();
-		String responseString = buildNetworkFoldersConfigResponse(configLines);
+		String responseString = buildNetworkFoldersConfigResponse();
 	
 		/*
 		if(responseString.endsWith("\n")) {
@@ -171,12 +172,28 @@ public class WebResponder {
 	 * @param response The current HttpServletResponse object
 	 * @param fileBinaryBuffer binaryBuffer containing the requested NII file
 	 * @param fileName String representing the name of the requested NII file to download
+	 * @param selectedStudy - String representing what study the file is a part of
 	 */
-	public static void sendFileDownloadResponse(HttpServletResponse response, byte[] fileBinaryBuffer, String fileName) {
+	public static void sendFileDownloadResponse(HttpServletResponse response, byte[] fileBinaryBuffer, String fileName, String selectedStudy) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendFileDownloadResponse()...invoked.");
-				
+		
+		
+		if(fileName.contains("surface.zip")) {
+			//this allows client javascript to detect when download is complete
+			Cookie ck = new Cookie("np_download_name", "surface.zip");
+			ck.setMaxAge(60);
+			response.addCookie(ck);
+		}
+		
+		// admin files like sample_files.zip or add_a_study.docx do not have an
+		// associated study
+		if(selectedStudy != null && !fileName.contains(".dscalar")) {
+			fileName = selectedStudy + "_" + fileName;
+		}
+		
+		
 		try {
 			response.setContentType("image/nii");
 			response.setHeader("X-Content-Type-Options", "nosniff");
@@ -285,7 +302,7 @@ public class WebResponder {
 		    return jsonString;
 	}
 	
-	protected static String buildNetworkFoldersConfigResponse(ArrayList<String> configLines) {
+	protected static String buildNetworkFoldersConfigResponse() {
 
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "buildNetworkFoldersConfigResponse()...invoked.");
@@ -368,15 +385,18 @@ public class WebResponder {
 		 avr.setValidationMessage(validationMessage);
 		 
 		 String webHitsMapURL = "/HTML/map_error.html";
+		 String downloadHitsMapURL = "/HTML/map_error.html";
 		 
 		 try {
 			 webHitsMapURL = DBManager.getInstance().getWebHitsMapURL();
+			 downloadHitsMapURL = DBManager.getInstance().getDownloadHitsMapURL();
 		 }
 		 catch(SQLException sqlE) {
 			 LOGGER.error(loggerId + "buildAdminValidationResponse()....unable to retrieve webHitsMapURL.");
 		 }
 		 
 		 avr.setWebHitsMapURL(webHitsMapURL);
+		 avr.setDownloadsMapURL(downloadHitsMapURL);
 		 
 		 Gson gson = new Gson();
 		 String jsonResponse = gson.toJson(avr);
@@ -409,18 +429,20 @@ public class WebResponder {
 		 return emailAddressesJSON;
 	}
 	
-	protected static String buildUpdateWHMapURL(String messageToDisplay, String targetMap, String newURL) {
+	protected static String buildUpdateWHMapURL(String messageToDisplay, String targetMap) throws SQLException {
 		
 
 		 String loggerId = ThreadLocalLogTracker.get();
 		 LOGGER.trace(loggerId + "buildUpdateWHMapURL()...invoked.");
 
-		 UpdateWebHitsMapResponse uwhResponse = new UpdateWebHitsMapResponse();
+		 UpdateMapUrlsResponse uwhResponse = new UpdateMapUrlsResponse();
 		 uwhResponse.setMessage(messageToDisplay);
 		 
-		 String webHitsMapURL = "/HTML/map_error.html";
+		 String webHitsMapURL = DBManager.getInstance().getWebHitsMapURL();
+		 String downloadsMapURL = DBManager.getInstance().getDownloadHitsMapURL();
 		  
-		 uwhResponse.setMapURL(newURL);
+		 uwhResponse.setWebHitsMapURL(webHitsMapURL);
+		 uwhResponse.setDownloadsMapURL(downloadsMapURL);
 		 
 		 Gson gson = new Gson();
 		 String jsonResponse = gson.toJson(uwhResponse);
@@ -687,7 +709,23 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendResynchWebHitsResponse()...exit.");
 	}
 	
-	public static void sendUpdateMapURLResponse(HttpServletResponse response, int updatedRowCount, String targetMap, String newURL) {
+	
+	public static void sendStorageStatsResponse(HttpServletResponse response, String statsResponse) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendStorageStatsResponse()...invoked");
+		
+		try {
+			  response.getWriter().println(statsResponse);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	    }
+		LOGGER.trace(loggerId + "sendStorageStatsResponse()...exit");
+	}
+	
+	
+	public static void sendUpdateMapURLResponse(HttpServletResponse response, int updatedRowCount, String targetMap, String newURL) throws SQLException {
 		
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendUpdateMapURLResponse()...invoked");
@@ -701,7 +739,7 @@ public class WebResponder {
 			responseString = "Unable to update " + targetMap;
 		}
 		
-		String jsonResponse = buildUpdateWHMapURL(responseString, targetMap, newURL);
+		String jsonResponse = buildUpdateWHMapURL(responseString, targetMap);
 		
 		
 		try {

@@ -28,20 +28,41 @@
 {
     background-color: #ddd;
 }
-#alertBox .message, #div_promptAdminPasswordBox .message, #adminAlertBox .message
+#alertBox .message, #div_promptAdminPasswordBox .message, #adminAlertBox .message, #div_confirmAdminDownloadBox .message
 {
     text-align: center;
     color: white;
     margin-bottom: 8px;
 }
 
-#adminAlertBox
+#adminAlertBox, #div_confirmAdminDownloadBox
 {
     display: none;
     z-index:99;
     /*background-color: #7a0019;*/
     /* background-color: #644B26; */
     background-color:  slategrey;  /* #0F52BA */
+   /* background-color: #a49561;*/
+   /* background-image: linear-gradient(#a49561ff, #474747ff); */   
+    border-radius: 5px;
+    border: 2px solid white;
+    outline: 2px solid black;
+    position: fixed;
+    width: 340px;
+    left: 50%;
+    top: 50%;
+    margin-left: -150px;
+    padding: 6px 8px 8px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+#div_downloadFileProgress {
+    display: none;
+    z-index:99;
+    /*background-color: #7a0019;*/
+    /* background-color: #644B26; */
+    background-color:  whitesmoke;  /* #0F52BA */
    /* background-color: #a49561;*/
    /* background-image: linear-gradient(#a49561ff, #474747ff); */   
     border-radius: 5px;
@@ -98,7 +119,7 @@
     position: fixed;
     width: 340px;
     left: 50%;
-    top: 22%;
+    top: 18%;
     margin-left: -150px;
     padding: 6px 8px 8px;
     box-sizing: border-box;
@@ -110,9 +131,9 @@
     z-index:10;
     color: #f5f5f5;
     /*background-color: #7a0019;*/
-    background-color: dimgrey;    /* #644B26 */
-   /* background-color: #a49561;*/
-   /* background-image: linear-gradient(#a49561ff, #474747ff); */   
+   /* background-color: slategrey;    #644B26 */
+   /* background-color: #a49561; */
+	background-image: linear-gradient(slategrey, #36454F);
     border-radius: 5px;
     border: 2px solid white;
     outline: 2px solid black;
@@ -121,10 +142,36 @@
     left: 50%;
     top: 50%;
     margin-left: -600px;
+    padding: 8px 8px 8px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+
+#div_addStudyHelp
+{
+    display: none;
+    text-align: left;
+    z-index:99;
+    /* background-color: #7a0019; */
+    background-color: #0F52BA;
+    color: white;
+   /* background-color: #a49561;*/
+   /* background-image: linear-gradient(#a49561ff, #474747ff); */   
+    background-image: linear-gradient(slategrey, #36454F);
+    border-radius: 5px;
+    border: 2px solid white;
+    outline: 2px solid black;
+    position: fixed;
+    width: 830px;
+    left: 50%;
+    top: 20%;
+    margin-left: -420px;
     padding: 6px 8px 8px;
     box-sizing: border-box;
     text-align: center;
 }
+
 
 #div_updateStudyHelp
 {
@@ -141,9 +188,9 @@
     border: 2px solid white;
     outline: 2px solid black;
     position: fixed;
-    width: 900px;
+    width: 830px;
     left: 50%;
-    top: 22%;
+    top: 20%;
     margin-left: -420px;
     padding: 6px 8px 8px;
     box-sizing: border-box;

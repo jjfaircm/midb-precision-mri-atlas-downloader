@@ -151,7 +151,7 @@ ul.menu {
  #ul_zipList {
  	list-style: none;
  	margin: 0;
- 	padding; 0;
+ 	padding: 0;
  }
  
 
@@ -267,14 +267,14 @@ thead.fixedHead th {
 #div_webHitsView {
 	overflow-y: auto;
     height: 296px;
-    width: 51%;
+    width: 54%;
     margin: auto;
 }
 
 #div_adminAccessView {
 	overflow-y: auto;
     height: 296px;
-    width: 68%;
+    width: 60%;
     margin: auto;
 }
 

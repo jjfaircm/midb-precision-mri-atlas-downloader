@@ -1,39 +1,23 @@
 package edu.umn.midb.population.atlas.study.handlers;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import edu.umn.midb.population.atlas.base.ApplicationContext;
 import edu.umn.midb.population.atlas.data.access.AtlasDataCacheManager;
 import edu.umn.midb.population.atlas.exception.BIDS_FatalException;
-import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
-import edu.umn.midb.population.atlas.utils.EmailNotifier;
-import edu.umn.midb.population.atlas.utils.SMSNotifier;
-import edu.umn.midb.population.response.handlers.WebResponder;
 import logs.ThreadLocalLogTracker;
 
 /**
@@ -84,10 +68,8 @@ public class CreateStudyHandler extends StudyHandler {
 	private static final String TEMPLATE_BEGIN_NETWORK_FOLDER_ENTRY = "NETWORK FOLDERS ENTRY (id=${studyFolderName})";
 	private static final String TEMPLATE_END_NETWORK_FOLDER_ENTRY = "END NETWORK FOLDERS ENTRY";
 	private static final String TEMPLATE_FOLDERS_ERROR_MESSAGE = "folder.txt error: folder ${folderName} not found in zip file. Study not created.";
-    private static final int BUFFER_SIZE = 4096;
     
     
-	private String availableDataTypes = null;
 	private String summaryTextFile = null;
 	private String foldersTextFile = null;
 	private ArrayList<String> summaryEntryLines = new ArrayList<String>();
@@ -137,9 +119,12 @@ public class CreateStudyHandler extends StudyHandler {
 	 * @throws IOException - Unhandled exception
 	 */
 	public CreateStudyHandler(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws IOException {
+		
+		super();
+		
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "CreateStudyHandler()...constructor invoked.");
-
+		
 		//this.request = request;
 		//this.response = response;
 		this.appContext = appContext;
@@ -168,7 +153,13 @@ public class CreateStudyHandler extends StudyHandler {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "completeStudyDeploy()...invoked.");
 
-		boolean success = true;
+		boolean success = checkSufficientServerStorage();
+		
+		if(!success) {
+			this.errorMessage = "Insufficient storage available.";
+			this.errorEncountered = true;
+			return success;
+		}
 		
 		if(this.surfaceZipFilePath != null) {
 			//unzipFolder(zipFile_surface, this.absoluteStudyFolder);
@@ -208,11 +199,15 @@ public class CreateStudyHandler extends StudyHandler {
 			}
 		}
 	
-		createSubFolderZips();
+		createConfigBackup();
 		updateMenuConfig();
 		updateSummaryConfig();
 		updateNetworkFolderNamesConfig();
-		createConfigBackup();
+		
+		//the remaining work can be completed asynchronously so the admin user
+		//does not have to wait for the subfolders to be zipped for potential downloads
+		//Refer to AsyncRunner inner class in StudyHandler
+		asyncRunner.start();
 		
 		AtlasDataCacheManager.getInstance().reloadConfigs();
 		LOGGER.trace(loggerId + "completeStudyDeploy()...exit.");
@@ -231,7 +226,6 @@ public class CreateStudyHandler extends StudyHandler {
 		LOGGER.trace(loggerId + "createNetworkFolderConfigEntry()...invoked.");
 
 		File file = new File(this.foldersTextFile);
-		boolean shouldContinue = true;
 		
 		String folderName = null;
 		String entryLine = TEMPLATE_BEGIN_NETWORK_FOLDER_ENTRY.replace(REPLACE_STUDY_FOLDER_NAME, this.studyFolder);
@@ -273,7 +267,7 @@ public class CreateStudyHandler extends StudyHandler {
 	
 
 	/**
-	 * Inserts an entry fpr the new study in the /midb/summary.conf file. The entry
+	 * Inserts an entry for the new study in the /midb/summary.conf file. The entry
 	 * represents lines that are stored as list entries that are displayed under the
 	 * main image panel in the browser.
 	 * 
@@ -283,7 +277,6 @@ public class CreateStudyHandler extends StudyHandler {
 		LOGGER.trace(loggerId + "createSummaryEntry()...invoked.");
 
 		File file = new File(this.absoluteStudyFolder + SUMMARY_ENTRY_FILE);
-		boolean shouldContinue = true;
 		
 		String entryLine = TEMPLATE_BEGIN_SUMMARY.replace(REPLACE_STUDY_FOLDER_NAME, this.studyFolder);
 		this.summaryEntryLines.add(entryLine);

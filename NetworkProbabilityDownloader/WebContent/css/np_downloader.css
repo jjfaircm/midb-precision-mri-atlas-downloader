@@ -46,6 +46,10 @@ button:hover {
 	cursor: pointer;
 }
 
+.admin_helpImage {
+	cursor: pointer;
+}
+
 button.downloader, button.downloaderThreshold, button.copy, button.downloader_dscalar {
    border:none;
    background-color:Transparent;
@@ -108,13 +112,11 @@ td.tipToTheLeft:hover span, th.tipToTheLeft:hover span, h2.tipToTheLeft:hover sp
     Background: linear-gradient(#b6d7a8, #9fc5e8);
     z-index: 100;
     cursor: help;
-   <!--  background: url(../images/status-info.png) #f0f0f0 no-repeat 100% 5%;  -->
     left: 0px;
     margin: 10px;
     width: 225px;
     position: absolute;
-  <!-- jjf  top: 10px; -->
-    text-decoration: none
+    text-decoration: none;
     /* next 2 lines added by jjf */
      top: -5px;
     /* left: 80%; */
@@ -128,14 +130,11 @@ button.downloaderThreshold:hover span, label.tip_selectThreshold:hover span {
     Background: linear-gradient(#b6d7a8, #9fc5e8);
     z-index: 100;
     cursor: help;
-   <!--  background: url(../images/status-info.png) #f0f0f0 no-repeat 100% 5%;  -->
     left: 0px;
     margin: 10px;
     width: 200px;
     position: absolute;
-  <!-- jjf  top: 10px; -->
-    text-decoration: none
-    /* next 2 lines added by jjf */
+    text-decoration: none;
      top: -5px;
     /* left: 80%; */
      right: 23%;
@@ -148,13 +147,11 @@ button.downloader_dscalar:hover span, img.img_help:hover span {
     Background: linear-gradient(#b6d7a8, #9fc5e8);
     z-index: 100;
     cursor: help;
-   <!--  background: url(../images/status-info.png) #f0f0f0 no-repeat 100% 5%;  -->
     left: 0px;
     margin: 10px;
     width: 180px;
     position: absolute;
-  <!-- jjf  top: 10px; -->
-    text-decoration: none
+    text-decoration: none;
     /* next 2 lines added by jjf */
      top: -5px;
     /* left: 80%; */
@@ -178,13 +175,11 @@ span.span_instructions {
     Background: linear-gradient(#b6d7a8, #9fc5e8);
     z-index: 100;
     cursor: help;
-   <!--  background: url(../images/status-info.png) #f0f0f0 no-repeat 100% 5%;  -->
     /* left: 0px; */
     margin: 10px;
     width: 215px;
     position: absolute;
-  <!-- jjf  top: 10px; -->
-    text-decoration: none
+    text-decoration: none;
     /* next 2 lines added by jjf */
      top: -5px;
     left: 37%;
@@ -913,6 +908,7 @@ h1.sitename {
   z-index: 10;
 }
 
+/*
 a.downloadMessage {
 	text-decoration: none;
 	color: yellow;
@@ -925,7 +921,7 @@ a.downloadMessage: focus {
 a.downloadMessage: visited {
 	background-color: #0F52BA !important;
 }
-
+*/
 
 /*   background: #fc3;
 border-color: #fc3;

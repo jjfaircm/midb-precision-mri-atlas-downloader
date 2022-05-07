@@ -1,4 +1,5 @@
-		 var version_buildString = BUILD_DATE = "Version beta_88.0  0424_B_2022:17:24__war=NPDownloader_0424_B_2022.war"; 
+		 var version_buildString = BUILD_DATE = "Version beta_91.0  0506_2330_2022:17:24__war=NPDownloader_0506_2330_2022.war";
+		 var enableTracing = true; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
          var ajaxType = 0;
@@ -51,6 +52,7 @@
          var priorSelectedStudy = "none";
          var readyToDisplayDownloadDiv = false;
          var lastTokenActionTime = null;
+         var cookieCheckDownloadTimer = null;
          var mobileDeviceActive = false;
          
          
@@ -145,28 +147,14 @@
         	 initializeDragDropAddStudy();
         	 initializeDragDropUpdateStudy();
 
-        	 
-
-       	     //registerScrollEventListener();
         	 resetAddStudyForm()
         	 //doUpdatesAlert("File downloads are enabled now.");
         	 console.log("continueStartup()...exit.");
-        	 //toggleLogging();
+        	if(!enableTracing) {
+				toggleLogging();
+			}
          }
          
-         function registerScrollEventListener() {
-        	 
-        	 document.addEventListener('keydown', function(e){
-        		    if(e.keyCode === 40) {
-        		        //down();
-        		        e.preventDefault();
-        		    } else if(e.keyCode === 38) {
-        		        //up();
-        		        e.preventDefault();
-        		    }
-        	 })
-        	 
-         }
          
          function addTableRow(tableId) {
             console.log("addTableRow()...invoked.");
@@ -492,8 +480,7 @@
         	 console.log("displayThresholdImageElements()...minValueLabel=" + minValueLabel);
         	 //alert("imageSrcURL=" + imageSrcURL);
         	 selected_thresholdImage.src = null;
-           	 let div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
-        	 //div_selectNeuralNetworkName.style.display = "block";
+
            	 var div_networkMapImage = document.getElementById("div_networkMapImage");
         	 
         	 div_thresholdImage = document.getElementById("div_thresholdImage");
@@ -551,7 +538,7 @@
              ul_atlasMenu.style.display = "block";
                 	 
         	 trackThresholdValue(true);
-
+        	 
         	 console.log("displayThresholdImageElements()...exit.");
          }
          
@@ -674,7 +661,7 @@
         }
  
          
-         function preprocessDownloadFile(choice, dialogueCompleted) {
+         function preprocessDownloadFile(choice) {
         	 console.log("preprocessDownloadFile()...invoked, choice=" + choice);
         	 
         	 if(downloadDisabled) {
@@ -798,6 +785,15 @@
            	 console.log("downloadAdminFile()...invoked.");
            	 
            	 var docName = null;
+
+			 if(fileNameAndPath == "/midb/surface.zip") {
+				var div_confirmAdminDownloadBox = document.getElementById("div_confirmAdminDownloadBox");
+				div_confirmAdminDownloadBox.style.display = "none";
+				var div_downloadFileProgress = document.getElementById("div_downloadFileProgress");
+				div_downloadFileProgress.style.display = "block";
+				console.log("setting timer");
+				cookieCheckDownloadTimer = setInterval(checkDownloadCompleteCookie, 500);
+			 }
            	 
            	 if(fileNameAndPath) {
            		 docName = fileNameAndPath;
@@ -805,6 +801,11 @@
            	 else {
 	             var select_DocId = document.getElementById("select_downloadAdminDocsDropdown");
 	             docName = select_DocId.options[select_DocId.selectedIndex].value;
+
+				 if(docName == "confirm_surface.zip") {
+					confirmDownloadAdminFile("/midb/surface.zip");
+					return;
+				}
            	 }
 	             
              if(docName == "unselected") {
@@ -817,49 +818,31 @@
         	 anchor_downloadAdminFiles.click();
         	 console.log("downloadAdminFile()...exit.");
          }
+
+		 
+		 function checkDownloadCompleteCookie() {
+			console.log("checkDownloadCompleteCookie()...invoked");
+			var docCookie = document.cookie;
+			
+			var cookies = docCookie.split(";");
+			var keyValuePair = null;
+			var cookieKey = null;
+			var cookieValue = null;
+			
+			for(i=0; i<cookies.length;i++) {
+				keyValuePair = cookies[i].split("=");
+				cookieKey = keyValuePair[0];
+				cookieValue = keyValuePair[1];
+
+				if(cookieKey == "np_download_name" && cookieValue == "surface.zip") {
+					clearInterval(cookieCheckDownloadTimer);
+					var div_downloadFileProgress = document.getElementById("div_downloadFileProgress");
+					div_downloadFileProgress.style.display = "none";
+				}
+			}
+			console.log("checkDownloadCompleteCookie()...exit");
+		}
          
-
-         function downloadFileViaAjax(fileName) {
-        	 console.log("downloadFileViaAjax()...invoked.");
-
-        	 var ajaxRequest = getAjaxRequest();
-        	 
-          	 var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadFilePathAndName;
-          	 var encodedUrl = encodeURI(url);
-          	
-        	 ajaxRequest.open("GET", encodedUrl, true);
-        	 ajaxRequest.setRequestHeader('my-custom-header', 'custom-value'); // adding some headers (if needed)
-
-        	 ajaxRequest.onload = function (event) {
-        		 var blob = req.response;
-        		 var fileName = null;
-        		 var contentType = req.getResponseHeader("content-type");
-
-        		 // IE/EDGE seems not returning some response header
-        		 if (req.getResponseHeader("content-disposition")) {
-        			 var contentDisposition = req.getResponseHeader("content-disposition");
-        			 fileName = contentDisposition.substring(contentDisposition.indexOf("=")+1);
-        		 } else {
-        			 fileName = "unnamed." + contentType.substring(contentType.indexOf("/")+1);
-        		 }
-
-        		 /*
-        		 if (window.navigator.msSaveOrOpenBlob) {
-        			 // Internet Explorer
-        			 window.navigator.msSaveOrOpenBlob(new Blob([blob], {type: contentType}), fileName);
-        		 } else {
-        			 var el = document.getElementById("href_download");
-        			 el.href = window.URL.createObjectURL(blob);
-        			 el.download = fileName;
-        			 el.click();
-        		 }
-        		 */
-        		 processFileDownloadResponse(ajaxRequest);
-        	 };
-        	 
-        	 req.send();
-        	 console.log("downloadFileViaAjax()...exit.");
-         }
          
          function emailDialogueValidation(preprocessCheck) {
         	 console.log("emailDialogueValidation()()...invoked.");
@@ -1256,7 +1239,6 @@
              var div_resources = document.getElementById("div_resources");
              var div_midbAtlas = document.getElementById("div_midbAtlas");
              var div_contactUs = document.getElementById("div_contactUs");
-             var heading_sitename = document.getElementById("sitename");
              var div_admin = document.getElementById("div_admin");
              var div_addStudy = document.getElementById("div_addStudy");
              var div_mobileDownload = document.getElementById("div_mobileDownload");
@@ -1296,8 +1278,10 @@
   	               if(readyToDisplayDownloadDiv) {
   	            	   div_download.style.display = "block";
   	               }
-  	               var button_downloadAll = document.getElementById("button_downloadAll");
-  	               button_downloadAll.scrollIntoView(false);
+  	               //var button_downloadAll = document.getElementById("button_downloadAll");
+  	               //button_downloadAll.scrollIntoView(false);
+  	               var div_submenuTop = document.getElementById("div_submenu").offsetTop;
+                   window.scrollTo(0, div_submenuTop);
                  }
                  else {
               	   div_mobileDownload.style.display = "block";
@@ -1404,81 +1388,6 @@
              div_unzipProgress.style.display = "block";
          }
          
-
-         /*
-          * 
-          */
-         function processFileDownloadResponse(ajaxRequest) {
-      	  	 console.log("processFileDownloadResponse()...invoked.")
-        	 var fileAsBase64String = ajaxRequest.responseText;
-        	 var imageSrcURLPrefix = "data:image/jpg;base64,";
-        	 var hrefURL = imageSrcURLPrefix + aBase64String;
-      	  	 console.log("processFileDownloadResponse()...exit.")
-         }
-         
-         function preProcessUpdateMapURL() {
-  	 		
-        	var div_urlDialogue = document.getElementById("div_updateURLDialogue");
-        	div_urlDialogue.style.display = "none";
-        	
-        	var newURL = document.getElementById("newURLEntry").value;
-        	newURL = newURL.replace("&", "!!!");
-        	var beginText1 = "<ifram";
-        	var beginText2 = "https";
-        	
-        	if(newURL.trim().length==0) {
-        		doAdminAlert("The url field must not be blank");
-            	div_urlDialogue.style.display = "block";
-            	return;
-        	}
-        	else if(!newURL.startsWith(beginText1) && !newURL.startsWith(beginText2)) {
-        		doAdminAlert("The url must start with " + "&lt;" + "iframe or https");
-            	div_urlDialogue.style.display = "block";
-        		return;
-        	}
-
- 			var div_mapProgress = document.getElementById("div_map_progress");
-			div_mapProgress.style.display = "block";
-        	        	
- 	 		sendUpdateMapURLRequest(newURL.trim(), "WEB_HITS_MAP");
-         }
-         
-      
- 		
- 		function processMapsRequest() {
- 		   	 console.log("processMapsRequest()...invoked.");
-
- 		   	 var mapsDropdown = document.getElementById("mapsDropdown");
-        	 var selection = mapsDropdown.options[mapsDropdown.selectedIndex].value
-        	 console.log("selection=" + selection);
-        	 
-        	 
-        	switch(selection) {
-        	
-     	 	case "updateWebHitsMapURL":
-     	 		var div_urlDialogue = document.getElementById("div_updateURLDialogue");
-     	 		div_urlDialogue.style.display = "block";
-     	 		document.getElementById("newURLEntry").focus();
-     	 		var button_maps = document.getElementById("button_maps");
-     	 		button_maps.style.display = "none";
-     	 		break;
-     	 	case "downloadWebHitsGeoLoc":
-     	 		downloadAdminFile("/midb/web_hits_geoloc.csv");
-     	 		break;
-     	 	case "resynchWebHits":
-     	 		var div_mapProgress = document.getElementById("div_map_progress");
-     	 		div_mapProgress.style.display = "block";
-     	 		sendResynchWebHitsRequest();
-     	 		break;
-     	 	case "downloadCreateMapDoc":
-     	 		downloadAdminFile("Create_New_Web_Hits_Map.rtf");
-        	}
- 		   	 
- 		   	 console.log("processMapsRequest()...exit.");
- 		}
- 		
- 	   
-
          
          function processNetworkProbabilityMapData(responseData) {
         	 
@@ -1546,13 +1455,11 @@
         	  //console.log(imageFilePathsArray[0]);
         	  //console.log(filePathsString);
         	  //alert("tempFilePathsArray length=" + tempFilePathsArray.length);
-        	  var aFilePath = null;
         	  var anImageFileAndPath = null;
         	  var priorPath = "";
         	  var anImageSrcURL = null;
         	  var imageSrcURLPrefix = "data:image/png;base64,";
         	  var aBase64String = null;
-        	  var slashIndex = 0;
         	  var downloadTargetFile = null;
         	  var pngMarker = ".png";
         	  var pngIndex = 0;
@@ -1577,7 +1484,6 @@
         		  anImageFileAndPath = imageFilePathsArray[i].trim();
         		  if(i==0) {
         			  var zipPathIndex = 0;
-        			  var fileNameIndex = 0;
         			  if(selectedDataType=="surface") {
         				  zipPathIndex = anImageFileAndPath.indexOf("surface")+8; 
         			  }
@@ -1645,13 +1551,6 @@
         	 var tab_download = document.getElementById("tab_download");
         	 var tab_contact = document.getElementById("tab_contactUs");
         	 
-        	 var label_home = document.getElementById("label_home");
-        	 var label_overview = document.getElementById("label_overview");
-        	 var label_midbAtlas = document.getElementById("label_midbAtlas");
-        	 var label_download = document.getElementById("label_download");
-        	 var label_resources = document.getElementById("label_resources");
-        	 var label_contact = document.getElementById("label_contact");
-
 
         	 tab_home.checked = true;
         	 tab_overview.checked = false;
@@ -1668,50 +1567,6 @@
         	 console.log("resetSelectedTab()...exit");
          }
          
-         function resetAddStudyForm() {
-       	    console.log("resetAddStudyForm()...invoked.");
-  			var table = document.getElementById("adminTable");
-  			var rowCount = table.rows.length;
-  			var networkDisplayNameRows = document.getElementsByClassName("networkDisplayNameRow");
- 			var numberToDelete = networkDisplayNameRows.length - 1;
- 			
- 			while(numberToDelete > 0) {
- 				table.deleteRow(rowCount-1);
- 				rowCount = table.rows.length;
- 				numberToDelete--;
-         	}
-            
-   	   	 	var text_studyDisplayName = document.getElementById("input_studyDisplayName");
-   	   	 	text_studyDisplayName.value = "";
-	   	 
-   	   	 	var text_studyFolderName = document.getElementById("input_studyFolderName");;
-   	   	 	text_studyFolderName.value = "";
-
- 		    var selectElement = document.getElementById("select_dataType");
-		    selectElement.selectedIndex = 0; 
-		    
-		    selectElement = document.getElementById("select_networkType");
-		    selectElement.selectedIndex = 0; 
-
-		    var div_dropZone = document.getElementById("div_dropZone");
-		    
-		    resetDropZone();
-		    div_dropZone.style.display = "block";
-		    
-       	    console.log("resetAddStudyForm()...exit.");
-         }
-         
-         function resetDropZone() {
-        	console.log("resetDropZone()...invoked.");
-        	var ul_droppedFilesList = document.getElementById("ul_zipList");
-        	ul_droppedFilesList.innerHTML = "";
-        	
-        	droppedFileNamesArray = new Array();
-        	uploadFilesArray = new Array();
-
-        	console.log("resetDropZone()...exit.");
-
-         }
          
          function scrollToInstructions() {
        	     console.log("scrollToInstructions()...invoked.")
@@ -2010,6 +1865,7 @@
    	
          	var remainder =  newStudy.totalFileNumber % newStudy.currentFileNumber;
          	console.log("remainder=" + remainder);
+			//changes the upload message without flickering
          	if(remainder == 0) {
          		console.log("in remainder=0 code");
          		newStudy.span_progress_0.innerHTML = "Uploading File:  " + fileName + "...";

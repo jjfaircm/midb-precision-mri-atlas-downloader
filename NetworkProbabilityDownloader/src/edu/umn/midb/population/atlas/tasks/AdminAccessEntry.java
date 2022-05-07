@@ -9,30 +9,17 @@ package edu.umn.midb.population.atlas.tasks;
 public class AdminAccessEntry extends TaskEntry {
 	
 	private String action = "unknown";
-	private boolean validIP = true;
-	private String validIPString = "true";
 	private boolean validPassword = false;
 	private String validPasswordString = "true";
 
 
 	/**
-	 * The action that was requested by the remote client.
+	 * Returns the action that was requested by the remote client.
 	 * 
 	 * @return action - String
 	 */
 	public String getAction() {
 		return action;
-	}
-
-	/**
-	 * Returns a String ('true' or 'false') indicating if the remote ip address was found
-	 * in the access control list (acl.conf).
-	 * 
-	 * 
-	 * @return validIPString - String
-	 */
-	public String getValidIPString() {
-		return validIPString;
 	}
 
 	/**
@@ -47,14 +34,10 @@ public class AdminAccessEntry extends TaskEntry {
 	}
 
 	/**
-	 * Returns a boolean indicating if the ip address was in the access control list (acl.conf).
+	 * Returns a boolean indicating if the provided password was valid
 	 * 
-	 * @return validIP - boolean
+	 * @return validPassword - boolean
 	 */
-	public boolean isValidIP() {
-		return validIP;
-	}
-
 	public boolean isValidPassword() {
 		return validPassword;
 	}
@@ -68,22 +51,7 @@ public class AdminAccessEntry extends TaskEntry {
 		this.action = action;
 	}
 
-	/**
-	 * Sets the validIP attributes that indicates if the remote ip address was found in
-	 * the access control list (acl.conf).
-	 * 
-	 * @param validIP - boolean
-	 */
-	public void setValidIP(boolean validIP) {
-		this.validIP = validIP;
-		if(!this.validIP) {
-			this.validIPString = "false";
-		}
-		else {
-			this.validIPString = "true";
-		}
-	}
-	
+
 	/**
 	 * Sets the validPassword boolean attribute indicating if the client input the correct
 	 * password.

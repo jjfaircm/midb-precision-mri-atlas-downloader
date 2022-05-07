@@ -15,13 +15,10 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.logging.log4j.Logger;
-
 import edu.umn.midb.population.atlas.data.access.DBManager;
 import edu.umn.midb.population.atlas.exception.DiagnosticsReporter;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
-import edu.umn.midb.population.atlas.utils.EmailNotifier;
 import edu.umn.midb.population.atlas.utils.IPInfoRequestor;
 import edu.umn.midb.population.atlas.utils.IPLocator;
 import edu.umn.midb.population.atlas.utils.SMSNotifier;
@@ -133,7 +130,6 @@ public class Tracker extends Thread {
 			if(!connectionOK) {
 				String emailAddress = entry.getEmailAddress();
 				LOGGER.fatal(LOGGER_ID + "Unable to get jdbcConnection...Not able to add email record, emailAddress=" + emailAddress);
-				EmailNotifier.sendEmailNotification(this.failedConnectionMessageRef.toString());
 				String domainName = NetworkProbabilityDownloader.getDomainName();
 				String message = "MIDB_APP_ERROR:" + domainName + ": UNABLE TO SUCCESSFULLY CHECK JDBC CONNECTION FROM EmailTracker";
 				message +=  "->emailAddress=" + emailAddress;
@@ -683,7 +679,7 @@ public class Tracker extends Thread {
 		message += "connectionOK=" + connectionOK;
 		SMSNotifier.sendNotification(message, this.subclassName);
 		firstHealthCheckSent = true;
-		LOGGER.trace(LOGGER_ID + "sendHealthCheckNotification()...exit");
+		LOGGER.trace(LOGGER_ID + "sendHealthCheckNotification()...exit, class=" + this.subclassName);
 	}
 	
 	

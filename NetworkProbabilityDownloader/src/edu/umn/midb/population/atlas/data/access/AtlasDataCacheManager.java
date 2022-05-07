@@ -5,17 +5,15 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import edu.umn.midb.population.atlas.menu.NetworkMapData;
 import edu.umn.midb.population.atlas.security.TokenManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
-import edu.umn.midb.population.atlas.utils.EmailNotifier;
 import edu.umn.midb.population.atlas.utils.IPInfoRequestor;
 import edu.umn.midb.population.atlas.utils.IPLocator;
 import edu.umn.midb.population.atlas.utils.SMSNotifier;
@@ -29,6 +27,8 @@ import logs.ThreadLocalLogTracker;
  * Additionally, a performance benefit is achieved since the base64 encoded data is created only once
  * for any given neural network type. After the first request for a neural network type, subsequent requests
  * are fulfilled by retrieving the data from the cache.
+ * 
+ * Additionally, this class loads properties from files when not running in a Linux environment.
  * 
  * @author jjfair
  *
@@ -46,6 +46,7 @@ public class AtlasDataCacheManager {
 	private static final String SUMMARY_CONFIG_PATH = "/midb/summary.conf";
 	private static final String NETWORK_FOLDERS_CONFIG_PATH = "/midb/network_folder_names.conf";
 	private static final String NEW_LINE = "\n";
+	
 	static {
 	      LOGGER = LogManager.getLogger(AtlasDataCacheManager.class);
 	}
@@ -70,16 +71,15 @@ public class AtlasDataCacheManager {
 
 	//contains collection of base64NetworkImageStrings keyed by the different 
 	//neural network types
-	private Hashtable<String, ArrayList<String>> base64NetworkImageStrings = new Hashtable<String, ArrayList<String>>();
+	private Hashtable<String, ArrayList<String>> base64NetworkImageStringsCache = new Hashtable<String, ArrayList<String>>();
 	//private Hashtable<String, ArrayList<byte[]>> binaryNetworkImageBuffers = new Hashtable<String, ArrayList<byte[]>>();
-	private Hashtable<String, ArrayList<String>> imagePathNames = new Hashtable<String, ArrayList<String>>();
+	private Hashtable<String, ArrayList<String>> imagePathNamesCache = new Hashtable<String, ArrayList<String>>();
 	private Hashtable<String, NetworkMapData> networkMapDataCache = new Hashtable<String, NetworkMapData>();
 	private ArrayList<String> menuStudyNames = new ArrayList<String>();
-	private Hashtable<String, ArrayList<String>> menuChoicesMap = new Hashtable<String, ArrayList<String>>();
+	private Hashtable<String, ArrayList<String>> menuChoicesCache = new Hashtable<String, ArrayList<String>>();
 	private ArrayList<String> summaryStudyNames = new ArrayList<String>();
-	private Hashtable<String, ArrayList<String>> summaryEntriesMap = new Hashtable<String, ArrayList<String>>();
-	private ArrayList<String> networkFolderNamesConfig = new ArrayList<String>();
-	private Hashtable<String, ArrayList<String>> singleNetworkFolderNamesMap = new Hashtable<String, ArrayList<String>>();
+	private Hashtable<String, ArrayList<String>> summaryEntriesCache = new Hashtable<String, ArrayList<String>>();
+	private Hashtable<String, ArrayList<String>> singleNetworkFolderNamesCache = new Hashtable<String, ArrayList<String>>();
 
 
 	private String localHostName = null;
@@ -92,13 +92,24 @@ public class AtlasDataCacheManager {
 	
 	private final Object configLock = new Object();
 	
-	/*
-	 * Declare empty constructor as private to prevent instantiation from other classes
+
+	/**
+	 * Hide constructor to enforce Singleton pattern.
+	 * 
 	 */
 	private AtlasDataCacheManager() {
 		
 	}
 	
+	/**
+	 * Creates and caches a {@link NetworkMapData} instance for a given network path. This stores
+	 * the base64-encoded data for the .png image file of the probabilityMap image, the absolute
+	 * path to the dscalar.nii file, and the network name which also is an absolute path representing
+	 * the folder on the server holding the data.
+	 * 
+	 * @param networkPath - String
+	 * @param imagePathNames - ArrayList
+	 */
 	private void addNetworkMapImage(String networkPath, ArrayList<String> imagePathNames) {
 		
 		String probabilityMapImagePath = imagePathNames.remove(0);
@@ -110,14 +121,14 @@ public class AtlasDataCacheManager {
 	}
 	
 	/**
-	 * Returns an ArrayList of base64 encoded Strings for all the .png files associated with the probabilistic thresholds for a specific neural network
+	 * Returns an ArrayList of base64 encoded Strings for all the .png files associated with the probabilistic thresholds for a specific neural network.
 	 * @param networkNamePath The name of the selected neural network type
 	 * 
 	 * @return ArrayList of base64 encoded .png image files
 	 */
 	public ArrayList<String> getBase64ImagePathStrings(String networkNamePath) {
 		
-		ArrayList<String> targetList = this.base64NetworkImageStrings.get(networkNamePath);
+		ArrayList<String> targetList = this.base64NetworkImageStringsCache.get(networkNamePath);
 		if(targetList == null) {
 			targetList = this.loadBase64ImagePathStrings(networkNamePath);
 		}
@@ -125,7 +136,8 @@ public class AtlasDataCacheManager {
 	}
 	
 	/**
-	 * Returns a list of NII image paths/names for a given neural network.
+	 * Returns a list of NII image paths/names for a given neural network. The networkNamePath
+	 * represents the absolute path to the desired data. This path includes the study name.
 	 * 
 	 * @param networkNamePath The absolute path to the folder containing the NII files for a neural network type
 	 * 
@@ -144,7 +156,7 @@ public class AtlasDataCacheManager {
 			networkMapImageExists = false;
 		}
 		
-		ArrayList<String> imagePathNames = this.imagePathNames.get(networkNamePath);
+		ArrayList<String> imagePathNames = this.imagePathNamesCache.get(networkNamePath);
 		
 		
 		if(imagePathNames==null) {
@@ -154,8 +166,9 @@ public class AtlasDataCacheManager {
 			}
 			LOGGER.info(loggerId + " adding imagePathNames to cache, key=" + networkNamePath);
 			LOGGER.trace(loggerId + "DirectoryAccessor.getThresholdImagePaths()...count=" + imagePathNames.size());
-			//LOGGER.trace(loggerId + imagePathNames);
-			this.imagePathNames.put(networkNamePath, imagePathNames);
+
+			// we cache the names, but only the base64-encoded image data for the abcd study
+			this.imagePathNamesCache.put(networkNamePath, imagePathNames);
 			if(networkNamePath.contains("abcd_template_matching")) {
 				this.loadBase64ImagePathStrings(networkNamePath);
 			}
@@ -165,34 +178,62 @@ public class AtlasDataCacheManager {
 		return imagePathNames;
 	}
 	
+	/**
+	 * Returns the localHostName on which the web application is running.
+	 * 
+	 * @return localHostName - String
+	 */
 	public String getLocalHostName() {
 		return localHostName;
 	}
 	
 	
+	/**
+	 * Returns a map of menu options for each study. The map is keyed by
+	 * the studyId and will return all the sub-options for that particular
+	 * study in the menu shown in the browser. For example, abcd_template_matching
+	 * would be the key and the sub-options would be: combined_clusters, overlapping,
+	 * and single.
+	 * 
+	 * @return menuChoicesMap - A Hashtable of ArrayList of String
+	 */
 	public Hashtable<String, ArrayList<String>> getMenuOptionsMap() {
 		synchronized(configLock) {
-			return this.menuChoicesMap;
+			return this.menuChoicesCache;
 		}
 	}
 
+	/**
+	 * Returns the names of all the studies contained in the /midb/studies folder.
+	 * 
+	 * @return menuStudyNames - ArrayList of String
+	 */
 	public ArrayList<String> getMenuStudyNames() {
 		synchronized(configLock) {
 			return this.menuStudyNames;
 		}
 	}
 	
+	/**
+	 * Returns an instance of {@link NetworkMapData} from the networkMapDataCache
+	 * keyed by the networkName such as /midb/studies/studyId/surface_or_volume/networkId
+	 * 
+	 * @param networkName - String
+	 * @return networkMapData - {@link NetworkMapData}
+	 */
 	public NetworkMapData getNetworkMapData(String networkName) {
 		return this.networkMapDataCache.get(networkName);
 	}
 	
-	public ArrayList<String> getNeuralNetworkFolderNamesConfig() {
-		
-		return this.networkFolderNamesConfig;
-	}
 	
+	/**
+	 * Returns the networkFolderNames config entry for a specific study.
+	 * 
+	 * @param studyName - String
+	 * @return nfnConfig - ArrayList of String
+	 */
 	public ArrayList<String> getNeuralNetworkFolderNamesConfig(String studyName) {
-		return this.singleNetworkFolderNamesMap.get(studyName);
+		return this.singleNetworkFolderNamesCache.get(studyName);
 	}
 	
 	public ArrayList<String> getPrivilegedList() {
@@ -200,21 +241,42 @@ public class AtlasDataCacheManager {
 	}
 	
 
+	/**
+	 * Returns the map of summaryEntries keyed by studyId.
+	 * 
+	 * @return - summaryEntriesMap - Hashtable of ArrayList of String
+	 */
 	public Hashtable<String, ArrayList<String>> getSummaryEntriesMap() {
-		return this.summaryEntriesMap;
+		return this.summaryEntriesCache;
 	}
 	
+	/**
+	 * Returns the studyIDs for each entry in the /midb/summary.conf file
+	 * 
+	 * @return summaryStudyNames - ArrayList of String
+	 */
 	public ArrayList<String> getSummaryStudyNames() {
 		return this.summaryStudyNames;
 	}
 	
-	private void initSMSNotifier(String accountSIDE, String authTokenE, String toPhoneE, String fromPhoneE) {
+	/**
+	 * Initializes the {@link SMSNotifier} with the correct account sid, authorization token,
+	 * 'from' telephone number, and 'to' telephone number. All the incoming parameters are
+	 * encrypted.
+	 * 
+	 * @param accountSIDE - encrypted account sid
+	 * @param authTokenE - encrypted authorization token
+	 * @param toPhoneE - encrypted 'to' telephone number that receives the SMS messages
+	 * @param fromPhoneE - encrypted 'from' telephone number which is a virtual number from twillio.com
+	 */
+	private void initSMSNotifier(String accountSIDE, String authTokenE, String toPhoneE, String fromPhoneE,
+			                     String textBeltKey, String smsMode) {
 		LOGGER.trace(DEFAULT_LOGGER_ID + "initSMSNotifier()...invoked");
 		
 		boolean success = true;
 		int successCount = 0;
 		
-		SMSNotifier.setKey(key);
+		SMSNotifier.setEncryptionKey(key);
 		
 		if(accountSIDE != null) {
 			SMSNotifier.setAccountSIDE(accountSIDE);
@@ -232,12 +294,15 @@ public class AtlasDataCacheManager {
 			SMSNotifier.setFromNumberE(fromPhoneE);
 			successCount++;
 		}
-		
-		if(successCount < 4) {
-			success = false;
+		if(textBeltKey != null) {
+			SMSNotifier.setTextBeltKey(textBeltKey);
+		}
+		if(smsMode != null) {
+			SMSNotifier.setSendMode(smsMode);
 		}
 		
-		LOGGER.trace(DEFAULT_LOGGER_ID + "initSMSNotifier()...exit, success=" + success);
+
+		LOGGER.trace(DEFAULT_LOGGER_ID + "initSMSNotifier()...exit");
 
 	}
 	
@@ -290,7 +355,7 @@ public class AtlasDataCacheManager {
 		
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "loadBase64ImagePathStrings()...invoked, networkNamePath=" + networkNamePath);
-		ArrayList<String> imagePaths = this.imagePathNames.get(networkNamePath);
+		ArrayList<String> imagePaths = this.imagePathNamesCache.get(networkNamePath);
 		ArrayList<byte[]> imageByteBuffers = new ArrayList<byte[]>();
 
 		Iterator<String> imagePathsIt = imagePaths.iterator();
@@ -316,7 +381,7 @@ public class AtlasDataCacheManager {
 		// we only cache abcd template matching study data
 		if(networkNamePath.contains("abcd_template_matching")) {
 			LOGGER.info(loggerId + "loadBase64ImagePathStrings()...adding base564ImageStrings array to cache, key=" + networkNamePath);
-			this.base64NetworkImageStrings.put(networkNamePath, base64ImageStrings);
+			this.base64NetworkImageStringsCache.put(networkNamePath, base64ImageStrings);
 			//this.binaryNetworkImageBuffers.put(networkNamePath, imageByteBuffers);
 		}
 		LOGGER.trace(loggerId + "loadBase64ImagePathStrings()...exit.");
@@ -338,11 +403,15 @@ public class AtlasDataCacheManager {
 		String defaultNetworkName = NetworkProbabilityDownloader.DEFAULT_NEURAL_NETWORK;
 		String targetDirectory = rootPath + defaultNetworkName;
 		ArrayList<String> imagePathNames = DirectoryAccessor.getThresholdImagePaths(targetDirectory);
-		this.imagePathNames.put(targetDirectory, imagePathNames);
+		this.imagePathNamesCache.put(targetDirectory, imagePathNames);
 		this.loadBase64ImagePathStrings(targetDirectory);
-		LOGGER.trace(loggerId + "loadDefaultGlobalData()...loadBase64ImagePathStrings.size=" + this.base64NetworkImageStrings.size());
+		LOGGER.trace(loggerId + "loadDefaultGlobalData()...loadBase64ImagePathStrings.size=" + this.base64NetworkImageStringsCache.size());
 	}
 	
+	/**
+	 * Loads the key used for encryption operations.
+	 * 
+	 */
 	public void loadKeyFromFile() {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "loadKeyFromFile()...invoked.");
@@ -378,15 +447,16 @@ public class AtlasDataCacheManager {
 		}
 		catch(Exception e) {
 			LOGGER.error(e.getMessage(), e);
-		}
-		
-		EmailNotifier.setKey(key);
-		
+		}		
 		
 		LOGGER.trace(loggerId + "loadKeyFromFile()...exit.");
 	
 	}
 	
+	/**
+	 * Loads the study menu entries from the /midb/menu.conf file.
+	 * 
+	 */
 	private void loadMenuConfig() {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "loadMenuConfig()...invoked.");
@@ -423,7 +493,7 @@ public class AtlasDataCacheManager {
 					menuEntryNamePending = false;
 					menuSubEntriesPending = true;
 					subMenuEntries = new ArrayList<String>();
-					this.menuChoicesMap.put(menuStudyName, subMenuEntries);
+					this.menuChoicesCache.put(menuStudyName, subMenuEntries);
 					continue;
 				}
 				else if(menuSubEntriesPending) {
@@ -435,13 +505,15 @@ public class AtlasDataCacheManager {
 				}
 			}
 			
-			Enumeration<String> keys = this.menuChoicesMap.keys();
+			Collections.sort(this.menuStudyNames);
+			
+			Enumeration<String> keys = this.menuChoicesCache.keys();
 			String currentKey = null;
 			ArrayList<String> subMenuChoices = null;
 			
 			while(keys.hasMoreElements()) {
 				currentKey = keys.nextElement();
-				subMenuChoices = this.menuChoicesMap.get(currentKey);
+				subMenuChoices = this.menuChoicesCache.get(currentKey);
 				LOGGER.trace(loggerId + "menuDetails->>" + currentKey + ":" + subMenuChoices);
 			}
 			br.close();
@@ -452,6 +524,12 @@ public class AtlasDataCacheManager {
 		LOGGER.trace(loggerId + "loadMenuConfig()...exit.");
 	}
 	
+	/**
+	 * Loads all the entries from the /midb/network_folder_names.conf.
+	 * Each entry is a collection of lines in an ArrayList of String and
+	 * stored in a map keyed by study ids.
+	 * 
+	 */
 	private void loadNetworkFolderNamesConfig() {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "loadNetworkFolderNamesConfig()...invoked.");
@@ -489,7 +567,7 @@ public class AtlasDataCacheManager {
 				}
 				
 				if(outputLine.equals("END NETWORK FOLDERS ENTRY")) {
-					this.singleNetworkFolderNamesMap.put(studyNameKey, currentConfig);
+					this.singleNetworkFolderNamesCache.put(studyNameKey, currentConfig);
 					continue;
 				}
 				currentConfig.add(outputLine.trim());
@@ -504,6 +582,13 @@ public class AtlasDataCacheManager {
 		
 	}
 	
+	/**
+	 * Load settings from a config file. This is used in a Mac development
+	 * environment. In the linux ec-2 environment the values are loaded
+	 * via environment values stored in the tomcat_service.conf file which
+	 * is loaded via the tomcat.service unit.
+	 * 
+	 */
 	public void loadSettingsConfig() {
 
 		String loggerId = ThreadLocalLogTracker.get();
@@ -532,6 +617,8 @@ public class AtlasDataCacheManager {
 			String ipLocatorAccountId = null;
 			String ipLocatorLicenseKey = null;
 			String ipInfoToken = null;
+			String textBeltKey = null;
+			String smsMode = null;
 			String propName = null;
 			int endIndex = 0;
 			String equalSign = "=";
@@ -551,27 +638,12 @@ public class AtlasDataCacheManager {
 				propName = outputLine.substring(0, endIndex).trim();
 				
 				switch(propName) {
-				case "MIDB_SERIALIZATION":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					concatenatedUP = rawArray[1];
-					upArray = concatenatedUP.split("::");
-					String sender = upArray[0];
-					String password = upArray[1];
-					EmailNotifier.setPassword(password);
-					EmailNotifier.setSender(sender);
-					break;
-				case "MIDB_ROOT":
+				case "MIDB_KEY":
 					rawArray = Utils.parseSettingEntry(outputLine.trim());
 					key = rawArray[1];
-					EmailNotifier.setKey(key);
 					TokenManager.setKey(key);
 					break;
-				case "MIDB_VERSION":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					String recipient = rawArray[1];
-					EmailNotifier.setRecipient(recipient);
-					break;
-				case "MIDB_MRI":
+				case "MIDB_ADMIN":
 					rawArray = Utils.parseSettingEntry(outputLine.trim());
 					String encryptedAdminPassword = rawArray[1];
 					TokenManager.setPassword(encryptedAdminPassword);
@@ -609,11 +681,19 @@ public class AtlasDataCacheManager {
 					rawArray = Utils.parseSettingEntry(outputLine.trim());
 					ipInfoToken = rawArray[1];
 					break;
-				}
+				case "MIDB_TBELT":
+					rawArray = Utils.parseSettingEntry(outputLine.trim());
+					textBeltKey = rawArray[1];
+					break;
+				case "MIDB_SMS_MODE":
+					rawArray = Utils.parseSettingEntry(outputLine.trim());
+					smsMode = rawArray[1];
+					break;
 			}
+		}
 			
 			br.close();
-			initSMSNotifier(accSidE, accAuthE, toPhoneE, fromPhoneE);
+			initSMSNotifier(accSidE, accAuthE, toPhoneE, fromPhoneE, textBeltKey, smsMode);
 			IPLocator.initAuthentication(key, ipLocatorAccountId, ipLocatorLicenseKey);
 			IPInfoRequestor.initAuthentication(key, ipLocatorLicenseKey);
 		}
@@ -624,6 +704,10 @@ public class AtlasDataCacheManager {
 		LOGGER.trace(loggerId + "loadSettingsConfig()...exit.");
 	}
 
+	/**
+	 * Loads the entries in the /midb/summary.conf file.
+	 * 
+	 */
 	public void loadSummaryConfig() {
 
 		String loggerId = ThreadLocalLogTracker.get();
@@ -668,7 +752,7 @@ public class AtlasDataCacheManager {
 					summaryEntryNamePending = false;
 					summarySubEntriesPending = true;
 					summarySubEntries = new ArrayList<String>();
-					this.summaryEntriesMap.put(summaryStudyName, summarySubEntries);
+					this.summaryEntriesCache.put(summaryStudyName, summarySubEntries);
 					continue;
 				}
 				else if(summarySubEntriesPending) {
@@ -688,6 +772,10 @@ public class AtlasDataCacheManager {
 		LOGGER.trace(loggerId + "loadSummaryConfig()...exit.");
 	}
 
+	/**
+	 * Reloads all the config entries
+	 * 
+	 */
 	public void reloadConfigs() {
 		synchronized(configLock) {
 			this.reloadMenuConfig();
@@ -696,36 +784,46 @@ public class AtlasDataCacheManager {
 		}
 	}
 	
+	/**
+	 * Reloads the entries in the /midb/menu.conf file.
+	 * 
+	 */
 	public void reloadMenuConfig() {
 		synchronized(menuLock) {
 			String loggerId = ThreadLocalLogTracker.get();
 			LOGGER.trace(loggerId + "reloadMenuConfig()...invoked.");
 		
 			this.menuStudyNames = new ArrayList<String>();
-			this.menuChoicesMap = new Hashtable<String, ArrayList<String>>();
+			this.menuChoicesCache = new Hashtable<String, ArrayList<String>>();
 			loadMenuConfig();
 			LOGGER.trace(loggerId + "reloadMenuConfig()...exit.");
 		}
 	}
 	
+	/**
+	 * Reloads the entries in the /midb/network_folder_names.conf file.
+	 * 
+	 */
 	public void reloadNetworkFoldersConfig() {
 		synchronized(menuLock) {
 			String loggerId = ThreadLocalLogTracker.get();
 			LOGGER.trace(loggerId + "reloadNetworkFoldersConfig()...invoked.");
-		
-			this.networkFolderNamesConfig = new ArrayList<String>();
 			loadNetworkFolderNamesConfig();
 			LOGGER.trace(loggerId + "reloadNetworkFoldersConfig()...exit.");
 		}
 	}
 	
+	/**
+	 * Reloads the entries in the /midb/summary.conf file.
+	 * 
+	 */
 	public void reloadSummaryConfig() {
 		synchronized(menuLock) {
 			String loggerId = ThreadLocalLogTracker.get();
 			LOGGER.trace(loggerId + "reloadSummaryConfig()...invoked.");
 		
 			this.summaryStudyNames = new ArrayList<String>();
-			this.summaryEntriesMap = new Hashtable<String, ArrayList<String>>();
+			this.summaryEntriesCache = new Hashtable<String, ArrayList<String>>();
 			loadSummaryConfig();
 			LOGGER.trace(loggerId + "reloadSummaryConfig()...exit.");
 		}

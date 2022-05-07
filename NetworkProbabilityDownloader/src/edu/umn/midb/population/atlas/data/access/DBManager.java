@@ -49,8 +49,9 @@ public class DBManager {
 	protected static final String EMAIL_ADDRESS_CSV_HEADER = "Email Address,First Name,Last Name";
 	protected static final String EMAIL_UNSUBSCRIBE_FILE = "/midb/unsubscribe_list.csv";
 	protected static final String WEB_HITS_GEOLOC_CSV_FILE = "/midb/web_hits_geoloc.csv";
-	protected static final String WEB_HITS_GEOLOC_CSV_HEADER = "Latitude,Longitude,Location_Name";
-	protected static final String WEB_HITS_GEOLOC_CSV_TEMPLATE = "latitude,longitude,locationName";
+	protected static final String DOWNLOAD_HITS_GEOLOC_CSV_FILE = "/midb/download_hits_geoloc.csv";
+	protected static final String GEOLOC_CSV_HEADER = "Latitude,Longitude,Location_Name";
+	protected static final String GEOLOC_CSV_TEMPLATE = "latitude,longitude,locationName";
 	protected static final String ADMIN_ENTRY_TEMPLATE = "IP_ADDRESS,ACTION,TIMESTAMP,VALID_IPADDRESS,VALID_PASSWORD";
 	protected static final String ADMIN_ACCESS_FILE = "/midb/tracking/admin_access.csv";
 	public static final long MAX_IDLE_TIME = 30*60*1000;
@@ -71,10 +72,11 @@ public class DBManager {
 	private String queryTest = "SELECT COUNT(*) FROM email_addresses";
 	private String queryEmailAddresses = "SELECT email_address, first_name, last_name FROM email_addresses";
 	private String queryWebHitsMapUrl = "SELECT url from map_urls WHERE map_name LIKE 'WEB_HITS_MAP'";
+	private String queryDownloadHitsMapUrl = "SELECT url from map_urls WHERE map_name LIKE 'FILE_DOWNLOADS_MAP'";
     private String queryWebHits = "SELECT create_date, ip_address, city, state, country, latitude, longitude from web_hits order by create_date";
-	private String queryFileDownloads = "SELECT create_date, file_name, study, ip_address, email_address, city, state, country from file_downloads"; 
-	private String queryAdminAccessRecords = "SELECT create_date, ip_address, valid_ip, action, valid_password, city, state, country FROM admin_access";
-	private String insertAdminAccessRecord = "INSERT INTO admin_access (ip_address, valid_ip, action, valid_password, city, state, country) VALUES(?,?,?,?,?,?,?)";
+	private String queryFileDownloads = "SELECT create_date, file_name, study, ip_address, email_address, city, state, country, latitude, longitude from file_downloads"; 
+	private String queryAdminAccessRecords = "SELECT create_date, ip_address, action, valid_password, city, state, country FROM admin_access ORDER BY create_date";
+	private String insertAdminAccessRecord = "INSERT INTO admin_access (ip_address, action, valid_password, city, state, country) VALUES(?,?,?,?,?,?)";
 	private String updateMapURL = "UPDATE map_urls SET url= ? WHERE map_name LIKE ?";
 	private String deleteEmailAddress = "DELETE FROM email_addresses WHERE email_address LIKE ?";
 	private String deleteExtraneousWebHits = "DELETE FROM web_hits WHERE ip_address LIKE ?";
@@ -118,7 +120,7 @@ public class DBManager {
 		String adminEntry = ADMIN_ENTRY_TEMPLATE.replace("IP_ADDRESS", aaEntry.getRequestorIPAddress());
 		adminEntry = adminEntry.replace("ACTION", appContext.getCurrentAction());
 		adminEntry = adminEntry.replace("TIMESTAMP", formattedTS);
-		adminEntry = adminEntry.replace("VALID_IP", aaEntry.getValidIPString());
+		adminEntry = adminEntry.replace("VALID_IP", "n/a");
 		adminEntry = adminEntry.replace("VALID_PASSWORD", aaEntry.getValidPasswordString());
 
 		FileWriter fw = null;
@@ -239,6 +241,49 @@ public class DBManager {
 		LOGGER.trace(loggerId + "createNewEmailAddressesCSVFile()...exit, recordCount=" + recordCount);
 	}
 	
+	private void createNewFileDownloadHitsGeoCSVFile(ArrayList<FileDownloadRecord> downloadHits) {
+
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "createNewFileDownloadHitsGeoCSVFile()...invoked");
+	
+		int recordCount = 0;
+		Iterator<FileDownloadRecord> webHitsIt = downloadHits.iterator();
+		FileDownloadRecord downloadHitRecord = null;
+		String downloadGeoEntryLine = null;
+		String latitude = null;
+		String longitude = null;
+		String locationName = null;
+		
+		try {
+			FileWriter fileWriter = new FileWriter(DOWNLOAD_HITS_GEOLOC_CSV_FILE);
+			BufferedWriter bufWriter = new BufferedWriter(fileWriter);
+			bufWriter.write(GEOLOC_CSV_HEADER);
+			bufWriter.newLine();
+			
+			while(webHitsIt.hasNext()) {
+				recordCount++;
+				downloadHitRecord = webHitsIt.next();
+				latitude = downloadHitRecord.getLatitude();
+				longitude = downloadHitRecord.getLongitude();
+				locationName = downloadHitRecord.getLocationName();
+				downloadGeoEntryLine = GEOLOC_CSV_TEMPLATE;
+				downloadGeoEntryLine = downloadGeoEntryLine.replace("latitude", latitude);
+				downloadGeoEntryLine = downloadGeoEntryLine.replace("longitude", longitude);
+				downloadGeoEntryLine = downloadGeoEntryLine.replace("locationName", locationName);
+				bufWriter.write(downloadGeoEntryLine);
+				bufWriter.newLine();
+			}
+		
+			bufWriter.flush();
+			fileWriter.close();
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			DiagnosticsReporter.createDiagnosticsEntry(e);
+		}
+		LOGGER.trace(loggerId + "createNewFileDownloadHitsGeoCSVFile()...exit, recordsInserted=" + recordCount);
+	}
+	
 	/**
 	 * 
 	 * Creates a csv file where each entry contains: longitude, latitude, locationName
@@ -262,7 +307,7 @@ public class DBManager {
 		try {
 			FileWriter fileWriter = new FileWriter(WEB_HITS_GEOLOC_CSV_FILE);
 			BufferedWriter bufWriter = new BufferedWriter(fileWriter);
-			bufWriter.write(WEB_HITS_GEOLOC_CSV_HEADER);
+			bufWriter.write(GEOLOC_CSV_HEADER);
 			bufWriter.newLine();
 			
 			
@@ -272,7 +317,7 @@ public class DBManager {
 				latitude = webHitRecord.getLatitude();
 				longitude = webHitRecord.getLongitude();
 				locationName = webHitRecord.getLocationName();
-				whGeoEntryLine = WEB_HITS_GEOLOC_CSV_TEMPLATE;
+				whGeoEntryLine = GEOLOC_CSV_TEMPLATE;
 				whGeoEntryLine = whGeoEntryLine.replace("latitude", latitude);
 				whGeoEntryLine = whGeoEntryLine.replace("longitude", longitude);
 				whGeoEntryLine = whGeoEntryLine.replace("locationName", locationName);
@@ -356,13 +401,13 @@ public class DBManager {
 			ts = rs.getTimestamp(1);
 			timestampStr = ts.toString();
 			index = timestampStr.lastIndexOf(".");
-			timestampStr = timestampStr.substring(0, index);
+			timestampStr = timestampStr.substring(0, index); 
 			ipAddress = rs.getString(2);
-			currentAction = rs.getString(4);
-			validPassword = rs.getString(5);
-			city = rs.getString(6);
-			state = rs.getNString(7);
-			country = rs.getString(8);
+			currentAction = rs.getString(3);
+			validPassword = rs.getString(4);
+			city = rs.getString(5);
+			state = rs.getNString(6);
+			country = rs.getString(7);
 			aaRecord = new AdminAccessRecord(ipAddress, currentAction);
 			aaRecord.setCreateDate(timestampStr);
 			aaRecord.setValidPassword(validPassword);
@@ -459,6 +504,8 @@ public class DBManager {
 		String city = null;
 		String state = null;
 		String country = null;
+		String latitude = null;
+		String longitude = null;
 		FileDownloadRecord fdr = null;
 		String timestampStr = null;
 		int index = 0;
@@ -484,6 +531,10 @@ public class DBManager {
 			fdr.setState(state);
 			country = rs.getString(8);
 			fdr.setCountry(country);
+			latitude = rs.getString(9);
+			fdr.setLatitude(latitude);
+			longitude = rs.getString(10);
+			fdr.setLongitude(longitude);
 			fileDownloads.add(fdr);
 		}
 		
@@ -537,9 +588,9 @@ public class DBManager {
 			whRecord.setCity(city);
 			state = rs.getString(4);
 			whRecord.setState(state);
-			country = rs.getString(4);
+			country = rs.getString(5);
 			whRecord.setCountry(country);
-			latitude = rs.getString(5);
+			latitude = rs.getString(6);
 			whRecord.setLatitude(latitude);
 			longitude = rs.getString(7);
 			whRecord.setLongitude(longitude);
@@ -550,6 +601,28 @@ public class DBManager {
 		conn.close();
 		LOGGER.trace(loggerId + "getWebHits()...exit");
 		return webHits;
+	}
+	
+	public String getDownloadHitsMapURL() throws SQLException {
+
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "getDownloadHitsMapURL()...invoked");
+		
+		Connection conn = getDBConnection();
+		Statement stmt = conn.createStatement();
+		stmt.execute(queryDownloadHitsMapUrl);
+		ResultSet rs = stmt.getResultSet();
+		
+		rs.next();
+		String mapURL = rs.getString(1);
+		
+		stmt.close();
+		conn.close();
+		
+		LOGGER.trace(loggerId + "getDownloadHitsMapURL()...exit");
+
+		return mapURL;
+	
 	}
 	
 	/**
@@ -622,12 +695,11 @@ public class DBManager {
 			Connection connection = getDBConnection();
 			PreparedStatement ps = connection.prepareStatement(this.insertAdminAccessRecord);
 			ps.setString(1, aaEntry.getRequestorIPAddress());
-			ps.setString(2, aaEntry.getValidIPString());
-			ps.setString(3, aaEntry.getAction());
-			ps.setString(4, aaEntry.getValidPasswordString());
-			ps.setString(5, aaEntry.getCity());
-			ps.setString(6, aaEntry.getState());
-			ps.setString(7, aaEntry.getCountry());
+			ps.setString(2, aaEntry.getAction());
+			ps.setString(3, aaEntry.getValidPasswordString());
+			ps.setString(4, aaEntry.getCity());
+			ps.setString(5, aaEntry.getState());
+			ps.setString(6, aaEntry.getCountry());
 
 			ps.execute();
 			updateCount = ps.getUpdateCount();
@@ -651,11 +723,8 @@ public class DBManager {
 		
 	/**
 	 * 
-	 * Re-synchronizes the web_hits table. This method calls the rWebHits stored procedure in
-	 * the midbatlas_db database. The stored procedure removes all records in the web_hits
-	 * table where the ip_address matches the ip address of a developer so that the table does
-	 * not give an inflated representation of the number of web hits. After the extraneous
-	 * records are deleted, the hit_count column is re-sequenced.
+	 * Removes extraneous records from web_hits table (such as hits from
+	 * the web developer team, etc.).
 	 * 
 	 * @return success - boolean
 	 * @throws SQLException - unhandled exception
@@ -734,6 +803,24 @@ public class DBManager {
 		LOGGER.trace(loggerId + "updateMapURL()...exit");
 
 		return updatedRowCount;
+	}
+	
+	public boolean updateDownloadHitsGeoLocCSVFile() throws Exception {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "updateDownloadbHitsGeoLocCSVFile()...invoked");		
+
+		boolean success = true;
+		
+		File csvFile = new File(DOWNLOAD_HITS_GEOLOC_CSV_FILE);
+		if(csvFile.exists()) {
+			csvFile.delete();
+		}
+		
+		ArrayList<FileDownloadRecord> downloadHitsRecords = getFileDownloads();
+		this.createNewFileDownloadHitsGeoCSVFile(downloadHitsRecords);
+		
+		LOGGER.info(loggerId + "updateDownloadbHitsGeoLocCSVFile()...Successfully updated " + DOWNLOAD_HITS_GEOLOC_CSV_FILE);
+		return success;
 	}
 	
 	

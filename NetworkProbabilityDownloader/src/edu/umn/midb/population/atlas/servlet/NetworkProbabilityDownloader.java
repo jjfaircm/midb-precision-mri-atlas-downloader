@@ -46,11 +46,12 @@ import edu.umn.midb.population.atlas.tasks.EmailTracker;
 import edu.umn.midb.population.atlas.tasks.FileDownloadEntry;
 import edu.umn.midb.population.atlas.tasks.WebHitEntry;
 import edu.umn.midb.population.atlas.tasks.WebHitsTracker;
+import edu.umn.midb.population.atlas.utils.CommandRunner;
 import edu.umn.midb.population.atlas.utils.CountryNamesResolver;
-import edu.umn.midb.population.atlas.utils.EmailNotifier;
 import edu.umn.midb.population.atlas.utils.IPInfoRequestor;
 import edu.umn.midb.population.atlas.utils.IPLocator;
 import edu.umn.midb.population.atlas.utils.SMSNotifier;
+import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 import edu.umn.midb.population.response.handlers.WebResponder;
 import logs.ThreadLocalLogTracker;
 
@@ -94,7 +95,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
 	
 	private static final long serialVersionUID = 1L;
-	public static final String BUILD_DATE = "Version beta_88.0  0424_B_2022:17:24__war=NPDownloader_0424_B_2022.war"; 
+	public static final String BUILD_DATE = "Version beta_91.0  0506_2330_2022:17:24__war=NPDownloader_0506_2330_2022.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";
@@ -138,7 +139,8 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		String loggerId = " ::LOGGERID=ACCESS_CHECKER:: ";
 		boolean accessAllowed = true;
 		
-		
+		//this method kept in place in case there arises a need to block certain ip addresses
+		//etc.
 		String serverName = request.getServerName();
 		LOGGER.trace("checkAccessAllowed()...serverName=" + serverName);
 		
@@ -160,7 +162,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			LOGGER.fatal(loggerId + "ACCESS DENIED, ip=" + ipAddress);
 		}
 		else {
-			LOGGER.fatal(loggerId + "ACCESS ALLOWED, ip=" + ipAddress);
+			LOGGER.trace(loggerId + "ACCESS ALLOWED, ip=" + ipAddress);
 		}
 		return accessAllowed;
 	}
@@ -357,6 +359,9 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			case "resynchWebHits":
 				handleResynchWebHits(appContext, request, response);
 				break;
+			case "getStorageStats":
+				handleGetStorageStats(appContext, response);
+				break;
 			}
 		
 		}
@@ -505,7 +510,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	 * Handles a request to download one of the admin files, such as email_addresses.csv. 
 	 * The {@link DirectoryAccessor#getFileBytes(String)} method will be invoked to get
 	 * the binary file bytes as a byte array. The byte array will then be passed to the
-	 * {@link WebResponder#sendFileDownloadResponse(HttpServletResponse, byte[], String)}
+	 * {@link WebResponder#sendFileDownloadResponse(HttpServletResponse, byte[], String, String)}
 	 * method.
 	 * 
 	 * @param appContext {@link ApplicationContext}
@@ -531,18 +536,22 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		else if(filePathAndName.equals("/midb/web_hits_geoloc.csv")) {
 			DBManager.getInstance().updateWebHitsGeoLocCSVFile();
 		}
+		else if(filePathAndName.equals("/midb/download_hits_geoloc.csv")) {
+			DBManager.getInstance().updateDownloadHitsGeoLocCSVFile();
+		}
+		
 		
 		//application documentation will not have the path specified in filePathAndName
 		//since it resides in the docs package
 		
-		if(!filePathAndName.endsWith("csv")) {
+		if(!filePathAndName.endsWith("csv") && !filePathAndName.equals("/midb/surface.zip")) {
 			filePathAndName = DocumentLocator.getPath(filePathAndName);
 		}
 		
 		byte[] fileBinaryBuffer = DirectoryAccessor.getFileBytes(filePathAndName);
 		int index = filePathAndName.lastIndexOf("/");
 		String fileNameOnly = filePathAndName.substring(index+1);
-		WebResponder.sendFileDownloadResponse(response, fileBinaryBuffer, fileNameOnly);
+		WebResponder.sendFileDownloadResponse(response, fileBinaryBuffer, fileNameOnly, null);
 		LOGGER.trace(loggerId + "handleDownloadAdminFile()...exit.");
 	}
 	
@@ -550,7 +559,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	/**
 	 * Handles a request to download an NII file that maps to the selected probabilistic threshold percentage.
 	 * The {@link DirectoryAccessor#getFileBytes(String)} method will be invoked to get the binary file bytes
-	 * that will be sent back to the client via the {@link WebResponder#sendFileDownloadResponse(HttpServletResponse, byte[], String)}
+	 * that will be sent back to the client via the {@link WebResponder#sendFileDownloadResponse(HttpServletResponse, byte[], String, String)}
 	 * 
 	 * @param appContext {@link ApplicationContext}
 	 * @param request A reference to the current HttpServletRequest
@@ -564,13 +573,14 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		LOGGER.trace(loggerId + "handleDownloadFile()...invoked.");
 		String filePathAndName = request.getParameter("filePathAndName");
 		
-		//we don't track files downloaded for admin tasks
-		if(filePathAndName.contains("sample_files.zip") || filePathAndName.contains(".csv") ||
-		   filePathAndName.contains(".rtf") || filePathAndName.contains("javadoc")) {
-			handleDownloadAdminFile(appContext, request, response);
-			LOGGER.trace(loggerId + "handleDownloadFile()...exit.");
-			return;
+		//we don't track file downloads for admin files
+		if(filePathAndName.contains("addStudy_sample.zip") || filePathAndName.contains(".csv") ||
+		   filePathAndName.contains("javadoc") || filePathAndName.contains(".odt") ||
+		   filePathAndName.contains(".rtf") || filePathAndName.contains("surface.zip")) {
+				handleDownloadAdminFile(appContext, request, response);
+				return;
 		}
+		
 		
 		boolean optedOut = true;
 		
@@ -583,8 +593,11 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			}
 		}
 		
-		String message = "MIDB_APP_FILE_DOWNLOAD::::" + DOMAIN_NAME + "::::IP=" + ipAddress;
-		SMSNotifier.sendNotification(message, "NetworkProbabilityDownloader");
+		//exclude developer ipAddress 
+		if(!ipAddress.equals("68.63.215.250")) {
+			String message = "MIDB_APP_FILE_DOWNLOAD::::" + DOMAIN_NAME + "::::IP=" + ipAddress;
+			SMSNotifier.sendNotification(message, "NetworkProbabilityDownloader");
+		}
 
 		
 		String optedOutParm = request.getParameter("optedOut");
@@ -639,7 +652,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		byte[] fileBinaryBuffer = DirectoryAccessor.getFileBytes(filePathAndName);
 
-		WebResponder.sendFileDownloadResponse(response, fileBinaryBuffer, fileNameOnly);
+		WebResponder.sendFileDownloadResponse(response, fileBinaryBuffer, fileNameOnly, selectedStudy);
 		LOGGER.trace(loggerId + "handleDownloadFile()...exit.");
 		
 		return;
@@ -795,6 +808,18 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		WebResponder.sendNetworkFolderNamesConfigResponse(response);
 		
 		LOGGER.trace(loggerId + "handleGetNetworkFolderNamesConfig()...invoked.");
+	}
+	
+	protected void handleGetStorageStats(ApplicationContext appContext, HttpServletResponse response) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "handleGetStorageStats()...invoked.");
+		
+		ServerStorageStats freeStorageStats = CommandRunner.getFreeStorageStats();
+		
+		LOGGER.trace(loggerId + "amount=" + freeStorageStats.getAmount());
+		WebResponder.sendStorageStatsResponse(response, freeStorageStats.getMessage());
+		
+		LOGGER.trace(loggerId + "handleGetStorageStats()...exit.");
 	}
 	
 
@@ -996,10 +1021,10 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		String responseMessage = null;
 		
 		if(success) {
-			responseMessage = "Successfully resynched table: web_hits";
+			responseMessage = "Successfully resynced table: web_hits";
 		}
 		else {
-			responseMessage = "Unable to resynch table: web_hits";
+			responseMessage = "Unable to resync table: web_hits";
 
 		}
 		WebResponder.sendResynchWebHitsResponse(response, responseMessage);
@@ -1202,7 +1227,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		LOGGER.trace(DEFAULT_LOGGER_ID + "acl loaded:::" + privilegedList);
 		
 		
-		if(localHostName.contains("JAMESs-MacBook-Pro") || localHostName.contains("Jims-Mac-mini") ) {
+		if(localHostName.contains("MacBook-Pro") || localHostName.contains("Jims-Mac-mini") ) {
 			AtlasDataCacheManager.getInstance().loadKeyFromFile();
 			AtlasDataCacheManager.getInstance().loadSettingsConfig();
 		}
@@ -1228,11 +1253,10 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		Set<String> envKeys = envMap.keySet();
 		
 		//key must be processed before other env vars
-		String key = envMap.get("MIDB_ROOT");
+		String key = envMap.get("MIDB_KEY");
 		
 		if(key != null) {
-			LOGGER.trace("Processing MIDB_ROOT...");
-			EmailNotifier.setKey(key);
+			LOGGER.trace("Processing MIDB_KEY...");
 			TokenManager.setKey(key);
 			initSMSNotifier(key);
 			initIPLocator(key);
@@ -1240,7 +1264,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		}
 		else {
 			LOGGER.fatal("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-			LOGGER.fatal("MIDB_ROOT not found! Key is null!");
+			LOGGER.fatal("MIDB_KEY not found! Key is null!");
 		}
 
 		Iterator<String> envIt = envKeys.iterator();
@@ -1257,16 +1281,13 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			case	"MIDB_SERIALIZATION" :
 				LOGGER.trace("Processing MIDB_SERIALIZATION");
 				String[] encryptedArray = envValue.split("::");
-				EmailNotifier.setSender(encryptedArray[0]);
-				EmailNotifier.setPassword(encryptedArray[1]);
 				break;
 			case	"MIDB_VERSION" :
 				LOGGER.trace("Processing MIDB_VERSION");
 				String encryptedRecipient = envValue;
-				EmailNotifier.setRecipient(encryptedRecipient);
 				break;
-			case	"MIDB_MRI" :
-				LOGGER.trace("Processing MIDB_MRI");
+			case	"MIDB_ADMIN" :
+				LOGGER.trace("Processing MIDB_ADMIN");
 				String encryptedPassword = envValue;
 				TokenManager.setPassword(encryptedPassword);
 				break;
@@ -1327,7 +1348,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		boolean success = true;
 		int successCount = 0;
 		
-		SMSNotifier.setKey(key);
+		SMSNotifier.setEncryptionKey(key);
 		
 		Map<String,String> envMap = System.getenv();
 		
@@ -1356,11 +1377,19 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			successCount++;
 		}
 		
-		if(successCount < 4) {
-			success = false;
+		String textBeltKey = envMap.get("MIDB_TBELT");
+		if(textBeltKey != null) {
+			SMSNotifier.setTextBeltKey(textBeltKey);
 		}
-
-		LOGGER.trace(DEFAULT_LOGGER_ID + "initSMSNotifier()...exit, success=" + success);
+		
+		String smsMode = envMap.get("MIDB_SMS_MODE");
+		if(smsMode != null) {
+			SMSNotifier.setSendMode(smsMode);
+		}
+		
+		
+		
+		LOGGER.trace(DEFAULT_LOGGER_ID + "initSMSNotifier()...exit.");
 		
 	}
 	

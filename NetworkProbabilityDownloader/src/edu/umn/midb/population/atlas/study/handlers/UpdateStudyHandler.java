@@ -62,6 +62,7 @@ public class UpdateStudyHandler extends StudyHandler {
 	 * @param appContext - {@link ApplicationContext}
 	 */
 	public UpdateStudyHandler(String studyFolderId, ApplicationContext appContext) {
+		super();
 		this.appContext = appContext;
 		this.studyFolder = studyFolderId;
 		this.absoluteStudyFolder = ROOT_DESTINATION_PATH + studyFolder + File.separator;
@@ -357,7 +358,6 @@ public class UpdateStudyHandler extends StudyHandler {
 		}
 		
 		
-		success = createSubFolderZips();
 		if(!success) {
 			return success;
 		}
@@ -366,6 +366,9 @@ public class UpdateStudyHandler extends StudyHandler {
 		
 		File uploadedZipFile = new File(this.surfaceZipFilePath);
 		uploadedZipFile.delete();
+		
+		asyncRunner.start();
+		
 		LOGGER.trace(loggerId + "deployZippedSurfaceData()...exit.");
 
 		return success;
@@ -407,7 +410,6 @@ public class UpdateStudyHandler extends StudyHandler {
 			return false;
 		}
 		
-		success = createSubFolderZips();
 		if(!success) {
 			return success;
 		}
@@ -416,6 +418,10 @@ public class UpdateStudyHandler extends StudyHandler {
 		
 		File uploadedZipFile = new File(this.volumeZipFilePath);
 		uploadedZipFile.delete();
+		
+		asyncRunner.start();
+
+		LOGGER.trace(loggerId + "deployZippedVolumeData()...exit.");
 
 		return success;
 	}

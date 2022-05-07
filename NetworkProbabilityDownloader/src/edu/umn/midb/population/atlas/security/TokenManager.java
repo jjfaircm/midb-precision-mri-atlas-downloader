@@ -1,16 +1,10 @@
 package edu.umn.midb.population.atlas.security;
 
-import java.util.ArrayList;
 import java.util.Random;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import edu.umn.midb.population.atlas.base.ApplicationContext;
 import edu.umn.midb.population.atlas.data.access.AtlasDataCacheManager;
-import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
-import edu.umn.midb.population.atlas.utils.EmailNotifier;
-import edu.umn.midb.population.atlas.utils.SMSNotifier;
 import edu.umn.midb.population.atlas.utils.Utils;
 import logs.ThreadLocalLogTracker;
 

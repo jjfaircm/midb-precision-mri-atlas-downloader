@@ -4,7 +4,7 @@ var template_li_submenu = "<li class=\x22submenu\x22 id=\x22li_${id}\x22><a clas
 var idReplacementMarker = "${id}";
 
 
-var template_webHitsMap = "<iframe id=\"iframe_webHitsMap\" src=\"url\" width=\"100%\" height=\"680\"></iframe>";
+var template_iframeMap = "<iframe id=\"iframe_webHitsMap\" src=\"url\" width=\"100%\" height=\"680\"></iframe>";
 
 
 var displayNameReplacementMarker = "${displayName}";

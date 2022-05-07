@@ -23,16 +23,14 @@ import edu.umn.midb.population.atlas.config.files.FileLocator;
  */
 public class LogConfigurator { 
 	
-	static {
-		configureLOG4J2();
-	}
-	
 	/**
 	 * Dynamically configures the log4j2 environment for logging.
 	 *
 	 */
 	public static void configureLOG4J2() {
 				  
+		  //do not use logger yet, wait until this method completes
+		  System.out.println("LogConfigurator.configureLOG4J2()...invoked");
 		  ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
 		  AppenderComponentBuilder console = builder.newAppender("stdout", "Console"); 
 		 
@@ -146,7 +144,7 @@ public class LogConfigurator {
 		  
 		  Configurator.initialize(builder.build());
 		  //StdOutErrRedirector.tieSystemOutAndErrToLog();
-	  
+		  System.out.println("LogConfigurator.configureLOG4J2()...exit");
 	}
 	
 }
