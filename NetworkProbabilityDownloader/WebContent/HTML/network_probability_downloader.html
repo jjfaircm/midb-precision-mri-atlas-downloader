@@ -7,9 +7,9 @@
 <head>
 
   <script src="/NetworkProbabilityDownloader/javascript/jquery.js"></script>
-  <script src="/NetworkProbabilityDownloader/javascript/np_downloader.js?id=0506_2330_0506_2022"></script>
-  <script src="/NetworkProbabilityDownloader/javascript/np_menu.js?id=.war_0506_2330_2022"></script>
-  <script src="/NetworkProbabilityDownloader/javascript/menuTemplates.js?id=.war_1830_0036_2022"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/np_downloader.js?id=0526_1445_2022"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/np_menu.js?id=.war_0526_1445_2022"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/menuTemplates.js?id=.war_0526_1445_2022"></script>
   
   
 
@@ -57,10 +57,10 @@
 <link href='https://fonts.googleapis.com/css?family=Amaranth:ital@1&display=swap' rel='stylesheet'>
 
 
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/np_downloader.css?id=.war_0506_2330_2022" media="all" />
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/alert.css?id=.war_0506_2330_2022" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/np_downloader.css?id=.war_0526_1445_2022" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/alert.css?id=.war_0526_1445_2022" media="all" />
 
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/menu_generic.css?id=.war_0506_2330_2022" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/menu_generic.css?id=.war_0526_1445_2022" media="all" />
 
 
 <!--[if lte IE 8]>
@@ -205,7 +205,7 @@
        <img id="img_splashImage"  class="splashImage" alt="image not available" src="/NetworkProbabilityDownloader/images/brain_splash.png" height="320" width=100% style="object-fit: cover;">
    </div>
    <div id="div_overlayImage" style="position: absolute; z-index: 1; top:0px; right:10px;">
-      <img class="centerImageXX" title="Version: 0506_2330_2022.war" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75" ondblclick="handleAdminLoginRequest()">
+      <img class="centerImageXX" title="Version: 0511_1445_2022.war" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75" ondblclick="handleAdminLoginRequest()">
    </div>
    <!--
    <div id="midb_atlases_text" style="position: absolute; z-index: 1; bottom:10px; right:16px">
@@ -973,7 +973,7 @@ As unestablished research software, these files are provided on an "as is'' basi
 <br>
 <button id="button_downloadAddStudyHelp"  class="downloader"  onclick="downloadAdminFile('addStudy_sample.zip')"><img alt="" src="/NetworkProbabilityDownloader/images/button_download_docs_light_grey.png"></img></button>
 <button id="button_downloadAddStudyHelp"  class="downloader"  onclick="confirmDownloadAdminFile('/midb/surface.zip')"><img alt="" src="/NetworkProbabilityDownloader/images/button_download_zip.png"></img></button>
-<button id="button_getServerStorage2"  class="downloader"  onclick="getStorageStats()"><img alt="" src="/NetworkProbabilityDownloader/images/button_display_storage.png"></img></button>
+<button id="button_getServerStorage2"  class="downloader"  onclick="getStorageStats(this)"><img alt="" src="/NetworkProbabilityDownloader/images/button_display_storage.png"></img></button>
 <button id="button_hideAddStudyHelp"  class="downloader"  onclick="hideUpdateStudyHelp()"><img alt="" src="/NetworkProbabilityDownloader/images/button_dismiss_light_grey.png"></img></button>
 
 
@@ -1163,7 +1163,7 @@ As unestablished research software, these files are provided on an "as is'' basi
   <option value="downloadCreateMapDoc">Download How To Create Map Doc</option>
   <option value="resynchWebHits">Resync Web Hits</option>
   <option value="downloadWebHitsGeoLoc">Download web_hits_geoloc.csv</option>
-  <option value="downloadFileDownloadHitsGeoLoc">Download download_hits_geoloc.csv</option>
+  <option value="downloadFileDownloadHitsGeoLoc">Download file_downloads_geoloc.csv</option>
   <option value="updateWebHitsMapURL">Update Web Hits Map URL</option>  
   <option value="updateDownloadHitsMapURL">Update Download Hits Map URL</option>  
 </select> 
@@ -1189,7 +1189,7 @@ As unestablished research software, these files are provided on an "as is'' basi
 <div id="div_mapRadioButtons" style="display:block;">
 <label for="radio_webHitsMap">Web Hits Map</label>
 <input type="radio" id="radio_webHitsMap" name="radio_maps" checked onclick="handleMapSelected(this)">
-<label for="radio_downloadsMap">Downloads Map</label>
+<label for="radio_downloadsMap">&nbsp;&nbsp;&nbsp;Downloads Map</label>
 <input type="radio" id="radio_downloadsMap" name="radio_maps" onclick="handleMapSelected(this)">
 </div>
 
@@ -1234,24 +1234,7 @@ As unestablished research software, these files are provided on an "as is'' basi
 
 <!-- begin the download div -->
 <div id="div_download" class="tab contentDownload" style="display:none;">
-
- <!--
- <div id="div_submitNotification" style="display:none;">
-<br>
-<br>
-<p style="text-align:center">
-<br><br>
-<span id="span_submitNotification" style="color:red;font-weight:bold;">Retrieving image data...</span>
-<br><br><br><br><br>
-    <img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
-    <br><br>
-    <img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
-    <br><br>
-    <img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
-
-</p>
-</div>    
-  -->   
+ 
      
 <div id="div_submenu" class="div_left" style="text-align:center;z-index:70;">
    <fieldset>
@@ -1282,7 +1265,7 @@ As unestablished research software, these files are provided on an "as is'' basi
    <h6 class="centerROI_imageHeading" id="roi_image_header">Network Probabilistic Map <br>(Dataset Release V.1.0)</h6>
    <img id="img_networkMap" class="centerImage" src="/NetworkProbabilityDownloader/images/DCAN.png" height="225" width="300" style="border:2px solid #555; max-width:100%;">
    <br>
-   <p style="text-align:center">&nbsp; &nbsp; &nbsp;<button id="button_downloadNetworkDscalar"  class="downloader_dscalar"  onclick="preprocessDownloadFile(2)"><span>download dscalar.nii for<br>selected atlas/network</span><img alt="" src="/NetworkProbabilityDownloader/images/btn_dload_dscalar.png"></img></button></p>
+   <p style="text-align:center">&nbsp; &nbsp; &nbsp;<button id="button_downloadNetworkDscalar"  class="downloader"  onclick="preprocessDownloadFile(2)"><span>download dscalar.nii for<br>selected atlas/network</span><img alt="" src="/NetworkProbabilityDownloader/images/btn_dload_dscalar.png"></img></button></p>
    
 </div>
 

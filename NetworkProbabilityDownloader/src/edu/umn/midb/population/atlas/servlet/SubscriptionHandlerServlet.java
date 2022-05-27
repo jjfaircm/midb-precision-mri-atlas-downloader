@@ -1,19 +1,14 @@
 package edu.umn.midb.population.atlas.servlet;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Enumeration;
-
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import edu.umn.midb.population.atlas.base.ApplicationContext;
 import edu.umn.midb.population.atlas.data.access.DBManager;
 import edu.umn.midb.population.atlas.utils.SMSNotifier;
 

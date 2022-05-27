@@ -1,4 +1,4 @@
-		 var version_buildString = BUILD_DATE = "Version beta_91.0  0506_2330_2022:17:24__war=NPDownloader_0506_2330_2022.war";
+		 var version_buildString = BUILD_DATE = "Version beta_92.0  0526_1445_2022:17:24__war=NPDownloader_0526_1445_2022.war";
 		 var enableTracing = true; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
@@ -317,7 +317,7 @@
         	 
         	 var option = null;
         	 var selectedIndex = 0;
-        	 var folderNamesArray = networkFolderNamesMap.get(selectedStudy);
+        	 var folderNamesArray = networkFolderNamesMap.get(selectedStudy.studyId);
         	 //console.log(folderNamesArray);
         	 var entryArray = null;
         	 var anEntry = null;
@@ -654,6 +654,7 @@
     			 anchor_downloadFile.href += optedOutString;
     		 }
         		 
+			 console.log(anchor_downloadFile.href);
     		 anchor_downloadFile.click();
         	 console.log("downloadFile()...request triggered, exit");
         	 
@@ -673,14 +674,14 @@
         	 if(choice==1) {
         		 console.log("choice=1, path=" + downloadZIP_path);
             	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadZIP_path;
-	        	 anchor_downloadFile.href += "&selectedStudy=" + selectedStudy;
+	        	 anchor_downloadFile.href += "&selectedStudy=" + selectedStudy.studyId;
 	        	 anchor_downloadFile.href += "&selectedNeuralNetworkName=" + selectedNeuralNetworkName;
         	 }
         	 else if(choice==2) {
         		 console.log("choice=2, path=" + download_target_map_nii);
         		 downloadFilePathAndName = download_target_map_nii;
             	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadFilePathAndName;
-	        	 anchor_downloadFile.href += "&selectedStudy=" + selectedStudy;
+	        	 anchor_downloadFile.href += "&selectedStudy=" + selectedStudy.studyId;
 	        	 anchor_downloadFile.href += "&selectedNeuralNetworkName=" + selectedNeuralNetworkName;
         	 }
         	 else if(choice==0) {
@@ -692,7 +693,7 @@
 	        	 downloadFilePathAndName = targetDownloadFilesMap.get(key);
 	        	 console.log("downloadTargetFile name=" + downloadFilePathAndName);
 	        	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadFilePathAndName;
-	        	 anchor_downloadFile.href += "&selectedStudy=" + selectedStudy;
+	        	 anchor_downloadFile.href += "&selectedStudy=" + selectedStudy.studyId;
 	        	 anchor_downloadFile.href += "&selectedNeuralNetworkName=" + selectedNeuralNetworkName;
         	 }
         	 
@@ -789,10 +790,10 @@
 			 if(fileNameAndPath == "/midb/surface.zip") {
 				var div_confirmAdminDownloadBox = document.getElementById("div_confirmAdminDownloadBox");
 				div_confirmAdminDownloadBox.style.display = "none";
-				var div_downloadFileProgress = document.getElementById("div_downloadFileProgress");
-				div_downloadFileProgress.style.display = "block";
-				console.log("setting timer");
-				cookieCheckDownloadTimer = setInterval(checkDownloadCompleteCookie, 500);
+				//var div_downloadFileProgress = document.getElementById("div_downloadFileProgress");
+				//div_downloadFileProgress.style.display = "block";
+				//console.log("setting timer");
+				//cookieCheckDownloadTimer = setInterval(checkDownloadCompleteCookie, 1000);
 			 }
            	 
            	 if(fileNameAndPath) {
@@ -821,7 +822,7 @@
 
 		 
 		 function checkDownloadCompleteCookie() {
-			console.log("checkDownloadCompleteCookie()...invoked");
+			//console.log("checkDownloadCompleteCookie()...invoked");
 			var docCookie = document.cookie;
 			
 			var cookies = docCookie.split(";");
@@ -835,12 +836,13 @@
 				cookieValue = keyValuePair[1];
 
 				if(cookieKey == "np_download_name" && cookieValue == "surface.zip") {
+					console.log("COOKIE FOUND!!!");
 					clearInterval(cookieCheckDownloadTimer);
 					var div_downloadFileProgress = document.getElementById("div_downloadFileProgress");
 					div_downloadFileProgress.style.display = "none";
 				}
 			}
-			console.log("checkDownloadCompleteCookie()...exit");
+			//console.log("checkDownloadCompleteCookie()...exit");
 		}
          
          
@@ -998,7 +1000,7 @@
 
           	var ajaxRequest = getAjaxRequest();
            	var paramString = "&selectedStudy=" + selectedStudy;
-           	paramString += "&selectedDataType=" + selectedDataType;
+           	paramString += "&selectedDataType=" + selectedStudy.selectedDataType;
           	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getNetworkFolderNamesConfig"
           		    + paramString;
           	var encodedUrl = encodeURI(url);
@@ -1087,11 +1089,20 @@
          	    
          	var span_submitNotification = document.getElementById("span_submitNotification");
          	
-         	if(selectedStudy != priorSelectedStudy) {
-         		var radioSurface = document.getElementById("radio_surface");
-         		radioSurface.checked = true;
-         		selectedDataType = "surface";
+			/*
+         	if(selectedStudy.studyId != priorSelectedStudy) {
+	            if(selectedStudy.availableDataType.includes("surface")) {
+         			var radioSurface = document.getElementById("radio_surface");
+         			radioSurface.checked = true;
+         			selectedDataType = "surface";
+				}
+				else {
+					var radioVolume = document.getElementById("radio_volume");
+         			radioVolume.checked = true;
+         			selectedDataType = "volume";
+				}
          	}
+			*/
          	
          	 priorSelectedStudy = selectedStudy;
 
@@ -1101,7 +1112,7 @@
          	 readyToDisplayDownloadDiv = false;
 
            	
-         	 if(selectedDataType == "volume") {
+         	 if(selectedStudy.selectedDataType == "volume") {
          		span_submitNotification.innerHTML = "Retrieving volume data...";
          	 }
          	 else {
@@ -1120,8 +1131,8 @@
            	var ajaxRequest = getAjaxRequest();
            	console.log("selectedNeuralNetworkName=" + selectedNeuralNetworkName);
            	var paramString = "&neuralNetworkName=" + selectedNeuralNetworkName; 
-           	paramString += "&selectedStudy=" + selectedStudy;
-           	paramString += "&selectedDataType=" + selectedDataType;
+           	paramString += "&selectedStudy=" + selectedStudy.studyId;
+           	paramString += "&selectedDataType=" + selectedStudy.selectedDataType;
            	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=getThresholdImages" + paramString;
            	console.log("getThresholdImages()...url=" + url);
 
@@ -1155,7 +1166,7 @@
                             processThresholdImagesResponse(ajaxRequest.responseText);
                        }
                        else {
-                    	   priorSelectedDataType = selectedDataType;
+                    	   priorSelectedDataType = selectedStudy.selectedDataType;
                     	   var combinedDataArray = ajaxRequest.responseText.split(DELIMITER_NETWORK_MAP_DATA);
                     	   /* first, process the image data for the Network Probabilistic Map  */
                     	   processNetworkProbabilityMapData(combinedDataArray[0]);
@@ -1484,10 +1495,10 @@
         		  anImageFileAndPath = imageFilePathsArray[i].trim();
         		  if(i==0) {
         			  var zipPathIndex = 0;
-        			  if(selectedDataType=="surface") {
+        			  if(selectedStudy.selectedDataType=="surface") {
         				  zipPathIndex = anImageFileAndPath.indexOf("surface")+8; 
         			  }
-        			  else if(selectedDataType=="volume") {
+        			  else if(selectedStudy.selectedDataType=="volume") {
         				  zipPathIndex = anImageFileAndPath.indexOf("volume")+7; 
         			  }
         			  var downloadZIP_root = anImageFileAndPath.substring(0, zipPathIndex);
@@ -1838,9 +1849,12 @@
          }
          
                   
-         function uploadStudyFile(zipFormData, fileName, fileSize) {
+         function uploadAddStudyFile(zipFormData, fileName, fileSize) {
 
-        	console.log("uploadStudyFile()...invoked.");
+        	console.log("uploadAddStudyFile()...invoked.");
+
+			var nowDate = new Date();
+         	lastTokenActionTime = nowDate.getTime();
         	 
           	var ajaxRequest = getAjaxRequest();
          	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=uploadStudyFiles";
@@ -1961,14 +1975,16 @@
 			newStudy.currentFileNumber++;
 			newStudy.currentIndex++;
           	ajaxRequest.send(zipFormData);
-          	console.log("uploadStudyFile()...exit.");
+          	console.log("uploadAddStudyFile()...exit.");
          }
          
          
          function uploadUpdateStudyFile(fileSize) {
 
-
          	console.log("uploadUpdateStudyFile()...invoked.");
+
+			var nowDate = new Date();
+         	lastTokenActionTime = nowDate.getTime();
          	 
            	var ajaxRequest = getAjaxRequest();
           	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=uploadUpdateStudyFile";
@@ -2069,7 +2085,7 @@
  			};
  			
            	ajaxRequest.send(updateStudy.formData);
-           	console.log("uploadStudyFile()...exit.");
+           	console.log("uploadUpdateStudyFile()...exit.");
 	 
          }
 

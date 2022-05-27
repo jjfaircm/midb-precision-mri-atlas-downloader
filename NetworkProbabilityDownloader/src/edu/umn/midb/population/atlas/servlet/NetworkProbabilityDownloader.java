@@ -95,7 +95,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
 	
 	private static final long serialVersionUID = 1L;
-	public static final String BUILD_DATE = "Version beta_91.0  0506_2330_2022:17:24__war=NPDownloader_0506_2330_2022.war"; 
+	public static final String BUILD_DATE = "Version beta_92.0  0526_1445_2022:17:24__war=NPDownloader_0526_1445_2022.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";
@@ -494,6 +494,19 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		}
 		
 		if(finished) {
+			String formattedTS = appContext.getCurrentActionFormattedTimestamp();
+			formattedTS = formattedTS.replace(" ", ",");
+
+			AdminAccessEntry aaEntry = new AdminAccessEntry();
+			String ipAddress = appContext.getRemoteAddress();
+			String action = appContext.getCurrentAction();
+			aaEntry.setAction(action);
+			aaEntry.setAppContext(appContext);
+			aaEntry.setRequestorIPAddress(ipAddress);
+			aaEntry.setFormattedTimeStamp(formattedTS);
+			aaEntry.setRequest(request);
+
+			DBManager.getInstance().insertAdminAccessRecord(aaEntry, appContext);
 			createStudyHandler.completeStudyDeploy();
 			WebResponder.sendAddStudyResponse(appContext, response);
 		}
@@ -523,10 +536,12 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		String loggerId = appContext.getLoggerId();
 		LOGGER.trace(loggerId + "handleDownloadAdminFile()...invoked.");
 		
+		/* now allowing file downloads even if session expired, etc.
 		if(!appContext.isAdminActionValidated()) {
 			WebResponder.sendAdminAccessDeniedResponse(response, appContext, true);
 			return;
 		}
+		*/
 		
 		String filePathAndName = request.getParameter("filePathAndName");
 		
@@ -536,7 +551,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		else if(filePathAndName.equals("/midb/web_hits_geoloc.csv")) {
 			DBManager.getInstance().updateWebHitsGeoLocCSVFile();
 		}
-		else if(filePathAndName.equals("/midb/download_hits_geoloc.csv")) {
+		else if(filePathAndName.equals("/midb/file_downloads_geoloc.csv")) {
 			DBManager.getInstance().updateDownloadHitsGeoLocCSVFile();
 		}
 		

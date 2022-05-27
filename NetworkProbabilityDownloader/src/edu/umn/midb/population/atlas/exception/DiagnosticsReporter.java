@@ -7,20 +7,18 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import edu.umn.midb.population.atlas.base.ApplicationContext;
-import edu.umn.midb.population.atlas.data.access.DBManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import edu.umn.midb.population.atlas.tasks.DownloadTracker;
 import edu.umn.midb.population.atlas.tasks.EmailTracker;
 import edu.umn.midb.population.atlas.tasks.WebHitsTracker;
 import edu.umn.midb.population.atlas.utils.SMSNotifier;
 import logs.ThreadLocalLogTracker;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * 

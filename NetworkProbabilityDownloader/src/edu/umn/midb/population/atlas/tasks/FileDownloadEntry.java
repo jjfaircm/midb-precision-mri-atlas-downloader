@@ -17,7 +17,7 @@ public class FileDownloadEntry extends TaskEntry {
 	private String id = "NOT SET";
 
 	public FileDownloadEntry() {
-		this.subclassName = "FileDownloadEntry";
+		this.setSubclassName("FileDownloadEntry");
 	}
 	
 	/**

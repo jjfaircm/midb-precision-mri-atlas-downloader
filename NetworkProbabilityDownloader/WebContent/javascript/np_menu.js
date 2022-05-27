@@ -9,13 +9,12 @@
     */
    var menuHasBeenClicked = false;
    var lastSelectedMenu = null;
-   var selectedStudy = "abcd_template_matching";
+   //var selectedStudy = "abcd_template_matching";
    var selectedSubmenu = null;
    var selectedNeuralNetworkName = null;
    var selectElement = null;
    var selectedSubmenuAnchor = null;
    var firstTimeSelectingSingle = true;
-   var selectedDataType = "surface";
    var priorSelectedDataType = "surface";
    var zipFormData = new FormData();
    var div_dropZone = null;
@@ -55,6 +54,12 @@
    		   div_unzipProgress: null,
    		   progress_updateUpload: null,
    		   formData: new FormData()
+   };
+
+   var selectedStudy = {
+		studyId: "abcd_template_matching",
+		selectedDataType: "surface",
+		availableDataType: null
    };
    
    var lastAdminActionRequest = null;
@@ -864,6 +869,24 @@
        console.log("hideMenuAll()...exit");
 
    }
+
+   function handleMapSelected(radioButton) {
+	    console.log("handleMapSelected()...invoked");
+	    var newInnerHTML = template_iframeMap;
+
+		if(radioButton.id=="radio_webHitsMap") {
+			newInnerHTML = newInnerHTML.replace("url", webHitsMapURL);
+		}
+		else {
+			newInnerHTML = newInnerHTML.replace("url", fileDownloadsMapUrl);
+		}
+	   var div_iframeMap = document.getElementById("div_iframeMap"); 
+       div_iframeMap.style.display = "none";
+	   div_iframeMap.innerHTML = newInnerHTML;
+       div_iframeMap.style.display = "block";
+       console.log("handleMapSelected()...exit");
+   }
+
    
    function handleRemoveStudyConfirmation() {
 
@@ -1248,7 +1271,7 @@
  
    function loadStudyROIImageHeader() {
 	   console.log("loadStudyROIImageHeader()...invoked");
-	   var studyDisplayName = studyDisplayNameMap.get(selectedStudy);
+	   var studyDisplayName = studyDisplayNameMap.get(selectedStudy.studyId);
 	   var headerText = studyDisplayName + " PROBABILISTIC ROIS";
 	   var headerElement = document.getElementById("roi_image_slides_header");
 	   headerElement.innerHTML = headerText;
@@ -1258,7 +1281,7 @@
    function loadStudySummaryList() {
 	    console.log("loadStudySummaryList()...invoked.");
 	    
-	    var summaryEntriesArray = studySummaryMap.get(selectedStudy);	    
+	    var summaryEntriesArray = studySummaryMap.get(selectedStudy.studyId);	    
 	    var ul_summary = document.getElementById("ul_atlasSummary");
 	    var ul_innerHTML = "";
 	    var currentLI = null;
@@ -1271,22 +1294,6 @@
 	    console.log("loadStudySummaryList()...exit.");
    }
 
-   function handleMapSelected(radioButton) {
-	    console.log("handleMapSelected()...invoked");
-	    var newInnerHTML = template_iframeMap;
-
-		if(radioButton.id=="radio_webHitsMap") {
-			newInnerHTML = newInnerHTML.replace("url", webHitsMapURL);
-		}
-		else {
-			newInnerHTML = newInnerHTML.replace("url", fileDownloadsMapUrl);
-		}
-	   var div_iframeMap = document.getElementById("div_iframeMap"); 
-       div_iframeMap.style.display = "none";
-	   div_iframeMap.innerHTML = newInnerHTML;
-       div_iframeMap.style.display = "block";
-       console.log("handleMapSelected()...exit");
-   }
    
    function maskInput(inputElement) {
 	   var inputText = inputElement.value;
@@ -1317,12 +1324,12 @@
 
    
    function menuClicked(element, startupTrigger, actionRequired) {
-	          console.log("menuClicked()...invoked, id=" + element.id);
-	          console.log("menuClicked()...invoked, actionRequired=" + actionRequired);
+	       console.log("menuClicked()...invoked, id=" + element.id);
+	       console.log("menuClicked()...invoked, actionRequired=" + actionRequired);
 
-              var study = element.getAttribute("data-study");
-              selectedStudy = study; //ie: abcd_template_matching
-              console.log("menuClicked()...invoked, study=" + study);
+           var study = element.getAttribute("data-study");
+           selectedStudy.studyId= study; //ie: abcd_template_matching
+           console.log("menuClicked()...invoked, study=" + study);
 	      
 	      if(lastSelectedMenu != null) {
 		      if(lastSelectedMenu.id === element.id) {
@@ -1332,14 +1339,9 @@
 		      }
 	      }
               
-	      
-              if(element.id.includes("uman")) {
-            	  doAlert("Sorry, the Human Connectome study is not available yet", alertOK);
-            	  return;
-	      }
              
 	      if(menuHasBeenClicked) { //menu has been previously clicked
-                  resetMenuColors();
+              resetMenuColors();
 	      }
 
 	      menuHasBeenClicked = true;
@@ -1389,12 +1391,29 @@
        //parent.style.display = "inline";
        
        var surfaceVolumeType = selectedSubmenuAnchor.getAttribute("data-surfaceVolumeType");
+       selectedStudy.availableDataType = surfaceVolumeType;
        var volumeDataAvailable = surfaceVolumeType.includes("volume");
+       var surfaceDataAvailable = surfaceVolumeType.includes("surface");
        var radio_VolumeControl = radio_VolumeControl = document.getElementById("radio_volume"); 
        var label_volume = document.getElementById("label_volume");
        var radio_SurfaceControl = document.getElementById("radio_surface"); 
        var label_surface = document.getElementById("label_surface");
 	   label_surface.style.backgroundColor = "#FFC300";
+
+       if(priorSelectedDataType=="volume" && volumeDataAvailable) {
+			selectedStudy.selectedDataType = "volume";
+	   }
+       else {
+			selectedStudy.selectedDataType = "surface";
+	   }
+
+       if(priorSelectedDataType=="surface" && surfaceDataAvailable) {
+			selectedStudy.selectedDataType = "surface";
+	   }
+       else {
+			selectedStudy.selectedDataType = "volume";
+	   }
+       
 
        
        if(!volumeDataAvailable) {
@@ -1407,6 +1426,24 @@
     	   //label_volume.style.backgroundColor = "#F0EAD6";
     	   label_volume.innerHTML = "Volume Data";
     	   label_volume.style.backgroundColor = "#f0efee";    	   
+       }
+
+       if(!surfaceDataAvailable) {
+    	   radio_SurfaceControl.disabled = true;
+           radio_SurfaceControl.checked = false;
+		   radio_VolumeControl.checked = true;
+    	   label_surface.innerHTML = "Surface Data - not yet available";
+    	   label_surface.style.backgroundColor = "lightgrey";
+    	   label_volume.style.backgroundColor = "#FFC300";    	   
+
+       }
+       else {
+	       radio_VolumeControl.checked = false;
+           radio_SurfaceControl.checked = true;
+    	   radio_SurfaceControl.disabled = false;
+    	   //label_volume.style.backgroundColor = "#F0EAD6";
+    	   label_surface.innerHTML = "Surface Data";
+    	   label_surface.style.backgroundColor = "#FFC300";    	   
        }
        
        console.log("networkTypeId=" + networkTypeId);
@@ -1424,7 +1461,7 @@
        if(networkTypeId.includes("single")) {
     	 global_networkTypeId = "single";
     	 buildNeuralNetworkDropdownList();
-    	 if(selectedStudy != priorSelectedStudy) {
+    	 if(selectedStudy.studyId != priorSelectedStudy) {
     		 firstTimeSelectingSingle = true;
     	 }
       	 var select_neuralNetworkName = document.getElementById("select_neuralNetworkName");
@@ -1541,7 +1578,7 @@
      	 		downloadAdminFile("/midb/web_hits_geoloc.csv");
      	 		break;
      	 	case "downloadFileDownloadHitsGeoLoc":
-     	 		downloadAdminFile("/midb/download_hits_geoloc.csv");
+     	 		downloadAdminFile("/midb/file_downloads_geoloc.csv");
      	 		break;
      	 	case "resynchWebHits":
      	 		var div_mapProgress = document.getElementById("div_map_progress");
@@ -1607,20 +1644,6 @@
    
 	   function showSubmenuLevel_1() {
 	        console.log("showSubmenuLevel_1()...invoked.");
-	        
-	        // jjf
-	        // https://stackoverflow.com/questions/9040768/getting-coordinates-of-objects-in-js
-	        //var thresholdImagePanel = document.getElementById("img_threshold");
-	        //thresholdImagePanel.style.visibility = "hidden";
-	        //thresholdImagePanel.style.opacity = "0.1";
-	        
-	        //var header = document.getElementById("roi_image_slides_header");
-	        //header.style.visibility = "hidden";
-	        //header.style.opacity = "0.1";
-	        
-	        //var div_selectNeuralNetworkName = document.getElementById("div_selectNeuralNetworkName");
-	        //div_selectNeuralNetworkName.style.visibility = "hidden";
-	        //div_selectNeuralNetworkName.style.opacity = "0.1";
 
 	        var div_thresholdImageWrapper = document.getElementById("thresholdImageWrapper");
 	        div_thresholdImageWrapper.style.display = "block";
@@ -1657,7 +1680,7 @@
 				var div_addStudyDetails = document.getElementById("div_addStudyDetails");
 				div_addStudyDetails.style.display = "none";
 			}
-		   uploadStudyFile(zipFormData, currentFileName, currentFileSize);
+		   uploadAddStudyFile(zipFormData, currentFileName, currentFileSize);
 		   console.log("manageFileUploads()...exit");
 	   }
 	   
@@ -1708,12 +1731,12 @@
 	        if(id.includes("surface")) {
 	        	surfaceLabel.style.background = "#FFC300";
 	        	volumeLabel.style.background = "#f0efee";
-	        	selectedDataType = "surface";
+	        	selectedStudy.selectedDataType = "surface";
 	        }
 	        else {
 	        	volumeLabel.style.background = "#FFC300";
 		        surfaceLabel.style.background = "#f0efee";
-	        	selectedDataType = "volume";
+	        	selectedStudy.selectedDataType = "volume";
 	        }
 	        //preProcessGetThresholdImages();
 	        //put a slight delay so user can see the radio button change

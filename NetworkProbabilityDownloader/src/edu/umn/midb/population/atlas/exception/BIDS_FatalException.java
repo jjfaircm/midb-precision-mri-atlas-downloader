@@ -10,6 +10,10 @@ package edu.umn.midb.population.atlas.exception;
  */
 public class BIDS_FatalException extends RuntimeException  {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	String className = null; 
 	String methodName = null;
 	String lineNumber = null;

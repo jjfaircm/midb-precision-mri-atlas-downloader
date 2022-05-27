@@ -57,7 +57,7 @@ public class DownloadTracker extends Tracker {
 	 */
 	public void addDownloadEntry(FileDownloadEntry entry) {
 		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "addDownloadEntry()...invoked, entry=>>" + entry);
+		LOGGER.trace(loggerId + "addDownloadEntry()...invoked, entry=>>" + entry.getFileName());
 		this.blockingQueue.add(entry);
 		LOGGER.trace(loggerId + "addDownloadEntry()...exit.");
 	}

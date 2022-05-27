@@ -12,7 +12,7 @@ import logs.ThreadLocalLogTracker;
 
 /**
  * 
- * Convenience class for changing ownership by executing a system bash command.
+ * Convenience class for changing ownership of a system object or getting available disk storage.
  * 
  * @author jjfair
  *

@@ -1,9 +1,9 @@
 package edu.umn.midb.population.atlas.webresponses;
 
 /**
- * Encapsulates the response for a client request of updating the url for the web hits map
- * which is stored in the map_urls table in MYSQL. An instance of this class is converted
- * to a json string which is sent to the client.
+ * Encapsulates the response for a client request of updating either the url for the WEB_HITS_MAP
+ * or the FILE_DOWNLOADS_MAP. These urls are stored in the map_urls table in MYSQL.
+ * An instance of this class is converted to a json string which is sent to the client.
  * 
  * @author jjfair
  *

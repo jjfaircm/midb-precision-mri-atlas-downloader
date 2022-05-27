@@ -2,7 +2,6 @@ package edu.umn.midb.population.atlas.config;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import logs.LogConfigurator;
 

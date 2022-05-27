@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -16,10 +15,8 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import edu.umn.midb.population.atlas.base.ApplicationContext;
 import edu.umn.midb.population.atlas.exception.DiagnosticsReporter;
 import edu.umn.midb.population.atlas.tasks.AdminAccessEntry;
@@ -49,7 +46,7 @@ public class DBManager {
 	protected static final String EMAIL_ADDRESS_CSV_HEADER = "Email Address,First Name,Last Name";
 	protected static final String EMAIL_UNSUBSCRIBE_FILE = "/midb/unsubscribe_list.csv";
 	protected static final String WEB_HITS_GEOLOC_CSV_FILE = "/midb/web_hits_geoloc.csv";
-	protected static final String DOWNLOAD_HITS_GEOLOC_CSV_FILE = "/midb/download_hits_geoloc.csv";
+	protected static final String DOWNLOAD_HITS_GEOLOC_CSV_FILE = "/midb/file_downloads_geoloc.csv";
 	protected static final String GEOLOC_CSV_HEADER = "Latitude,Longitude,Location_Name";
 	protected static final String GEOLOC_CSV_TEMPLATE = "latitude,longitude,locationName";
 	protected static final String ADMIN_ENTRY_TEMPLATE = "IP_ADDRESS,ACTION,TIMESTAMP,VALID_IPADDRESS,VALID_PASSWORD";

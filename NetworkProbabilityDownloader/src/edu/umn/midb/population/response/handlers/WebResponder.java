@@ -69,6 +69,13 @@ public class WebResponder {
 
 	private static final Logger LOGGER = LogManager.getLogger(WebResponder.class);
 	
+	
+	/**
+	 * Sends the response for the add study action.
+	 * 
+	 * @param appContext {@link ApplicationContext}
+	 * @param response - HttpServletReponse
+	 */
 	public static void sendAddStudyResponse(ApplicationContext appContext, HttpServletResponse response) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendAddStudyResponse()...invoked.");
@@ -99,6 +106,13 @@ public class WebResponder {
 	}
 	
 	
+	/**
+	 * Sends the menu configuration data and summary configuration data to the client so the
+	 * study menu in the browser can be dynamically built. The data is sent as json objects.
+	 * 
+	 * @param response - HttpServletRequest
+	 * @param appContext - {@link ApplicationContext}
+	 */
 	public static void sendMenuDataResponse(HttpServletResponse response, ApplicationContext appContext) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
@@ -133,7 +147,13 @@ public class WebResponder {
 
 	}
 	
-	
+	/**
+	 * Sends the network folder names configuration as a json object. This configuration has
+	 * an entry for each study and each entry specifies the display names and related folder
+	 * names of the available single networks data for a given study (such as Default Mode Network - DMN);
+	 * 
+	 * @param response - HttpServletResponse
+	 */
 	public static void sendNetworkFolderNamesConfigResponse(HttpServletResponse response) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
@@ -167,11 +187,11 @@ public class WebResponder {
 
 	
 	/**
-	 * Sends the requested NII file related to a selected probabilistic threshold.
+	 * Sends the binary buffer of the requested file to be downloaded.
 	 * 
-	 * @param response The current HttpServletResponse object
-	 * @param fileBinaryBuffer binaryBuffer containing the requested NII file
-	 * @param fileName String representing the name of the requested NII file to download
+	 * @param response - The current HttpServletResponse object
+	 * @param fileBinaryBuffer - binaryBuffer containing the requested NII file
+	 * @param fileName - String representing the name of the requested NII file to download
 	 * @param selectedStudy - String representing what study the file is a part of
 	 */
 	public static void sendFileDownloadResponse(HttpServletResponse response, byte[] fileBinaryBuffer, String fileName, String selectedStudy) {
@@ -179,13 +199,15 @@ public class WebResponder {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendFileDownloadResponse()...invoked.");
 		
-		
+		/*
 		if(fileName.contains("surface.zip")) {
 			//this allows client javascript to detect when download is complete
 			Cookie ck = new Cookie("np_download_name", "surface.zip");
-			ck.setMaxAge(60);
+			ck.setMaxAge(900);
+			ck.setHttpOnly(false);
 			response.addCookie(ck);
 		}
+		*/
 		
 		// admin files like sample_files.zip or add_a_study.docx do not have an
 		// associated study
@@ -211,46 +233,16 @@ public class WebResponder {
 
 	}
 	
-	/*
-	public static JsonArray buildMenuResponseOld(ArrayList<String> menuStudyNames, Hashtable<String, ArrayList<String>> menuSubOptionsMap) {
-		String loggerId = ThreadLocalLogTracker.get();
-		   LOGGER.trace(loggerId + "buildMenuResponse()...invoked.");
 
-		   JsonArray menuJsonArray = new JsonArray();
-		   Iterator<String> studyNamesIt = menuStudyNames.iterator();
-		   String currentStudyName = null;
-		   JsonPrimitive colonPrimitive = new JsonPrimitive(":");
-		   JsonPrimitive doubleColonPrimitive = new JsonPrimitive("::");
-
-		   ArrayList<String> subMenuOptions = null;
-		    // loop through your elements
-		    while(studyNamesIt.hasNext()) {
-		    	currentStudyName = studyNamesIt.next();
-	        	JsonPrimitive jsonPrimitiveStudy = new JsonPrimitive(currentStudyName);
-		    	menuJsonArray.add(jsonPrimitiveStudy);
-		    	subMenuOptions = menuSubOptionsMap.get(currentStudyName);
-		    	String anOption = null;
-		    	Iterator<String> subMenuOptionsIt = subMenuOptions.iterator();
-		        JsonArray submneuOptionsJsonArray = new JsonArray();
-		        
-		        while(subMenuOptionsIt.hasNext()) {
-		        	anOption = subMenuOptionsIt.next();
-		        	JsonPrimitive jsonPrimitive = new JsonPrimitive(anOption);
-		        	submneuOptionsJsonArray.add(jsonPrimitive);
-		        }
-		        menuJsonArray.add(colonPrimitive);
-		        menuJsonArray.add(submneuOptionsJsonArray);
-		        if(studyNamesIt.hasNext()) {
-		        	menuJsonArray.add(doubleColonPrimitive);
-		        }
-		        
-		    }
-			LOGGER.trace(loggerId + "buildMenuResponse()...menuJsonArray=" + menuJsonArray);
-		    return menuJsonArray;
-	}
-	
-	*/
-	
+	/**
+	 * Converts the menu configuration into an ArrayList of {@link MenuEntry} objects
+	 * and then loads them into a {@link Menu} object. The Menu object is then converted
+	 * to a json object.
+	 * 
+	 * @param menuStudyNames - ArrayList of the study names that are in the menu
+	 * @param menuSubOptionsMap - A Hashtable of the subOptions for each study
+	 * @return jsonString - String
+	 */
 	protected static String buildMenuResponse(ArrayList<String> menuStudyNames, Hashtable<String, ArrayList<String>> menuSubOptionsMap) {
 		   String loggerId = ThreadLocalLogTracker.get();
 		   LOGGER.trace(loggerId + "buildMenuResponse()...invoked.");
@@ -302,6 +294,13 @@ public class WebResponder {
 		    return jsonString;
 	}
 	
+	
+	/**
+	 * Builds the network folders configuration for each menu into a json object.
+	 * 
+	 * 
+	 * @return folderNamesConfigJSON - String
+	 */
 	protected static String buildNetworkFoldersConfigResponse() {
 
 		String loggerId = ThreadLocalLogTracker.get();
@@ -335,6 +334,11 @@ public class WebResponder {
 		return folderNamesConfigJSON;
 	}
 	
+	/**
+	 * Builds all the summary configurations for each study into a json object.
+	 * 
+	 * @return  summaryJSON - String
+	 */
 	protected static String buildSummaryResponse() {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "buildSummaryResponse()...invoked.");
@@ -366,6 +370,13 @@ public class WebResponder {
 		return summaryJSON;
 	}
 	
+	/**
+	 * Builds the file download records from the database into a json object.
+	 * 
+	 * @param fileDownloads - {@link FileDownloadRecord}
+	 * 
+	 * @return fileDownloadsJSON - json object
+	 */
 	protected static String buildFileDownloadsResponse(ArrayList<FileDownloadRecord> fileDownloads) {
 		 String loggerId = ThreadLocalLogTracker.get();
 		 LOGGER.trace(loggerId + "buildFileDownloadsResponse()...invoked.");
@@ -377,6 +388,12 @@ public class WebResponder {
 		 return fileDownloadsJSON;
 	}
 	
+	/**
+	 * Builds the admin validation response as a json object.
+	 * 
+	 * @param validationMessage - String
+	 * @return jsonResponse - String
+	 */
 	protected static String buildAdminValidationResponse(String validationMessage) {
 		 String loggerId = ThreadLocalLogTracker.get();
 		 LOGGER.trace(loggerId + "buildAdminValidationResponse()...invoked.");
@@ -406,6 +423,12 @@ public class WebResponder {
 
 	}
 	
+	/**
+	 * Converts the admin access records retrieved from the database into a json object.
+	 * 
+	 * @param aaRecords - ArrayLst of {@link AdminAccessRecord}
+	 * @return aaRecordsJSON - json representation of the admin access records
+	 */
 	protected static String buildAdminAccessRecordsResponse(ArrayList<AdminAccessRecord> aaRecords) {
 		 String loggerId = ThreadLocalLogTracker.get();
 		 LOGGER.trace(loggerId + "buildAdminAccessRecordsResponse()...invoked.");
@@ -418,6 +441,12 @@ public class WebResponder {
 	}
 	
 	
+	/**
+	 * Converts the email addresses retrieved from the database into a json object.
+	 * 
+	 * @param emailAddresses - ArrayList of {@link EmailAddressRecord}
+	 * @return emailAddressesJSON - json object
+	 */
 	protected static String buildEmailAddressesResponse(ArrayList<EmailAddressRecord> emailAddresses) {
 		 String loggerId = ThreadLocalLogTracker.get();
 		 LOGGER.trace(loggerId + "buildEmailAddressesResponse()...invoked.");
@@ -429,11 +458,20 @@ public class WebResponder {
 		 return emailAddressesJSON;
 	}
 	
-	protected static String buildUpdateWHMapURL(String messageToDisplay, String targetMap) throws SQLException {
+	/**
+	 * Creates a new {@link UpdateMapUrlsResponse} and converts it to a json object.
+	 * 
+	 * 
+	 * @param messageToDisplay - String
+	 * @param targetMap - Either WEB_HITS_MAP or FILE_DOWNLOADS_MAP
+	 * @return jsonResponse - String
+	 * @throws SQLException - unhandled exception
+	 */
+	protected static String buildUpdateMapUrlResponse(String messageToDisplay, String targetMap) throws SQLException {
 		
 
 		 String loggerId = ThreadLocalLogTracker.get();
-		 LOGGER.trace(loggerId + "buildUpdateWHMapURL()...invoked.");
+		 LOGGER.trace(loggerId + "buildUpdateMapUrlResponse()...invoked.");
 
 		 UpdateMapUrlsResponse uwhResponse = new UpdateMapUrlsResponse();
 		 uwhResponse.setMessage(messageToDisplay);
@@ -447,11 +485,17 @@ public class WebResponder {
 		 Gson gson = new Gson();
 		 String jsonResponse = gson.toJson(uwhResponse);
 		
-		 LOGGER.trace(loggerId + "buildUpdateWHMapURL()...exit.");
+		 LOGGER.trace(loggerId + "buildUpdateMapUrlResponse()...exit.");
 		 return jsonResponse;		
 	}
 	
-	
+	/**
+	 * Builds the records from the web_hits database table into a json object. 
+	 * 
+	 * 
+	 * @param webHits {@link WebHitRecord}
+	 * @return webHitsJSON - String
+	 */
 	protected static String buildWebHitsResponse(ArrayList<WebHitRecord> webHits) {
 		 String loggerId = ThreadLocalLogTracker.get();
 		 LOGGER.trace(loggerId + "buildWebHitsResponse()...invoked.");
@@ -467,10 +511,10 @@ public class WebResponder {
 	 * Sends the .png files associated with the different probabilistic threhsolds for a selected
 	 * neural network.  The files are sent as a list of base64 encoded strings.
 	 * 
-	 * @param response The current HttpServletResponse object
-	 * @param filePaths ArrayList of all the .png file names representing the different probabilistic thresholds
-	 * @param imageBase64Strings ArrayList of the .png files in base64 encoded format
-	 * @param networkMapData {@link NetworkMapData}
+	 * @param response - The current HttpServletResponse object
+	 * @param filePaths - ArrayList of all the .png file names representing the different probabilistic thresholds
+	 * @param imageBase64Strings - ArrayList of the .png files in base64 encoded format
+	 * @param networkMapData - {@link NetworkMapData}
 	 */
 	public static void sendThresholdImagesResponse(HttpServletResponse response, ArrayList<String> filePaths, ArrayList<String> imageBase64Strings,
 			                                       NetworkMapData networkMapData) {
@@ -545,6 +589,13 @@ public class WebResponder {
 		}
 	}
 	
+	/**
+	 * 
+	 * 
+	 * @param response - HttpServletResponse
+	 * @param appContext - {@link ApplicationContext}
+	 * @param isFileDownloadRequest - boolean
+	 */
 	public static void sendAdminAccessDeniedResponse(HttpServletResponse response, ApplicationContext appContext, boolean isFileDownloadRequest) {
 		String loggerId = ThreadLocalLogTracker.get();
 		int actionCount = appContext.getActionCount();
@@ -556,7 +607,7 @@ public class WebResponder {
 		
 		if(isFileDownloadRequest) {
 			String headerKey = "Content-Disposition";
-            String headerValue = String.format("attachment; filename=\"%s\"", "Access_Denied.txt");
+            String headerValue = String.format("attachment; filename=\"%s\"", "Session_Expired.txt");
             response.setHeader(headerKey, headerValue);
 		}
 		
@@ -568,7 +619,9 @@ public class WebResponder {
 		}
 		else {
 			aaEntry = new AdminAccessEntry();
-			responseString = "Access denied.";
+			//even if the actionCount>1 the user may still just try again after first alert
+			//so just repeat same message
+			responseString = "Access denied: Session has expired.<br> Please refresh browser page.";
 			aaEntry.setAction(appContext.getCurrentAction());
 			aaEntry.setRequestorIPAddress(appContext.getRemoteAddress());
 			aaEntry.setFormattedTimeStamp(appContext.getCurrentActionFormattedTimestamp());
@@ -596,6 +649,15 @@ public class WebResponder {
 	
 	}
 	
+	/**
+	 * Sends the response for an adminValidation request
+	 * 
+	 * @param response - HttpServletResponse
+	 * @param appContext - {@link ApplicationContext}
+	 * @param token - the 1-time use token required to login to admin console
+	 * @param password - String
+	 * @param ipAddress - String
+	 */
 	public static void sendAdminValidationResponse(HttpServletResponse response, ApplicationContext appContext, String token, String password, String ipAddress) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendAdminValidationResponse()...invoked.");
@@ -654,6 +716,12 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendAdminValidationResponse()...exit.");
 	}
 	
+	/**
+	 * Sends a response indicating if admin console access is still valid (not expired)
+	 * 
+	 * @param appContext - {@link ApplicationContext}
+	 * @param response - HttpServletResponse
+	 */
 	public static void sendAdminValidationStatus(ApplicationContext appContext, HttpServletResponse response) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendAdminValidationStatus()...invoked.");
@@ -675,6 +743,12 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendAdminValidationStatus()...exit.");
 	}
 	
+	/**
+	 * Sends the response for a remove study request.
+	 * 
+	 * @param response - HttpServletResponse
+	 * @param studyFolder - The name of the study folder which serves as the study id.
+	 */
 	public static void sendRemoveStudyResponse(HttpServletResponse response, String studyFolder) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
@@ -694,6 +768,12 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendRemoveStudyResponse()...exit.");
 	}
 	
+	/**
+	 * Sends the response for a resync web hits request.
+	 * 
+	 * @param response - HttpServletResponse
+	 * @param responseString - The response message
+	 */
 	public static void sendResynchWebHitsResponse(HttpServletResponse response, String responseString) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
@@ -710,6 +790,12 @@ public class WebResponder {
 	}
 	
 	
+	/**
+	 * Sends the response for a request to display available free storage on the server.
+	 * 
+	 * @param response - HttpServletResponse
+	 * @param statsResponse - The response message
+	 */
 	public static void sendStorageStatsResponse(HttpServletResponse response, String statsResponse) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendStorageStatsResponse()...invoked");
@@ -724,7 +810,16 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendStorageStatsResponse()...exit");
 	}
 	
-	
+	/**
+	 * Sends the response for a request to update a map url (this is the embed link for
+	 * displaying a google map).
+	 * 
+	 * @param response - HttpServletResponse
+	 * @param updatedRowCount - This value should be equal to 1
+	 * @param targetMap - name of the map that was updated (WEB_HITS_MAP or FILE_DOWNLOADS_MAP)
+	 * @param newURL - The new url that was inserted into the database
+	 * @throws SQLException - Unhandled exception
+	 */
 	public static void sendUpdateMapURLResponse(HttpServletResponse response, int updatedRowCount, String targetMap, String newURL) throws SQLException {
 		
 		String loggerId = ThreadLocalLogTracker.get();
@@ -739,7 +834,7 @@ public class WebResponder {
 			responseString = "Unable to update " + targetMap;
 		}
 		
-		String jsonResponse = buildUpdateWHMapURL(responseString, targetMap);
+		String jsonResponse = buildUpdateMapUrlResponse(responseString, targetMap);
 		
 		
 		try {
@@ -753,6 +848,13 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendUpdateMapURLResponse()...exit");
 	}
 	
+	/**
+	 * Sends the response for updating a study.
+	 * 
+	 * @param appContext - {@link ApplicationContext}
+	 * @param response - HttpServletResponse
+	 * @param updateHandler - {@link UpdateStudyHandler}
+	 */
 	public static void sendUpdateStudyResponse(ApplicationContext appContext, HttpServletResponse response, UpdateStudyHandler updateHandler) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
@@ -779,6 +881,12 @@ public class WebResponder {
 	}
 
 	
+	/**
+	 * Sends the response after a file has been uploaded for adding a study.
+	 * 
+	 * @param response - HttpServletResponse
+	 * @param fileName - String
+	 */
 	public static void sendUploadFileResponse(HttpServletResponse response, String fileName) {
 
 		String loggerId = ThreadLocalLogTracker.get();
@@ -796,6 +904,13 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendUploadFileResponse()...exit.");
 	}
 	
+	/**
+	 * Sends the file download records as a json object
+	 * 
+	 * @param response - HttpServletResponse
+	 * @param appContext - {@link ApplicationContext}
+	 * @param fileDownloads - ArrayList of {@link FileDownloadRecord}
+	 */
 	public static void sendFileDownloadRecordsResponse(HttpServletResponse response, ApplicationContext appContext, ArrayList<FileDownloadRecord> fileDownloads) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendFileDownloadRecordsResponse()...invoked");
@@ -811,6 +926,14 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendFileDownloadRecordsResponse()...exit");
 	}
 	
+	/**
+	 * 
+	 * Sends the response for getAdminAccessRecords request
+	 * 
+	 * @param response - HttpServletResponse
+	 * @param appContext - {@link ApplicationContext}
+	 * @param aaRecords - ArrayList of {@link AdminAccessRecord}
+	 */
 	public static void sendAdminAccessRecordsResponse(HttpServletResponse response, ApplicationContext appContext, ArrayList<AdminAccessRecord> aaRecords) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendEmailAddressesResponse()...invoked");
@@ -826,6 +949,13 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendEmailAddressesResponse()...exit");
 	}
 	
+	/**
+	 * Sends the emailAddress records as a json object
+	 * 
+	 * @param response - HttpServletResponse
+	 * @param appContext - {@link ApplicationContext}
+	 * @param emailAddresses - ArrayList of {@link EmailAddressRecord}
+	 */
 	public static void sendEmailAddressesResponse(HttpServletResponse response, ApplicationContext appContext, ArrayList<EmailAddressRecord> emailAddresses) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendEmailAddressesResponse()...invoked");
@@ -841,6 +971,12 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendEmailAddressesResponse()...exit");
 	}
 	
+	/**
+	 * Sends the collection of {@link WebHitRecord}	objects as a json string to the client. 
+	 * @param response - HttpServletResponse
+	 * @param appContext - {@link ApplicationContext}
+	 * @param webHits - ArrayList of {@link WebHitRecord}
+	 */
 	public static void sendWebHitsResponse(HttpServletResponse response, ApplicationContext appContext, ArrayList<WebHitRecord> webHits) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendWebHitsResponse()...invoked");
@@ -856,6 +992,13 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendWebHitsResponse()...exit");
 	}
 	
+	/**
+	 * Sends the url for the web hits map.
+	 * 
+	 * @param response - HttpServletResponse
+	 * @param appContext - {@link ApplicationContext}
+	 * @param mapURL - String
+	 */
 	public static void sendWebHitsMapURLResponse(HttpServletResponse response, ApplicationContext appContext, String mapURL) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendWebHitsMapURLResponse()...invoked");

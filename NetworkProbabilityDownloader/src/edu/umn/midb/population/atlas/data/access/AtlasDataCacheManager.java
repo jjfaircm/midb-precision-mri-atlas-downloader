@@ -268,6 +268,8 @@ public class AtlasDataCacheManager {
 	 * @param authTokenE - encrypted authorization token
 	 * @param toPhoneE - encrypted 'to' telephone number that receives the SMS messages
 	 * @param fromPhoneE - encrypted 'from' telephone number which is a virtual number from twillio.com
+	 * @param textBeltKey - encrypted api key for using textbelt.com service
+	 * @param smsMode - String indicating if textbelt or twilio should be used for sms service
 	 */
 	private void initSMSNotifier(String accountSIDE, String authTokenE, String toPhoneE, String fromPhoneE,
 			                     String textBeltKey, String smsMode) {

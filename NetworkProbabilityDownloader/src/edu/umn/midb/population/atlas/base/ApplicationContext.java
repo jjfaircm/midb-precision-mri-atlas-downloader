@@ -4,9 +4,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-
 import javax.servlet.http.HttpServletRequest;
-
 import edu.umn.midb.population.atlas.security.TokenManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import edu.umn.midb.population.atlas.study.handlers.CreateStudyHandler;

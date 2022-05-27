@@ -18,7 +18,7 @@ public class WebHitEntry extends TaskEntry {
 	 * 
 	 */
 	public WebHitEntry() {
-		this.subclassName = "WebHitEntry";
+		this.setSubclassName("WebHitEntry");
 	}
 	
 	/**

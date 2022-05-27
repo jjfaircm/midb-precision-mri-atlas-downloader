@@ -43,7 +43,7 @@ public class EmailAddressEntry extends TaskEntry {
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.emailAddress = emailAddress;
-		this.subclassName = "EmailAddressEntry";
+		this.setSubclassName("EmailAddressEntry");
 	}
 	
 	/**

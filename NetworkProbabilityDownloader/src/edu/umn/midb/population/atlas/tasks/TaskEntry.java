@@ -22,18 +22,18 @@ import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
  */
 public class TaskEntry {
 	
-	protected ApplicationContext appContext = null;
-	protected HttpServletRequest request = null;
-	protected HttpServletResponse response = null;
-	protected String requestorIPAddress = null;
-	protected String formattedTimeStamp = null;
-	protected String subclassName = null;
-	protected String city = "unknown";
-	protected String state = "unknown";
-	protected String country = "unknown";
-	protected String latitude = "unknown";
-	protected String longitude = "unknown";
-	protected boolean shutdownTrigger = false;
+	private ApplicationContext appContext = null;
+	private HttpServletRequest request = null;
+	private HttpServletResponse response = null;
+	private String requestorIPAddress = null;
+	private String formattedTimeStamp = null;
+	private String subclassName = null;
+	private String city = "unknown";
+	private String state = "unknown";
+	private String country = "unknown";
+	private String latitude = "unknown";
+	private String longitude = "unknown";
+	private boolean shutdownTrigger = false;
 
 	
 	/**
