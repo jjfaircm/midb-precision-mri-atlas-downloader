@@ -95,7 +95,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
 	
 	private static final long serialVersionUID = 1L;
-	public static final String BUILD_DATE = "Version beta_92.0  0526_1445_2022:17:24__war=NPDownloader_0526_1445_2022.war"; 
+	public static final String BUILD_DATE = "Version beta_98.0  0919_2045_2022:17:30__war=NPDownloader_0919_2045_2022.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";
@@ -257,6 +257,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		// SO THAT IT INCLUDES THE FOLLOWING WELCOME FILE
 		//     <welcome-file>/HTML/network_probability_downloader.html</welcome-file>
         
+		/*
 		boolean accessAllowed = true;
 		if(action==null || action.equals("initialRequest")) {
 			accessAllowed = checkAccessAllowed(request, ipAddress);
@@ -274,7 +275,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				return;
 			}
 		}
-	    	
+	    */	
 		
 		HttpSession session = request.getSession();
 		ApplicationContext appContext = (ApplicationContext)session.getAttribute("applicationContext");
@@ -317,13 +318,13 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				handleGetNetworkFolderNamesConfig(appContext, request, response);
 				break;
 			case "getThresholdImages":
-				//pause(30000);
-				//long gtiActionBeginTime = System.currentTimeMillis();
+				String selectedNeuralNetworkName = request.getParameter("neuralNetworkName");
+				long gtiActionBeginTime = System.currentTimeMillis();
 				handleGetThresholdImages(appContext, request, response);
-				//long gtiActionEndTime = System.currentTimeMillis();
-				//long gtiProcessingTime = gtiActionEndTime-gtiActionBeginTime;
-				//LOGGER.info("NetworkProbabilityDownloader.doGet()...selectedNeuralNetworkName=" + selectedNeuralNetworkName);
-				//LOGGER.info("Processing time in ms for getThresholdImages=" + gtiProcessingTime);
+				long gtiActionEndTime = System.currentTimeMillis();
+				long gtiProcessingTime = gtiActionEndTime-gtiActionBeginTime;
+				LOGGER.info("NetworkProbabilityDownloader.doGet()...selectedNeuralNetworkName=" + selectedNeuralNetworkName);
+				LOGGER.info("Processing time in ms for getThresholdImages=" + gtiProcessingTime);
 				break;
 			case "removeStudy":
 				//this updates the csv text file - does not insert database record
@@ -361,6 +362,9 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				break;
 			case "getStorageStats":
 				handleGetStorageStats(appContext, response);
+				break;
+			case "updateStudyFile":
+				handleUpdateStudy(appContext, request, response);
 				break;
 			}
 		
@@ -559,11 +563,11 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		//application documentation will not have the path specified in filePathAndName
 		//since it resides in the docs package
 		
-		if(!filePathAndName.endsWith("csv") && !filePathAndName.equals("/midb/surface.zip")) {
+		if(!filePathAndName.endsWith("csv") && !filePathAndName.contains("_surface.zip")) {
 			filePathAndName = DocumentLocator.getPath(filePathAndName);
 		}
 		
-		byte[] fileBinaryBuffer = DirectoryAccessor.getFileBytes(filePathAndName);
+		byte[] fileBinaryBuffer = DirectoryAccessor.getFileBytes(filePathAndName, null);
 		int index = filePathAndName.lastIndexOf("/");
 		String fileNameOnly = filePathAndName.substring(index+1);
 		WebResponder.sendFileDownloadResponse(response, fileBinaryBuffer, fileNameOnly, null);
@@ -665,7 +669,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		}
 		DownloadTracker.getInstance().addDownloadEntry(fdEntry);
 		
-		byte[] fileBinaryBuffer = DirectoryAccessor.getFileBytes(filePathAndName);
+		byte[] fileBinaryBuffer = DirectoryAccessor.getFileBytes(filePathAndName, selectedStudy);
 
 		WebResponder.sendFileDownloadResponse(response, fileBinaryBuffer, fileNameOnly, selectedStudy);
 		LOGGER.trace(loggerId + "handleDownloadFile()...exit.");
@@ -1147,10 +1151,23 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		String studyId = request.getParameter("studyFolderName");
 		String updateAction = request.getParameter("updateAction");
 		String fileSizeString = request.getParameter("fileSize");
-		long fileSize = Long.parseLong(fileSizeString);
 		
 		UpdateStudyHandler updateHandler = new UpdateStudyHandler(studyId, appContext);
-		updateHandler.uploadFile(request, fileSize);
+		
+		if(!updateAction.contains("addStudyPrefix")) {
+			long fileSize = Long.parseLong(fileSizeString);
+			updateHandler.uploadFile(request, fileSize);
+		}
+		else {
+			String dataType = null;
+			if(updateAction.contains("Surface")) {
+				dataType = "surface";
+			}
+			else if(updateAction.contains("Volume")) {
+				dataType = "volume";
+			}
+			updateHandler.addStudyPrefixToFileNames(dataType);
+		}
 
 		WebResponder.sendUpdateStudyResponse(appContext, response, updateHandler);
 

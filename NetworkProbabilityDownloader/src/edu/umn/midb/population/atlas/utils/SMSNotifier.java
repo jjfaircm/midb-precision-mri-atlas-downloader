@@ -1,6 +1,7 @@
 package edu.umn.midb.population.atlas.utils;
 
 import com.twilio.Twilio;
+import com.twilio.exception.ApiException;
 import com.twilio.rest.api.v2010.Account.Status;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
@@ -166,19 +167,25 @@ public class SMSNotifier  {
 	private static void sendViaTwilio(String textMessage, String invokerClassName) {
 
 		LOGGER.trace(LOGGER_ID + "sendViaTwilio()...invoked, invoker=" + invokerClassName);
-
-		if(AUTH_TOKEN == null) {
-			return;
-		}
 		
-        Twilio.init(ACCOUNT_SID, AUTH_TOKEN);
-
-        Message message = Message.creator(
-                new PhoneNumber(TO_PHONE_NUMBER),
-                //new com.twilio.type.PhoneNumber("+15005550006"),
-                new PhoneNumber(FROM_PHONE_NUMBER),
-                textMessage)
-            .create();
+		try {
+			if(AUTH_TOKEN == null) {
+				return;
+			}
+			
+	        Twilio.init(ACCOUNT_SID, AUTH_TOKEN);
+	
+	        Message message = Message.creator(
+	                new PhoneNumber(TO_PHONE_NUMBER),
+	                //new com.twilio.type.PhoneNumber("+15005550006"),
+	                new PhoneNumber(FROM_PHONE_NUMBER),
+	                textMessage)
+	            .create();
+		}
+		catch(ApiException e) {
+			LOGGER.error(e.getMessage(), e);
+			DiagnosticsReporter.createDiagnosticsEntry(e, false);
+		}
 		LOGGER.trace(LOGGER_ID + "sendViaTwilio()...exit");
 	
 	}

@@ -768,8 +768,18 @@ td.td_adminPasswordPromptLabel {
 
 #pwd_adminPasswordPrompt {
 	font-size: 0.75em;
-	padding: 3px;
+	padding: 0px;
 	display: block;
+}
+
+td.password_icon {
+	padding-bottom: 3px;
+	line-height: 28px;
+}
+
+#td_adminPasswordPrompt {
+	padding-bottom: 11px;
+	line-height: 28px;
 }
 
 #table_adminInfoPrompt {
@@ -823,7 +833,7 @@ select.adminUpdateStudy {
 	font-size: 16px;
 	background-color: slategrey;
     color: white;
-    width: 250px;
+    width: 290px;
 }
 
 

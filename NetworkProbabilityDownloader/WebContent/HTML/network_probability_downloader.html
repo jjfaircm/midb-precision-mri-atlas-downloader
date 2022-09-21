@@ -7,9 +7,9 @@
 <head>
 
   <script src="/NetworkProbabilityDownloader/javascript/jquery.js"></script>
-  <script src="/NetworkProbabilityDownloader/javascript/np_downloader.js?id=0526_1445_2022"></script>
-  <script src="/NetworkProbabilityDownloader/javascript/np_menu.js?id=.war_0526_1445_2022"></script>
-  <script src="/NetworkProbabilityDownloader/javascript/menuTemplates.js?id=.war_0526_1445_2022"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/np_downloader.js?id=.war_0919_2045_2022"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/np_menu.js?id=.war_0919_2045_2022"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/menuTemplates.js?id=.war_0919_2045_2022"></script>
   
   
 
@@ -57,10 +57,10 @@
 <link href='https://fonts.googleapis.com/css?family=Amaranth:ital@1&display=swap' rel='stylesheet'>
 
 
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/np_downloader.css?id=.war_0526_1445_2022" media="all" />
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/alert.css?id=.war_0526_1445_2022" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/np_downloader.css?id=.war_0919_2045_2022" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/alert.css?id=.war_0919_2045_2022" media="all" />
 
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/menu_generic.css?id=.war_0526_1445_2022" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/menu_generic.css?id=.war_0919_2045_2022" media="all" />
 
 
 <!--[if lte IE 8]>
@@ -205,7 +205,7 @@
        <img id="img_splashImage"  class="splashImage" alt="image not available" src="/NetworkProbabilityDownloader/images/brain_splash.png" height="320" width=100% style="object-fit: cover;">
    </div>
    <div id="div_overlayImage" style="position: absolute; z-index: 1; top:0px; right:10px;">
-      <img class="centerImageXX" title="Version: 0511_1445_2022.war" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75" ondblclick="handleAdminLoginRequest()">
+      <img class="centerImageXX" title="Version: .war_0919_2045_2022" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75" ondblclick="handleAdminLoginRequest()">
    </div>
    <!--
    <div id="midb_atlases_text" style="position: absolute; z-index: 1; bottom:10px; right:16px">
@@ -796,7 +796,8 @@ As unestablished research software, these files are provided on an "as is'' basi
 <ul style="text-align: left;">
 <li> The surface.zip and volume.zip files must contain a specific folder structure for
      the add study process to complete successfully.</li>
-<li> Refer to the Add A Study doc on how to create a surface.zip or volume.zip file</li>
+<li> Refer to the Add Study doc on how to create a surface.zip or volume.zip file
+     <br>(click the Download Docs button to download the Add Study document)</li>
 <li> The folders.txt file specifies what type of Single Networks are available. It
      specifies the display names and folder names that the data reside in. For more
      detail refer to the Add A Study doc.</li>
@@ -808,7 +809,7 @@ As unestablished research software, these files are provided on an "as is'' basi
 </ul>
 <br>
 <button id="button_downloadAddStudySample"  class="downloader"  onclick="downloadAdminFile('addStudy_sample.zip')"><img alt="" src="/NetworkProbabilityDownloader/images/button_download_docs_light_grey.png"></img></button>
-<button id="button_downloadSurfaceZip"  class="downloader"  onclick="confirmDownloadAdminFile('/midb/surface.zip')"><img alt="" src="/NetworkProbabilityDownloader/images/button_download_zip.png"></img></button>
+<button id="button_downloadSurfaceZip"  class="downloader" title="download surface.zip sample"  onclick="confirmDownloadAdminFile('/midb/test_template_matching_surface.zip')"><img alt="" src="/NetworkProbabilityDownloader/images/button_download_zip.png"></img></button>
 <button id="button_getServerStorage1"  class="downloader"  onclick="getStorageStats(this)"><img alt="" src="/NetworkProbabilityDownloader/images/button_display_storage.png"></img></button>
 <button id="button_hideAddStudyHelp"  class="downloader"  onclick="hideAddStudyHelp()"><img alt="" src="/NetworkProbabilityDownloader/images/button_dismiss_light_grey.png"></img></button>
 
@@ -913,6 +914,10 @@ As unestablished research software, these files are provided on an "as is'' basi
       <option value="addSurfaceData" class="updateOption">add/update surface data</option>
       <option value="addVolumeData" class="updateOption">add/update volume data</option>
       <option value="updateSummary" class="updateOption">update summary</option>
+      <!--
+      <option value="addStudyPrefixToSurface" class="updateOption">add study prefix to surface data files</option>
+      <option value="addStudyPrefixToVolume" class="updateOption">add study prefix to volume data files</option>
+        -->
       </select>
   </td>
   </tr>
@@ -925,7 +930,7 @@ As unestablished research software, these files are provided on an "as is'' basi
 <form>
   <div id="div_dropZoneUpdateStudy" style="text-align:center;">
   <label class="dropZoneHeader" style="font-weight:600; font-size: 18px;">Drag/Drop Files Here</label>
-  <span style="font-size:14px; font-weight:500;">(summary.txt or volume.zip)</span>
+  <span style="font-size:14px; font-weight:500;">(summary.txt, *_surface.zip or *_volume.zip)</span>
   <ul id="ul_updateStudyFileList" style="z-index: 10;">
       <!--
       <li class="zipList">
@@ -957,11 +962,26 @@ As unestablished research software, these files are provided on an "as is'' basi
 
 </div>
 
+
+	<div id="div_updatePrefixProgress" style="display: none;text-align: center;">
+	<br>
+	    <h6 class="uploadHeader" id="uploadZipHeader" style="color: green;">Update Study In Progress...</h6>
+    <figure>
+    	<img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+    	<figcaption class="ziplist" style="color: green; font-weight: 500;">Renaming Files On Server<br>Please Wait</figcaption>
+    </figure>
+
+</div>
+
+
+
+
 <div id="div_updateStudyHelp">
 <span style="font-size: 20px;font-weight: 700;">Updating A Study</span>
 <ul style="text-align: left;">
 <li> Adding/Updating volume or surface data will overwrite any existing data</li>
-<li> Refer to the Add A Study doc on how to create a surface.zip or volume.zip file</li>
+<li> Refer to the Add A Study doc on how to create a surface.zip or volume.zip file
+     <br>(click the Download Docs button to download the Add Study document</li>
 <li> For volume or surface data, the Single Network folder names in the zip file must<br>
      match what already has been previously uploaded when the study was first added.<br>
      To change the names or add/subtract folders you must remove the study and add it<br>
@@ -972,7 +992,7 @@ As unestablished research software, these files are provided on an "as is'' basi
 </ul>
 <br>
 <button id="button_downloadAddStudyHelp"  class="downloader"  onclick="downloadAdminFile('addStudy_sample.zip')"><img alt="" src="/NetworkProbabilityDownloader/images/button_download_docs_light_grey.png"></img></button>
-<button id="button_downloadAddStudyHelp"  class="downloader"  onclick="confirmDownloadAdminFile('/midb/surface.zip')"><img alt="" src="/NetworkProbabilityDownloader/images/button_download_zip.png"></img></button>
+<button id="button_downloadAddStudyHelp"  class="downloader" title="download surface.zip sample" onclick="confirmDownloadAdminFile('/midb/test_template_matching_surface.zip')"><img alt="" src="/NetworkProbabilityDownloader/images/button_download_zip.png"></img></button>
 <button id="button_getServerStorage2"  class="downloader"  onclick="getStorageStats(this)"><img alt="" src="/NetworkProbabilityDownloader/images/button_display_storage.png"></img></button>
 <button id="button_hideAddStudyHelp"  class="downloader"  onclick="hideUpdateStudyHelp()"><img alt="" src="/NetworkProbabilityDownloader/images/button_dismiss_light_grey.png"></img></button>
 
@@ -1130,11 +1150,11 @@ As unestablished research software, these files are provided on an "as is'' basi
 
 <select name="select_downloadAdminDocsDropdown" id="select_downloadAdminDocsDropdown">
   <option value="unselected">Select document</option>
-  <option value="addStudy_sample.zip">Add A Study</option>
+  <option value="addStudy_sample.zip">Add A Study Doc</option>
   <option value="npd_javadoc.zip">Server Code Javadoc</option>
   <option value="NetwokrProbabilityDownloader_Application_Overview.odt">Application Overview Doc</option> 
-  <option value="CreateNewMap.odt">Create A New Map</option>
-  <option value="confirm_surface.zip">Sample surface.zip</option>
+  <option value="CreateNewMap.odt">Create A New Map Doc</option>
+  <option value="/midb/test_template_matching_surface.zip">Sample surface.zip</option>
 </select> 
 <br>
 <br>
@@ -1464,7 +1484,7 @@ As unestablished research software, these files are provided on an "as is'' basi
     <div class="message" id="div_confirmDownloadAdminBoxMessage"></div>
     <br>
     <button class="ok" id="button_adminAlertOK" onclick="dismissConfirmDownloadAdminAlert()">cancel</button>
-    <button class="ok" id="button_adminAlertOK" onclick="downloadAdminFile('/midb/surface.zip')">continue</button>
+    <button class="ok" id="button_adminAlertOK" onclick="downloadAdminFile('/midb/test_template_matching_surface.zip')">continue</button>
     
 </div>
 
@@ -1569,10 +1589,13 @@ As unestablished research software, these files are provided on an "as is'' basi
 <tr>
 
 <td colspan="2" id="td_adminPasswordPrompt" class="td_adminPasswordPrompt">
-<input type="text" name="adminPassword" id="pwd_adminPasswordPrompt" class="input_adminPassword password_mask" size=20 onkeyup="maskInput(this)" onkeypress="handleAdminPasswordEnterKey(event)" >
+<input type="password" name="adminPassword" id="pwd_adminPasswordPrompt" class="input_adminPassword password_mask" size=20 onkeypress="handleAdminPasswordEnterKey(event)" 
+  placeholder="  click icon to show/hide" style="height:25px;font-size:16px;">
 </td>
+<td style="text-align:center;" class="password_icon"><img id="img_password" src="/NetworkProbabilityDownloader/images/show_password.png" height=40 width=50 style="margin-left:-5px" onclick="toggleMasking()"></td>
 </tr>
 </table>
+
 <button class="ok" id="adminOKButton" onclick="handleAdminLogin()">ok</button>
 </div>
 

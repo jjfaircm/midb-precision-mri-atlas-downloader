@@ -1,4 +1,4 @@
-		 var version_buildString = BUILD_DATE = "Version beta_92.0  0526_1445_2022:17:24__war=NPDownloader_0526_1445_2022.war";
+		 var version_buildString = BUILD_DATE = "Version beta_97.0  0919_2045_2022:17:30__war=NPDownloader_0919_2045_2022.war";
 		 var enableTracing = true; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
@@ -782,14 +782,24 @@
         	 
          }
          
+		 /*
+	        When downloading the test_template_matchng_surface.zip file this method ends up being
+            called twice from the html interface. The first time it is called, the fileNameAndPath
+            parameter will not be supplied. This causes the function to go into an 'else' condition
+            which causes the confirmDownloadAdminFile() function to be invoked. If the user confirms
+            the download, this method is invoked again from the html interface but the fileNameAndPath
+            parameter will be supplied which causes anchor_downloadAdminFiles.click() to be executed.
+            This results in the download request being sent to the server.
+	     */
          function downloadAdminFile(fileNameAndPath) {
-           	 console.log("downloadAdminFile()...invoked.");
+           	 console.log("downloadAdminFile()...invoked, fileNameAndPath=" + fileNameAndPath);
            	 
            	 var docName = null;
 
-			 if(fileNameAndPath == "/midb/surface.zip") {
+			 if(fileNameAndPath == "/midb/test_template_matching_surface.zip") {
 				var div_confirmAdminDownloadBox = document.getElementById("div_confirmAdminDownloadBox");
 				div_confirmAdminDownloadBox.style.display = "none";
+				//jjf cookie test
 				//var div_downloadFileProgress = document.getElementById("div_downloadFileProgress");
 				//div_downloadFileProgress.style.display = "block";
 				//console.log("setting timer");
@@ -803,8 +813,8 @@
 	             var select_DocId = document.getElementById("select_downloadAdminDocsDropdown");
 	             docName = select_DocId.options[select_DocId.selectedIndex].value;
 
-				 if(docName == "confirm_surface.zip") {
-					confirmDownloadAdminFile("/midb/surface.zip");
+				 if(docName == "/midb/test_template_matching_surface.zip") {
+					confirmDownloadAdminFile("/midb/test_template_matching_surface.zip");
 					return;
 				}
            	 }
@@ -826,14 +836,18 @@
 			var docCookie = document.cookie;
 			
 			var cookies = docCookie.split(";");
+			console.log("cookies-length=" + cookies.length);
 			var keyValuePair = null;
 			var cookieKey = null;
 			var cookieValue = null;
 			
 			for(i=0; i<cookies.length;i++) {
 				keyValuePair = cookies[i].split("=");
-				cookieKey = keyValuePair[0];
-				cookieValue = keyValuePair[1];
+				cookieKey = keyValuePair[0].trim();
+				console.log("cookie key=" + cookieKey);
+				cookieValue = keyValuePair[1].trim();
+				console.log("cookie-value=" + cookieValue);
+
 
 				if(cookieKey == "np_download_name" && cookieValue == "surface.zip") {
 					console.log("COOKIE FOUND!!!");
@@ -1140,7 +1154,7 @@
            	ajaxRequest.open('get', encodedUrl, true);
          
             ajaxRequest.onreadystatechange=function() {
-
+	
                    if (ajaxRequest.readyState==4 && ajaxRequest.status==200) {
                        //console.log(ajaxRequest.responseText);
                 	   //alert("images response");
@@ -1212,7 +1226,10 @@
     	   	 
     	   	 var button_createStudy = document.getElementById("button_createStudy");
     	   	 button_createStudy.disabled = false;
-    	   	 
+
+			 var div_addStudyDetails = document.getElementById("div_addStudyDetails");
+			 div_addStudyDetails.style.display = "block";
+
     	   	 var div_dropZone = document.getElementById("div_dropZone");
     	   	 div_dropZone.style.display = "block";
     	  
@@ -1439,7 +1456,7 @@
         	  console.log("processThresholdImagesResponse()...invoked.")
         	  
         	  var ajaxRequest_endTime = performance.now();
-        	  var ajaxRequest_elapsedTime = ajaxRequest_startTime - ajaxRequest_endTime;
+        	  var ajaxRequest_elapsedTime = ajaxRequest_endTime - ajaxRequest_startTime;
         	  
         	  console.log("processThresholdImagesResponse()...ajaxRequest_elapsedTime=" + ajaxRequest_elapsedTime);
         	  
@@ -1504,7 +1521,7 @@
         			  var downloadZIP_root = anImageFileAndPath.substring(0, zipPathIndex);
         			  downloadZIP_root += "zips/";
         			  var downloadZIP_fileName = selectedNeuralNetworkName + ".zip";
-        			  downloadZIP_path = downloadZIP_root + downloadZIP_fileName;
+        			  downloadZIP_path = downloadZIP_root + selectedStudy.studyId + "_" + downloadZIP_fileName;
         			  console.log("downloadZIP_path=" + downloadZIP_path);
         			  console.log("imageFileAndPath for min=" + anImageFileAndPath);
         			  setRangeValue(anImageFileAndPath, "min");
@@ -1978,6 +1995,64 @@
           	console.log("uploadAddStudyFile()...exit.");
          }
          
+		 function updateStudyWithoutUpload() {
+			console.log("updateStudyWithoutUpload()...invoked.");
+			
+			updateStudy.div_updatePrefixProgress.style.display = "block";
+			updateStudy.div_updateStudyDetails.style.display = "none";
+			
+			var ajaxRequest = getAjaxRequest();
+          	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=updateStudyFile";
+          	var paramString = "&studyFolderName=" + updateStudy.studyId;
+          	paramString += "&updateAction=" + updateStudy.actionName;
+
+			url += paramString;
+			
+			var encodedUrl = encodeURI(url);
+          	ajaxRequest.open('get', encodedUrl, true);
+			
+			ajaxRequest.onreadystatechange=function() {
+				if(ajaxRequest.responseText.includes("Unexpected Error")) {
+                 	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+              		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+              		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+                  	var errorArray = errorData.split("&");
+                 	var msg1 = errorArray[0];
+                 	var msg2 = errorArray[1];
+                 	stackTraceData = errorArray[2];
+                 	var divSubmitNotification = document.getElementById("div_submitNotification");
+                 	divSubmitNotification.style.display = "none";
+                    	var incidentIdIndex = ajaxRequest.responseText.indexOf("INCIDENT_ID");
+                    	var incidentId = ajaxRequest.responseText.substring(incidentIdIndex, incidentIdIndex+54);
+                    	var headerElement = document.getElementById("stackTraceHeader");
+                    	headerElement.innerHTML = incidentId;
+                 	doErrorAlert(msg1, msg2, errorAlertOK);
+                 	console.log("uploadMenuFiles()...onreadystatechange...error");
+                 	console.log("msg1=" + msg1);
+                 	console.log("msg2=" + msg2);
+                 	console.log(stackTraceData);
+                 	return;
+                 }
+                 if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+                 	 
+                	 var lastFile = true; // there is only 1 file to upload in updateStudy
+                 	
+                     if(lastFile) {
+                     	handleUpdateStudyResponse(ajaxRequest.responseText);
+                     }
+ 
+          	     }
+                 //handle nginx hiccup from server
+                 if (ajaxRequest.readyState == 4 && ajaxRequest.status == 404) {
+                 	div_uploadProgress.style.display = "none";
+                 	div_unzipProgress.style.display = "none";
+                 	var inferredResponse = "Study created, please refresh page to view new menu";
+                    handleUpdateStudyResponse(inferredResponse);
+          	     }
+          	}
+			ajaxRequest.send();
+			console.log("updateStudyWithoutUpload()...exit.");
+		 }
          
          function uploadUpdateStudyFile(fileSize) {
 

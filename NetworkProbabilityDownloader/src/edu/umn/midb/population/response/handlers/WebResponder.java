@@ -50,11 +50,12 @@ import logs.ThreadLocalLogTracker;
 
 /**
  * The WebResponder is responsible for sending responses for the various requests that
- * come to the {@link NetworkProbabilityDownloader}. It will answer the following requests:
+ * come to the {@link NetworkProbabilityDownloader}. It will answer the following requests, among others:
  * <ul>
- * <li>retrieve the list  of neural network types
- * <li>retrieve the .png images associated with the probabilistic thresholds for a given network type
- * <li>retrieve the NII file for a selected threshold
+ * <li>get menu data which will return the menu and sub-menu options to build the study menu
+ * <li>get threshold images associated with the probabilistic thresholds for a given network type
+ * <li>download an NII file for a selected threshold
+ * <li>send the response after a study had been added
  * </ul>
  * @author jjfair
  *
@@ -82,7 +83,7 @@ public class WebResponder {
 		String studyName = appContext.getCreateStudyHandler().getStudyName();
 		String responseString = "Study successfully created:<br>";
 		responseString += studyName;
-		responseString += "<br>Please refresh page<br>to view new menu.";
+		responseString += "<br>Please refresh page to view new menu.";
 		CreateStudyHandler csHandler = appContext.getCreateStudyHandler();	
 		
 		
@@ -199,20 +200,26 @@ public class WebResponder {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendFileDownloadResponse()...invoked.");
 		
-		/*
+		
 		if(fileName.contains("surface.zip")) {
 			//this allows client javascript to detect when download is complete
 			Cookie ck = new Cookie("np_download_name", "surface.zip");
 			ck.setMaxAge(900);
 			ck.setHttpOnly(false);
+			ck.setPath("/");
 			response.addCookie(ck);
 		}
-		*/
+		
+		String studyNamePrefix = null;
+		
+		if(selectedStudy != null) {
+			studyNamePrefix = selectedStudy + "_";
+		}
 		
 		// admin files like sample_files.zip or add_a_study.docx do not have an
 		// associated study
-		if(selectedStudy != null && !fileName.contains(".dscalar")) {
-			fileName = selectedStudy + "_" + fileName;
+		if(selectedStudy != null && !fileName.startsWith(studyNamePrefix)) {
+			fileName = studyNamePrefix + fileName;
 		}
 		
 		
@@ -590,7 +597,7 @@ public class WebResponder {
 	}
 	
 	/**
-	 * 
+	 * Sends a failed admin access response when due to an expired session.
 	 * 
 	 * @param response - HttpServletResponse
 	 * @param appContext - {@link ApplicationContext}
@@ -755,10 +762,9 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendRemoveStudyResponse()...invoked.");
 		
 		String responseString = "Study successfully removed:<br> " + studyFolder
-				              + "<br>Please refresh page<br>to see current menu";
+				              + "<br>Please refresh page to see current menu";
 
 		try {
-		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
 			  response.getWriter().println(responseString);
 		      Thread.sleep(1000);
 		}

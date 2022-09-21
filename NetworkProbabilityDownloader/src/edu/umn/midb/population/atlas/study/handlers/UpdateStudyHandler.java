@@ -8,7 +8,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import javax.servlet.http.HttpServletRequest;
@@ -178,6 +183,97 @@ public class UpdateStudyHandler extends StudyHandler {
 	}
 	
 	/**
+	 * Adds the study prefix to all files in all folders for the given data type (surface
+	 * or volume).
+	 * 
+	 * @param dataType - String representing surface or volume
+	 * @return success - boolean
+	 */
+	public boolean addStudyPrefixToFileNames(String dataType) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "addStudyPrefixToFileNames()...invoked.");
+		
+		boolean success = true;
+
+	    ArrayList<String> subDirs = new ArrayList<String>();
+	    String targetRootPath = this.absoluteStudyFolder + dataType + "/";	
+	    try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(targetRootPath))) {
+	        for (Path path : stream) {
+	            if (Files.isDirectory(path)) {
+	            	subDirs.add(path.toString());
+	            }
+	        }
+	    }
+	    catch(Exception e) {
+	    	LOGGER.error(loggerId + e.getMessage(), e);
+	    	DiagnosticsReporter.createDiagnosticsEntry(e);
+	    	this.errorMessage = "Unable to get list of subdirectories for path: " + targetRootPath;
+	    	this.errorEncountered = true;
+	    	return false;
+	    }
+	    
+	   Iterator<String> dirIt = subDirs.iterator(); 
+	   String[] fileNamesArray = null;
+	   ArrayList<String> fileNames = null;
+	   Iterator<String> fileNamesIt = null;
+	   String subDirName = null;
+	   long count = 0;
+	   
+	   while(dirIt.hasNext()) {
+		    subDirName = dirIt.next();
+
+		    try {
+			   count = Files.list(Paths.get(subDirName))
+			            .filter(p -> p.toFile().isFile())
+			            .count();
+			   LOGGER.trace(loggerId + subDirName + ": count before = " + count);
+		    } 
+		    catch (IOException e) {
+				LOGGER.error(loggerId + e.getMessage(), e);
+		    }
+		    		    
+		    File subDir = new File(subDirName);
+		    fileNamesArray = subDir.list();
+		    fileNames = new ArrayList<String>(Arrays.asList(fileNamesArray));
+		    fileNamesIt = fileNames.iterator();
+		    String fileName = null;
+		    String absoluteFileName = null;
+		    String shortOrigFileName = null;
+		    String absoluteOrigFileName = null;
+		    String newShortFileName = null;
+		    String newAbsoluteFileName = null;
+		    File newFile = null;
+		    File origFile = null;
+		    
+		    while(fileNamesIt.hasNext()) {
+		    	fileName = fileNamesIt.next();
+		    	if(fileName.startsWith(this.studyFolder)) {
+		    		continue;
+		    	}
+		    	shortOrigFileName = fileName;
+		    	absoluteOrigFileName = subDirName + "/" + shortOrigFileName;
+            	newShortFileName = this.studyFolder + "_" + shortOrigFileName;
+            	newAbsoluteFileName = subDirName + "/" + newShortFileName;
+                origFile = new File(absoluteOrigFileName);
+                newFile = new File(newAbsoluteFileName);
+                origFile.renameTo(newFile);
+		    }
+		    try {
+				count = Files.list(Paths.get(subDirName))
+				        .filter(p -> p.toFile().isFile())
+				        .count();
+				LOGGER.trace(loggerId + subDirName + ": count after = " + count);
+			} 
+		    catch (IOException e) {
+				LOGGER.error(loggerId + e.getMessage(), e);
+			}
+	   }
+	    
+		LOGGER.trace(loggerId + "addStudyPrefixToFileNames()...exit.");
+		return success;
+	}
+	
+	/**
 	 * Loads the existing entries in the /midb/summary.txt file. The entry for the study
 	 * be updated is omitted.
 	 * 
@@ -268,6 +364,39 @@ public class UpdateStudyHandler extends StudyHandler {
 	}
 	
 	/**
+	 * Removes the old surface or volume folder and the old zip file relating
+	 * to the Add Study or the last Update Study.
+	 * 
+	 * @param dataType - String representing surface or volume data
+	 */
+	private void cleanup(String dataType) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "cleanup()...invoked.");
+		
+		boolean success = true;
+		
+		if(dataType.equals("surface")) {
+			
+			success = removeBackupSurfaceDirectory();
+			if(!success) {
+				LOGGER.error("cleanup()...unable to remove backup surface directory, study path=" + this.absoluteStudyFolder);
+				Exception e = new Exception("cleanup()...unable to remove backup surface directory, study path=\" + this.absoluteStudyFolder");
+				DiagnosticsReporter.createDiagnosticsEntry(e, true);
+			}
+			
+			success = removeBackupSurfaceZipFile();
+			if(!success) {
+				LOGGER.error("cleanup()...unable to remove backup surface zip file, study path=" + this.absoluteStudyFolder);
+				Exception e = new Exception("cleanup()...unable to remove backup surface zip file, study path=\" + this.absoluteStudyFolder");
+				DiagnosticsReporter.createDiagnosticsEntry(e, true);
+			}
+			
+		}
+		
+		LOGGER.trace(loggerId + "cleanup()...exit.");
+	}
+	
+	/**
 	 * Updates the /midb/network_folder_names.conf file by inserting the updated entry for
 	 * the study.
 	 * 
@@ -326,14 +455,19 @@ public class UpdateStudyHandler extends StudyHandler {
 		return success;
 	}
 	
+	/**
+	 * Main wrapper method for deploying the new data in the zip file.
+	 * 
+	 * @return success - boolean indicating if all operations were successful
+	 */
 	private boolean deployZippedSurfaceData() {
 
 		String loggerId = this.appContext.getLoggerId();
 		LOGGER.trace(loggerId + "deployZippedSurfaceData()...invoked.");
 		boolean success = true;
+
+		success = renameSurfaceDirectory();
 		
-		//remove folder if already exists
-		success = removeSurfaceFolder();
 		
 		if(!success) {
 			return success;
@@ -342,30 +476,36 @@ public class UpdateStudyHandler extends StudyHandler {
 		success = runSystemUnzipCommand(this.surfaceZipFilePath);
 		
 		if(!success) {
-			File uploadedZipFile = new File(this.surfaceZipFilePath);
-			uploadedZipFile.delete();
+			rollback("surface");
 			return false;
 		}
 		
 		success = validateNetworkFoldersConfig("surface", true);
 		if(!success) {
-			File uploadedZipFile = new File(this.surfaceZipFilePath);
-			uploadedZipFile.delete();
-
-			removeSurfaceFolder();
-
+			rollback("surface");
 			return false;
 		}
 		
-		
+		success = validateFileNames("surface", true);
 		if(!success) {
-			return success;
+			rollback("surface");
+			return false;
 		}
 		
-		success = updateMenuConfig();
+		success = validateDscalarFiles("surface");
+		if(!success) {
+			rollback("surface");
+			return false;
+		}
 		
-		File uploadedZipFile = new File(this.surfaceZipFilePath);
-		uploadedZipFile.delete();
+		success = validateThresholdFiles("surface");
+		if(!success) {
+			rollback("surface");
+			return false;
+		}
+
+		success = updateMenuConfig();
+		cleanup("surface");
 		
 		asyncRunner.start();
 		
@@ -410,14 +550,15 @@ public class UpdateStudyHandler extends StudyHandler {
 			return false;
 		}
 		
+		success = validateDscalarFiles("volume");
 		if(!success) {
-			return success;
+			rollback("volume");
+			return false;
 		}
-		
+			
 		success = updateMenuConfig();
 		
 		File uploadedZipFile = new File(this.volumeZipFilePath);
-		uploadedZipFile.delete();
 		
 		asyncRunner.start();
 
@@ -436,14 +577,90 @@ public class UpdateStudyHandler extends StudyHandler {
 	}
 	
 	/**
-	 * Removes the surface folder.
+	 * Removes a file/folder from the local file system.
+	 * 
+	 * @param absolutePathAndFileName - String
+	 * 
+	 * @return success - boolean indicating success
+	 */
+	private boolean removeFile(String absolutePathAndFileName) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "removeFile()...invoked.");
+		
+		boolean success = true;
+		
+		File fileToRemove = new File(absolutePathAndFileName);
+		
+		if(fileToRemove.exists()) {
+			success = fileToRemove.delete();
+		}
+		
+		LOGGER.trace(loggerId + "removeFile()...exit.");
+		return success;
+	}
+	
+	/**
+	 * Removes the backup surface folder, which is the n-1 version.
 	 * 
 	 * @return success - boolean
 	 */
-	private boolean removeSurfaceFolder() {
+	private boolean removeBackupSurfaceDirectory() {
 
 		String loggerId = this.appContext.getLoggerId();
-		LOGGER.trace(loggerId + "removeSurfaceFolder()...invoked.");
+		LOGGER.trace(loggerId + "removeBackupSurfaceDirectory()...invoked.");
+
+		boolean success = true;
+		
+		String backupSurfaceDirectoryString = this.absoluteStudyFolder + "surface_backup";
+		File backupSurfaceDirectory = new File(backupSurfaceDirectoryString);
+		
+		if(backupSurfaceDirectory.exists()) {
+			
+			try {
+				FileUtils.deleteDirectory(backupSurfaceDirectory);
+			}
+			catch(IOException ioE) {
+				String message = "Unable to delete " + backupSurfaceDirectoryString;
+				LOGGER.trace(loggerId + message);
+				String incidentId = DiagnosticsReporter.createDiagnosticsEntry(ioE);
+				this.errorEncountered = true;
+				this.errorMessage = message;
+				LOGGER.trace(loggerId + incidentId);
+				success = false;
+			}
+		}
+		LOGGER.trace(loggerId + "removeBackupSurfaceDirectory()...exit.");
+		return success;
+	}
+	
+	/**
+	 * Removes the backup surface zip file which is the n-1 zip file.
+	 * 
+	 * @return success - boolean
+	 */
+	private boolean removeBackupSurfaceZipFile() {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "removeBackupSurfaceZipFile()...invoked.");
+		
+		boolean success = true;
+		File backupSurfaceZipFile = new File(this.surfaceZipFilePath + "_backup");
+		
+		if(backupSurfaceZipFile.exists()) {
+			success = backupSurfaceZipFile.delete();
+		}
+		return success;
+	}
+	
+	/**
+	 * Removes the surface directory. This is invoked if the file is found to contain
+	 * invalid data or structure.
+	 * 
+	 * @return success - boolean
+	 */
+	private boolean removeSurfaceDirectory() {
+
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "removeSurfaceDirectory()...invoked.");
 
 		boolean success = true;
 		
@@ -465,13 +682,35 @@ public class UpdateStudyHandler extends StudyHandler {
 				success = false;
 			}
 		}
-		LOGGER.trace(loggerId + "removeSurfaceFolder()...exit.");
+		LOGGER.trace(loggerId + "removeSurfaceDirectory()...exit.");
 		return success;
 	}
 	
+	/**
+	 * Removes the uploaded zip file if the data was found to be invalid.
+	 * 
+	 * @param dataType - String indicating surface or volume data
+	 * @return success - boolean
+	 */
+	private boolean removeUploadedZipFile(String dataType) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "removeUploadedZipFile()...invoked.");
+
+		boolean success = false;
+		
+		File fileToDelete = null;
+		
+		if(dataType.equals("surface")) {
+			fileToDelete = new File(this.surfaceZipFilePath);
+			success = fileToDelete.delete();
+		}
+		
+		LOGGER.trace(loggerId + "removeUploadedZipFile()...exit.");
+		return success;
+	}
 	
 	/**
-	 * Removes the volume folder.
+	 * Removes the volume folder is the data was found to be invalid
 	 * 
 	 * @return success - boolean
 	 */
@@ -501,6 +740,142 @@ public class UpdateStudyHandler extends StudyHandler {
 		}
 		LOGGER.trace(loggerId + "removeVolumeFolder()...exit.");
 		return success;
+	}
+	
+	/**
+	 * Renames the backup surface directory if it already exists. The original surface folder
+	 * is renamed 'surface_backup' when the Update Study process begins. If the new data is
+	 * found to be invalid a rollback is done and the surface_backup folder is renamed 'surface'.
+	 * Returns false if the directory does not exist.
+	 * 
+	 * @return success - boolean denoting outcome
+	 */
+	private boolean renameBackupSurfaceDirectory() {
+		
+		boolean success = true;
+		
+		String targetSurfaceDirectory = this.absoluteStudyFolder + "surface/";
+		String backupSurfaceDirectory = this.absoluteStudyFolder + "surface_backup/";
+				
+		File sourceDirectory = new File(backupSurfaceDirectory);
+		File targetDirectory = new File(targetSurfaceDirectory);
+		
+		if(!sourceDirectory.exists()) {
+			return false;
+		}
+		
+		success = sourceDirectory.renameTo(targetDirectory);
+		return success;
+	}
+	
+	/**
+	 * When the Update Study process begins the original zip file that contains the original
+	 * data is renamed by adding '_backup' to the name. If the new data is found to be invalid
+	 * then a rollback is done and the '_backup' suffix is removed from the original zip file.
+	 * 
+	 * @return success - boolean
+	 */
+	protected boolean renameBackupSurfaceZipFile() {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "renameBackupSurfaceZipFile()...invoked.");
+		
+		boolean success = true;
+		
+		File fileToDelete = new File(this.surfaceZipFilePath);
+		fileToDelete.delete();
+		
+		
+		File targetZipFile = new File(this.surfaceZipFilePath);
+		File sourceZipFile = new File(this.surfaceZipFilePath + "_backup");
+		
+		success = sourceZipFile.renameTo(targetZipFile);
+		LOGGER.trace(loggerId + "renameBackupSurfaceZipFile()...exit.");
+		return success;
+	}
+	
+	protected boolean renameBackupVolumeZipFile() {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "renameBackupVolumeZipFile()...invoked.");
+		
+		boolean success = true;
+		
+		File fileToDelete = new File(this.volumeZipFilePath);
+		fileToDelete.delete();
+		
+		
+		File targetZipFile = new File(this.volumeZipFilePath);
+		File sourceZipFile = new File(this.volumeZipFilePath + "_backup");
+		
+		success = sourceZipFile.renameTo(targetZipFile);
+		LOGGER.trace(loggerId + "renameBackupVolumeZipFile()...exit.");
+		return success;
+	}
+		
+	/**
+	 * When the Update Study process begins the original (or n-1) zip file is renamed
+	 * by adding '_backup' to it.
+	 * 
+	 * @param zipFileName - String
+	 * @return success - boolean
+	 */
+	protected boolean renameExistingZipFile(String zipFileName) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "renameExistingZipFile()...invoked.");
+		
+		boolean success = true;
+		
+		File sourceZipFile = new File(this.absoluteStudyFolder + zipFileName);
+		File targetZipFile = new File(this.absoluteStudyFolder + zipFileName + "_backup");
+		
+		success = sourceZipFile.renameTo(targetZipFile);
+		LOGGER.trace(loggerId + "renameExistingZipFile()...exit.");
+		return success;
+	}
+		
+	
+	/**
+	 * Renames the surface directory if it already exists. Returns true if the directory
+	 * does not exist.
+	 * 
+	 * @return success - boolean denoting outcome
+	 */
+	private boolean renameSurfaceDirectory() {
+		
+		boolean success = true;
+		
+		String existingSurfaceDirectory = this.absoluteStudyFolder + "surface/";
+		String targetSurfaceDirectory = this.absoluteStudyFolder + "surface_backup/";
+				
+		File sourceDirectory = new File(existingSurfaceDirectory);
+		File targetDirectory = new File(targetSurfaceDirectory);
+		
+		if(!sourceDirectory.exists()) {
+			return success;
+		}
+
+		success = sourceDirectory.renameTo(targetDirectory);
+		
+		if(!success) {
+			this.errorEncountered = true;
+			this.errorMessage = "Update failed, unable to create backup source directory";
+		}
+		return success;
+	}
+	
+	/** 
+	 * Wrapper method for invoking methods required to do a rollback if the new data is
+	 * found to be invalid.
+	 * 
+	 * @param dataType - String indicating surface or volume data
+	 */
+	private void rollback(String dataType) {
+		
+		if(dataType.equals("surface")) {
+			removeSurfaceDirectory();
+			removeUploadedZipFile("surface");
+			renameBackupSurfaceDirectory();
+			renameBackupSurfaceZipFile();
+		}
 	}
 	
 	/**
@@ -565,16 +940,20 @@ public class UpdateStudyHandler extends StudyHandler {
 		boolean isSummaryText = false;
 		long uploadedZipSize = 0;
 		boolean shouldContinue = true;
+		boolean success = true;
 
 		String fileName = null;
+		String absolutePathAndFileName = null;
 
 		try {
 		
 			for (Part part : request.getParts()) {
 				fileName = part.getSubmittedFileName();
 				
+				absolutePathAndFileName = absoluteStudyFolder + fileName;
+				
 				if(fileName.toLowerCase().contains("volume")) {
-					isVolumeZip = true;
+					isVolumeZip = true;					
 					this.volumeZipFilePath = absoluteStudyFolder + fileName;
 				}
 				if(fileName.toLowerCase().contains("surface")) {
@@ -585,20 +964,15 @@ public class UpdateStudyHandler extends StudyHandler {
 					isSummaryText = true;
 					this.newSummaryTextFilePath = absoluteStudyFolder + fileName;
 				}
+				renameExistingZipFile(fileName);
 			    part.write(absoluteStudyFolder + fileName);
 			}
 		}
 		catch(Exception e) {
 			LOGGER.error(loggerId + e.getMessage(), e);
-			//StackTraceElement[] ste = Thread.currentThread().getStackTrace();
-			//BIDS_FatalException bfE = new BIDS_FatalException(e.getMessage(), ste);
-			//throw bfE;
-			LOGGER.fatal(loggerId + "Error creating new summary.conf file");
-			LOGGER.fatal(e.getMessage(), e);
-			String incidentId = DiagnosticsReporter.createDiagnosticsEntry(e);
-			this.errorEncountered = true;
-			this.errorMessage = ("Error creating new summary.conf file, update failed: " + incidentId);
-			shouldContinue = false;
+			StackTraceElement[] ste = Thread.currentThread().getStackTrace();
+			BIDS_FatalException bfE = new BIDS_FatalException(e.getMessage(), ste);
+			throw bfE;
 		}
 		
 		if(!shouldContinue) {
@@ -619,6 +993,11 @@ public class UpdateStudyHandler extends StudyHandler {
 					BIDS_FatalException bfE = new BIDS_FatalException(message, ste);
 					throw bfE;
 				}
+				success = validateZipFileTopLevelFolder("volume");
+				if(!success) {
+					renameBackupVolumeZipFile();
+					return fileName;
+				}
 			}
 			if(isSurfaceZip) {
 				File surfaceZipFile = new File(this.surfaceZipFilePath);
@@ -631,8 +1010,14 @@ public class UpdateStudyHandler extends StudyHandler {
 					BIDS_FatalException bfE = new BIDS_FatalException(message, ste);
 					throw bfE;
 				}
+				success = validateZipFileTopLevelFolder("surface");
+				if(!success) {
+					renameBackupSurfaceZipFile();
+					return fileName;
+				}
 			}
-			boolean success = cacheMenuEntriesConfig();
+			
+			success = cacheMenuEntriesConfig();
 			if(!success) {
 				return fileName;
 			}

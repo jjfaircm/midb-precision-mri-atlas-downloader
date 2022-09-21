@@ -162,24 +162,29 @@ public class CreateStudyHandler extends StudyHandler {
 		}
 		
 		if(this.surfaceZipFilePath != null) {
-			//unzipFolder(zipFile_surface, this.absoluteStudyFolder);
+			success = validateZipFileTopLevelFolder("surface");
+			if(!success) {
+				removeStudyFolder();
+				return false;
+			}
+			
 			success = runSystemUnzipCommand(this.surfaceZipFilePath);
 			if(!success) {
 				removeStudyFolder();
 				return false;
 			}
-            File zipFile = new File(this.surfaceZipFilePath);
-            zipFile.delete();
 		}
 		if(this.volumeZipFilePath != null && success) {
-			//unzipFolder(zipFile_volume, this.absoluteStudyFolder);
+			success = validateZipFileTopLevelFolder("volume");
+			if(!success) {
+				removeStudyFolder();
+				return false;
+			}
 			success = runSystemUnzipCommand(this.volumeZipFilePath);
 			if(!success) {
 				removeStudyFolder();
 				return false;
 			}
-            File zipFile = new File(this.volumeZipFilePath);
-            zipFile.delete();
 		}
 		this.createNetworkFolderConfigEntry();
 		
@@ -189,6 +194,25 @@ public class CreateStudyHandler extends StudyHandler {
 				this.removeStudyFolder();
 				return success;
 			}
+			
+			success = this.validateDscalarFiles("surface");
+			if(!success) {
+				this.removeStudyFolder();
+				return success;
+			}
+			
+			success = this.validateFileNames("surface", false);
+			if(!success) {
+				this.removeStudyFolder();
+				return success;
+			}
+			
+			success = validateThresholdFiles("surface");
+			if(!success) {
+				this.removeStudyFolder();
+				return false;
+			}
+			
 		}
 
 		if(this.volumeZipFilePath != null) {
@@ -197,6 +221,26 @@ public class CreateStudyHandler extends StudyHandler {
 				this.removeStudyFolder();
 				return success;
 			}
+			
+			
+			success = this.validateDscalarFiles("volume");
+			if(!success) {
+				this.removeStudyFolder();
+				return success;
+			}
+			
+			success = this.validateFileNames("volume", false);
+			if(!success) {
+				this.removeStudyFolder();
+				return success;
+			}
+			
+			success = validateThresholdFiles("volume");
+			if(!success) {
+				this.removeStudyFolder();
+				return false;
+			}
+			
 		}
 	
 		createConfigBackup();

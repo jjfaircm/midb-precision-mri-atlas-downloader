@@ -62,7 +62,7 @@ public class DirectoryAccessor {
 	 * 
 	 * @return byte[] A byte array containing the binary data of the file 
 	 */
-	public static byte[] getFileBytes(String filePath) {
+	public static byte[] getFileBytes(String filePath, String selectedStudy) {
 		
 		//String loggerId = ThreadLocalLogTracker.get();
 		//LOGGER.trace(loggerId + "getFileBytes()...invoked.");
@@ -70,8 +70,32 @@ public class DirectoryAccessor {
 		
 		byte[] allBytes = null;
 		
+		int index = filePath.lastIndexOf("/");
+		
+		String fileDirectory = filePath.substring(0, index+1);
+		String fileName = filePath.substring(index+1);
+		String targetFilePath = filePath;
+		
+		File targetFile = new File(filePath);
+		boolean fileFound = targetFile.exists();
+		
+		//this is a temporary circumvention to handle studies that do not have
+		//the appropriate naming convention where files names should begin with
+		//the study prefix. The javascript client code assumes that files all
+		//begin with the study prefix
+		if(!fileFound) {
+			if(selectedStudy != null) {
+				String studyPrefix = selectedStudy.trim() + "_";
+				int studyPrefixLength = studyPrefix.length();
+				//assume the filename in the folder does not begin
+				//with the studyPrefix
+				fileName = fileName.substring(studyPrefixLength);
+				targetFilePath = fileDirectory + fileName;
+			}
+		}
+		
 		try {
-			InputStream inputStream = new FileInputStream(filePath);
+			InputStream inputStream = new FileInputStream(targetFilePath);
 			allBytes = inputStream.readAllBytes();
 			inputStream.close();
 		}
@@ -124,13 +148,13 @@ public class DirectoryAccessor {
 		LOGGER.trace(loggerId + "getThresholdImagePaths()...invoked. Target directory=" + fileDirectory);
 
 		ArrayList<String> imagePaths = new ArrayList<String>();
-		File[] directories =  null;
+		File[] files =  null;
 		File aFile = null;
 		String anImagePath = null;
 		//String imagePath100 = null;
 		
 				
-		directories = new File(fileDirectory).listFiles(new FileFilter() {
+		files = new File(fileDirectory).listFiles(new FileFilter() {
 		    @Override
 		    public boolean accept(File file) {
 		    	
@@ -169,10 +193,10 @@ public class DirectoryAccessor {
 		    }
 		});
 		
-		Arrays.sort(directories);
+		Arrays.sort(files);
 
-		for(int i=0; i<directories.length; i++ ) {
-			aFile = directories[i];
+		for(int i=0; i<files.length; i++ ) {
+			aFile = files[i];
 			anImagePath = aFile.getAbsolutePath();
 			// the client always expects the network probability map to be first in the array
 			// because it is processed differently on the client

@@ -113,7 +113,7 @@ public class AtlasDataCacheManager {
 	private void addNetworkMapImage(String networkPath, ArrayList<String> imagePathNames) {
 		
 		String probabilityMapImagePath = imagePathNames.remove(0);
-		byte[] fileBytes = DirectoryAccessor.getFileBytes(probabilityMapImagePath);
+		byte[] fileBytes = DirectoryAccessor.getFileBytes(probabilityMapImagePath, null);
 		String base64EncodedString = Base64.getEncoder().encodeToString(fileBytes);
 		String networkMapNifiFilePath = DirectoryAccessor.getNetworkMapNiiFilePath(networkPath);
 		NetworkMapData nmd = new NetworkMapData(networkPath, base64EncodedString, networkMapNifiFilePath);
@@ -366,7 +366,7 @@ public class AtlasDataCacheManager {
 		
 		while(imagePathsIt.hasNext()) {
 			anImagePath = imagePathsIt.next();
-			imageBuffer = DirectoryAccessor.getFileBytes(anImagePath);
+			imageBuffer = DirectoryAccessor.getFileBytes(anImagePath, null);
 			imageByteBuffers.add(imageBuffer);
 		}
 

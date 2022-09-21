@@ -5,8 +5,18 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import edu.umn.midb.population.atlas.base.ApplicationContext;
@@ -34,7 +44,8 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 	private static final Logger LOGGER = LogManager.getLogger(CreateStudyHandler.class);
 	protected static final String ROOT_DESTINATION_PATH = "/midb/studies/";
 	protected static final String REPLACE_FOLDER_NAME = "${folderName}";
-	private static final String TEMPLATE_ZIP_COMMAND = "/usr/bin/zip -r zips/${folderName}.zip ${folderName} -x \"*.DS_Store\" -x \"__MACOSX\" -x \"*.png\"";
+	protected static final String REPLACE_ZIP_FILE_NAME = "${zipFileName}";
+	private static final String TEMPLATE_ZIP_COMMAND = "/usr/bin/zip -r zips/${zipFileName}.zip ${folderName} -x \"*.DS_Store\" -x \"__MACOSX\" -x \"*.png\"";
 	private static final String TEMPLATE_LINK = "<a href=\"${url}/\" target=\"_blank\" style=\"font-style: italic; color:DarkBlue;\">${linkText}</a>";
 
 
@@ -92,9 +103,14 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 		asyncRunner = new AsyncRunner();
 	}
 	
+	/**
+	 * Checks available storage to determine if it is sufficient to add a study.
+	 * 
+	 * @return isSufficient - boolean
+	 */
 	protected boolean checkSufficientServerStorage() {
 		
-		boolean sufficientStorage = false;
+		boolean isSufficient = false;
 		float requiredStorage = 0;
 		
 		ServerStorageStats freeStorageStats = CommandRunner.getFreeStorageStats();
@@ -107,12 +123,12 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 		}
 		
 		if(freeStorageStats.getUnitOfMeasure().equals("TB")) {
-			sufficientStorage = true;
+			isSufficient = true;
 		}
 		else if(freeStorageStats.getAmount()>requiredStorage) {
-			sufficientStorage = true;
+			isSufficient = true;
 		}
-		return sufficientStorage;
+		return isSufficient;
 	}
 
 	
@@ -214,7 +230,9 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 	
 	/**
 	 * Creates zip files for the various types of available network data. This is done
-	 * so that the user can download the files for all 'thresholds' if desired.
+	 * so that the user can download the files for all 'thresholds' if desired. This method
+	 * run asynchronously so the administrator does not have to wait for it to complete when
+	 * adding/creating a new study.
 	 * 
 	 * @return success - boolean indicating if the subfolders were zipped successfully
 	 */
@@ -223,7 +241,7 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 		LOGGER.trace(loggerId + "createSubFolderZips()...invoked.");
 		
 		long startTime = System.currentTimeMillis();
-		
+				
 		Iterator<String> foldersIt = this.zippedFoldersList.iterator();
 		String currentFolder = null;
 		String surfaceRootFolder = this.absoluteStudyFolder + "surface";
@@ -312,6 +330,7 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 	public boolean isErrorEncountered() {
 		return this.errorEncountered;
 	}
+	
 	
 	/**
      * 
@@ -502,7 +521,9 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 		boolean success = true;
     	int returnCode = -1;
     	//String zipFileName = this.studyFolder + "_" + dataType + "_" folderName;
-    	String commandToExecute = TEMPLATE_ZIP_COMMAND.replace(REPLACE_FOLDER_NAME, folderName);
+    	String commandToExecute = TEMPLATE_ZIP_COMMAND.replace(REPLACE_ZIP_FILE_NAME, this.studyFolder + "_" + folderName);
+    	commandToExecute = commandToExecute.replace(REPLACE_FOLDER_NAME, folderName);
+
     	//Runtime runtime = Runtime.getRuntime();
 		LOGGER.trace(loggerId + "runSystemZipFolderCommand()...command=" + commandToExecute);
     	Process process = null;
@@ -573,46 +594,97 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
     	return success;
     }
     
+    /**
+     * Checks if each file begins with the studyName prefix. The study prefix is the same
+     * as the name of the study folder with a trailing underscore added at the end. The
+     * folder name of the study is also used as the unique study id.
+     * 
+     * @param dataType - String indicating surface or volume data
+     * @param isUpdate - boolean indicating if the operation is Add Study or Update Study
+     * @return success - boolean indicating if every file begins with the study prefix
+     */
+    protected boolean validateFileNames(String dataType, boolean isUpdate) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "validateFileNames()...invoked.");
+		
+		boolean success = true;
+
+	    ArrayList<String> subDirs = new ArrayList<String>();
+	    String targetRootPath = this.absoluteStudyFolder + dataType + "/";	
+	    try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(targetRootPath))) {
+	        for (Path path : stream) {
+	            if (Files.isDirectory(path)) {
+	            	subDirs.add(path.toString());
+	            }
+	        }
+	    }
+	    catch(Exception e) {
+	    	LOGGER.error(loggerId + e.getMessage(), e);
+	    	DiagnosticsReporter.createDiagnosticsEntry(e);
+	    	this.errorMessage = "Unable to get list of subdirectories for path: " + targetRootPath;
+	    	this.errorEncountered = true;
+	    	return false;
+	    }
+	    
+	   Iterator<String> dirIt = subDirs.iterator(); 
+	   String[] fileNamesArray = null;
+	   ArrayList<String> fileNames = null;
+	   Iterator<String> fileNamesIt = null;
+	   String subDirName = null;
+	   String shortSubDirName = null;
+	   int slashIndex = 0;
+	   
+	   while(dirIt.hasNext()) {
+		    subDirName = dirIt.next();
+		    slashIndex = subDirName.lastIndexOf("/");
+		    shortSubDirName = subDirName.substring(slashIndex);
+		    shortSubDirName = dataType + shortSubDirName;
+		    
+	        if(subDirName.endsWith("/zips")) {
+	    	   continue;
+	        }
+    		    
+		    File subDir = new File(subDirName);
+		    fileNamesArray = subDir.list();
+		    fileNames = new ArrayList<String>(Arrays.asList(fileNamesArray));
+		    fileNamesIt = fileNames.iterator();
+		    String fileName = null;
+
+		    
+		    while(fileNamesIt.hasNext()) {
+		    	fileName = fileNamesIt.next();
+		    	if(!fileName.startsWith(this.studyFolder)) {
+		    		this.errorEncountered = true;
+		    		this.errorMessage = "study prefix missing for file: " + shortSubDirName + "/" + fileName;
+		    		if(!isUpdate) {
+		    			this.errorMessage += "<br>Study not created";
+		    		}
+		    		else {
+		    			this.errorMessage += "<br>Study not updated";
+		    		}
+		    		return false;
+		    	}
+		    }
+	   }
+	    
+		LOGGER.trace(loggerId + "validateFileNames()...exit.");
+		return success;    	
+    }
     
-    
-	/**
-	 * 
-	 * Validates that there is not a mismatch between the uploaded folders.txt file
-	 * and the folders contained in the uploaded zip file.
-	 * 
-	 * @param dataType - either 'volume' or 'surface'
-	 * @param isUpdate - boolean indicating this is occurring as part of a study update
-	 * @return isValid - boolean
-	 */
-	protected boolean validateNetworkFoldersConfig(String dataType, boolean isUpdate) {
-    	
-    	boolean isValid = true;
-    	// targetDirectory will be root + surface or volume
-    	String targetDirectory = this.absoluteStudyFolder + dataType;
-    	
-    	File[] directories = new File(targetDirectory).listFiles(new FileFilter() {
-    	    @Override
-    	    public boolean accept(File file) {
-    	        return file.isDirectory();
-    	    }
-    	});
-    	
-    	String currentFolderName = null;
-    	for(int i=0; i<directories.length; i++) {
-    		//we're creating a list of the single network names so we
-    		//exclude combined_clusters and overlapping_networks
-    		currentFolderName = directories[i].getName();
-    		if(currentFolderName.contentEquals("combined_clusters")) {
-    			this.combinedClustersFolderExists = true;
-    			continue;
-    		}
-    		if(currentFolderName.contentEquals("overlapping_networks")) {
-    			this.overlappingNetworksFolderExists = true;
-    			continue;
-    		}
-    		this.zippedFoldersList.add(directories[i].getName());
-    	}
-    	
+    /**
+     * Validates that there is a folder named 'combined_clusters' if combined_clusters
+     * was denoted as available data by the admin user in the interface to create a study.
+     * If no combined_clusters data was specified then the folder should not exist.
+     * 
+     * @param isUpdate - boolean
+     * @return isValid - boolean
+     */
+    protected boolean validateCombinedClustersConfig(boolean isUpdate) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "validateCombinedClustersConfig()...invoked.");
+		
+		boolean isValid = true;
+		
     	if(this.menuEntry.contains("combined_clusters")) {
     		if(!this.combinedClustersFolderExists) {
     			isValid = false;
@@ -631,22 +703,160 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
     		}
     	}
     	
-    	if(this.menuEntry.contains("overlapping")) {
-    		if(!this.overlappingNetworksFolderExists) {
+    	
+    	if(!this.menuEntry.contains("combined_clusters")) {
+    		if(this.combinedClustersFolderExists) {
     			isValid = false;
     			if(!isUpdate) {
-	    			this.errorMessage = "Integration Zone was selected as an available network type, " +
-	    		           "but the 'overlapping_networks' folder does not exist in the uploaded zip file." +
-	    					"<br>Study not created";
+	    			this.errorMessage = "Combined Networks was not selected as an available network type, " +
+	    		           "but the 'combined_clusters' folder does exist in the uploaded zip file." +
+	    				   "<br>Study not created";
     			}
-    			else {
-	    			this.errorMessage = "Integration Zone is an available network type in the study menu, " +
-		    		           "but the 'overlapping_networks' folder does not exist in the uploaded zip file." +
-		    					"<br>Study not created";
-    			}
+	    		else {
+	    			this.errorMessage = "Combined Networks was not selected as an available network type, " +
+		    		           "but the 'combined_clusters' folder does exist in the uploaded zip file." +
+		    				   "<br>Study not updated";
+	    		}
     			this.errorEncountered = true;    			
     			return isValid;
     		}
+    	}			
+		LOGGER.trace(loggerId + "validateCombinedClustersConfig()...exit.");
+		return isValid;
+    }
+    
+    /**
+     * Checks that the dscalar files exist in each network folder. There are two dscalar files: 
+     * the .nii file an the .png file. The name of the dscalar .nii file must end with '.dscalar.nii'.
+     * The dscalar .png file name must end with '_network_probability.png'.
+     * 
+     * @param dataType - String indicating surface or volume data
+     * @return success - boolean indicating if all dscalar files for all networks were detected
+     */
+    protected boolean validateDscalarFiles(String dataType) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "validateDscalarFiles()...invoked.");
+		
+		boolean success = true;
+		
+		String directoryPath = null;
+		File targetDirectory = null;
+		
+		if(dataType.equalsIgnoreCase("surface")) {
+			directoryPath = this.absoluteStudyFolder + "surface/";
+			targetDirectory = new File(directoryPath);
+		}
+		else if(dataType.equalsIgnoreCase("volume")) {
+			directoryPath = this.absoluteStudyFolder + "volume/";
+			targetDirectory = new File(this.volumeZipFilePath);
+		}
+		
+		String[] folderArray = targetDirectory.list();
+		List<String> folderList = Arrays.asList(folderArray);
+		Iterator<String> folderListIt = folderList.iterator();
+		String currentFolderName = null;
+		String shortFolderName = null;
+		String[] fileList = null;
+		
+		
+		while(folderListIt.hasNext()) {
+			shortFolderName = folderListIt.next();
+			currentFolderName = directoryPath + shortFolderName;
+			
+			//combined_clusters does not have a dscalar file
+			if(currentFolderName.contains("combined_clusters")) {
+				continue;
+			}
+			
+			File currentDirectory = new File(currentFolderName);
+			
+			if(!currentDirectory.isDirectory()) {
+				this.errorMessage = "Unexpected file found: " + currentFolderName;
+				this.errorEncountered = true;
+				return false;
+			}
+			
+			fileList = currentDirectory.list();
+			String currentFileName = null;
+			File currentFile = null;
+			boolean dscalar_nii_found = false;
+			boolean dscalar_png_found = false;
+			
+			for(int i=0; i<fileList.length; i++) {
+				currentFileName = fileList[i];
+				currentFile = new File(currentFileName);
+				
+				
+				
+				if(currentFile.isDirectory()) {
+					this.errorMessage = "Unexpected directory found: " + shortFolderName;
+					this.errorEncountered = true;
+					return false;
+				}
+				
+				if(currentFileName.endsWith(".dscalar.nii")) {
+					dscalar_nii_found = true;
+				}
+				else if(currentFileName.endsWith("network_probability.png")) {
+					dscalar_png_found = true;
+				}
+				if(dscalar_nii_found && dscalar_png_found) {
+					break;
+				}
+			}
+			if(!dscalar_nii_found || !dscalar_png_found) {
+				this.errorMessage = "...dscalar.nii and/or ...network_probability.png<br> missing in directory: " + shortFolderName;
+				this.errorEncountered = true;
+				return false;
+			}
+		}
+		
+		LOGGER.trace(loggerId + "validateDscalarFiles()...exit.");
+		return success;
+    }
+    
+	/**
+	 * 
+	 * Validates that there is not a mismatch between the uploaded folders.txt file
+	 * and the folders contained in the uploaded zip file.
+	 * 
+	 * @param dataType - either 'volume' or 'surface'
+	 * @param isUpdate - boolean indicating this is occurring as part of a study update
+	 * @return isValid - boolean
+	 */
+	protected boolean validateNetworkFoldersConfig(String dataType, boolean isUpdate) {
+    	
+    	boolean isValid = true;
+    	// targetDirectory will be root + surface or volume
+    	String targetDirectory = this.absoluteStudyFolder + dataType;
+
+    	File[] directories = new File(targetDirectory).listFiles();
+    	File currentFile = null;
+    	
+    	String currentFolderName = null;
+    	for(int i=0; i<directories.length; i++) {
+    		currentFile = directories[i];
+    		currentFolderName = currentFile.getName();
+    		if(!currentFile.isDirectory()) {
+    			this.errorEncountered = true;
+    			this.errorMessage = "Unexpected file found in " + dataType + " folder: " + currentFolderName;
+    			return false;
+    		}
+    		//we're creating a list of the single network names so we
+    		//exclude combined_clusters and overlapping_networks
+    		currentFolderName = directories[i].getName();
+    		
+    		
+    		
+    		if(currentFolderName.contentEquals("combined_clusters")) {
+    			this.combinedClustersFolderExists = true;
+    			continue;
+    		}
+    		if(currentFolderName.contentEquals("overlapping_networks")) {
+    			this.overlappingNetworksFolderExists = true;
+    			continue;
+    		}
+    		this.zippedFoldersList.add(directories[i].getName());
     	}
     	
     	String errorMessage = null;
@@ -715,7 +925,7 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 
     			}
     		}
-
+   		
 			return isValid;
     	}
     	
@@ -732,9 +942,248 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
     			break;
     		}
     	}
+    	
+		isValid = validateCombinedClustersConfig(isUpdate);
+		isValid = validateOverlappingNetworksConfig(isUpdate);
+ 	
     	return isValid;
     }
-
 	
+	protected boolean validateOverlappingNetworksConfig(boolean isUpdate) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "validateOverlappingNetworksConfig()...invoked.");
+		
+		boolean isValid = true;
+		
+    	if(this.menuEntry.contains("overlapping")) {
+    		if(!this.overlappingNetworksFolderExists) {
+    			isValid = false;
+    			if(!isUpdate) {
+	    			this.errorMessage = "Integration Zone was selected as an available network type, " +
+	    		           "but the 'overlapping_networks' folder does not exist in the uploaded zip file." +
+	    				   "<br>Study not created";
+    			}
+	    		else {
+	    			this.errorMessage = "Integration Zone was selected as an available network type, " +
+		    		           "but the 'overlapping_networks' folder does not exist in the uploaded zip file." +
+		    				   "<br>Study not updated";
+	    		}
+    			this.errorEncountered = true;    			
+    			return isValid;
+    		}
+    	}
+    	
+    	
+    	if(!this.menuEntry.contains("overlapping")) {
+    		if(this.overlappingNetworksFolderExists) {
+    			isValid = false;
+    			if(!isUpdate) {
+	    			this.errorMessage = "Integration Zone was not selected as an available network type, " +
+	    		           "but the 'overlapping_networks' folder does exist in the uploaded zip file." +
+	    				   "<br>Study not created";
+    			}
+	    		else {
+	    			this.errorMessage = "Integration Zone was not selected as an available network type, " +
+		    		           "but the 'overlapping_networks' folder does exist in the uploaded zip file." +
+		    				   "<br>Study not updated";
+	    		}
+    			this.errorEncountered = true;    			
+    			return isValid;
+    		}
+    	}			
+
+		LOGGER.trace(loggerId + "validateOverlappingNetworksConfig()...exit.");
+		return isValid;
+	}
+
+	/**
+	 * Checks that each folder holding the data for a single network (Aud, CO, etc.) has a .nii
+	 * and .png file representing every threshold from 1% to 100% in increments of 1.
+	 * 
+	 * @param dataType - String representing surface or volume data
+	 * @return success - boolean indicating if all files were found
+	 */
+	protected boolean validateThresholdFiles(String dataType) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "validateThresholdFiles()...invoked.");
+		
+		boolean success = true;
+		
+	    ArrayList<String> subDirs = new ArrayList<String>();
+	    String targetRootPath = this.absoluteStudyFolder + dataType + "/";	
+	    try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(targetRootPath))) {
+	        for (Path path : stream) {
+	            if (Files.isDirectory(path)) {
+	            	if(!path.endsWith("combined_clusters") && !path.endsWith("overlapping_networks")) {
+	            		subDirs.add(path.toString());
+	            	}
+	            }
+	        }
+	    }
+	    catch(Exception e) {
+	    	LOGGER.error(loggerId + e.getMessage(), e);
+	    	DiagnosticsReporter.createDiagnosticsEntry(e);
+	    	this.errorMessage = "Unable to get list of subdirectories for path: " + targetRootPath;
+	    	this.errorEncountered = true;
+	    	return false;
+	    }
+	    
+	   Iterator<String> dirIt = subDirs.iterator(); 
+	   String[] fileNamesArray = null;
+	   ArrayList<String> fileNames = null;
+	   Iterator<String> fileNamesIt = null;
+	   String subDirName = null;
+	   String shortSubDirName = null;
+	   int slashIndex = 0;
+	   String baseThreshold = "0.0";
+	   String baseThresholdSuffix = null;
+	   String targetThreshold = null;
+	   int currentThreshold = -1;
+	   boolean niiThresholdFound = false;
+	   boolean pngThresholdFound = false;
+	   
+	   while(dirIt.hasNext()) {
+		    subDirName = dirIt.next();
+		    slashIndex = subDirName.lastIndexOf("/");
+		    shortSubDirName = subDirName.substring(slashIndex);
+		    shortSubDirName = dataType + shortSubDirName;
+		    
+	        if(subDirName.endsWith("/zips")) {
+	    	   continue;
+	        }
+   		    
+		    File subDir = new File(subDirName);
+		    fileNamesArray = subDir.list();
+		    //fileNames = new ArrayList<String>(Arrays.asList(fileNamesArray));
+		    //fileNamesIt = fileNames.iterator();
+		    //String fileName = null;
+		    
+			File targetDirectory = new File(subDirName);
+			String currentFileName = null;
+			File currentFile = null;
+			baseThreshold = "0.0";
+			targetThreshold = null;
+			currentThreshold = 0;
+			
+			while(currentThreshold < 100) {
+				
+				niiThresholdFound = false;
+				pngThresholdFound = false;
+				
+				currentThreshold++;
+				
+				if(currentThreshold == 100) {
+					targetThreshold = "1.0.";
+				}
+				else {
+					if(currentThreshold == 10) {
+						baseThreshold = "0.";
+					}
+					if((currentThreshold % 10)==0) {
+						baseThresholdSuffix = currentThreshold/10 + ".";
+					}
+					else {
+						baseThresholdSuffix = currentThreshold + ".";
+					}
+					targetThreshold = baseThreshold + baseThresholdSuffix;
+				}
+			
+				for(int i=0;i<fileNamesArray.length;i++) {
+					
+					currentFileName = fileNamesArray[i];
+					currentFile = new File(currentFileName);
+					
+					if(currentThreshold==1) {
+						if(!currentFileName.endsWith(".nii") && !currentFileName.endsWith(".png")) {
+							this.errorEncountered = true;
+							String errorFile = currentFileName;
+							this.errorMessage = "Unexpected file encountered<br>directory:<br>" + shortSubDirName;
+							this.errorMessage += "<br>file name:<br>" + errorFile;
+							return false;	
+						}
+					}
+
+					if(currentFile.isDirectory()) {
+						this.errorEncountered = true;
+						this.errorMessage = "Unexpected directory encountered:" + shortSubDirName;
+						return false;		
+					}
+					
+					if(currentFileName.contains(targetThreshold)) {
+						if(currentFileName.endsWith(".nii")) {
+							niiThresholdFound = true;
+						}
+						if(currentFileName.endsWith(".png")) {
+							pngThresholdFound = true;
+						}
+					}
+					if(niiThresholdFound && pngThresholdFound) {
+						break;
+					}
+				}
+			    if(!niiThresholdFound || !pngThresholdFound) {
+			    	String message = "Threshold file missing.<br>Directory: " + shortSubDirName;
+			    	message += "<br>Threshold: " + targetThreshold;
+			    	message += "<br>Check both .nii and .png files for theshold.";
+			    	message += "<br>Names must follow standard naming conventions";
+			    	message += "<br>Download surface.zip for example data.";
+			    	this.errorMessage = message;
+			    	this.errorEncountered = true;
+			    	return false;
+			    }
+			}
+	   }
+	   
+		LOGGER.trace(loggerId + "validateThresholdFiles()...exit.");
+		return success;
+	}
+	
+	/**
+	 * Validates that there is only 1 top level folder in the zip file. This top level
+	 * folder must be named either 'surface' or 'volume'.
+	 * 
+	 * @param dataType - String denoting surface or volume data
+	 * @return isValid - boolean
+	 */
+	protected boolean validateZipFileTopLevelFolder(String dataType) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "validateTopLevelFolder()...invoked.");
+		
+		boolean isValid = true;
+		
+		ZipFile zipFile = null;
+		
+		try {
+			if(dataType.equals("surface")) {
+				zipFile = new ZipFile(this.surfaceZipFilePath);
+			}
+			else if(dataType.equals("volume")) {
+				zipFile = new ZipFile(this.volumeZipFilePath);
+			}	
+		}
+		catch(Exception e) {
+			LOGGER.error(loggerId + e.getMessage(), e);
+			DiagnosticsReporter.createDiagnosticsEntry(e);
+			this.errorEncountered = true;
+			this.errorMessage = "Unable to examine entries in zip file";
+			return false;
+		}
+					
+        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
+            String name = entry.getName();
+            if(!name.matches("\\S+/\\S+")){ //it's a top level folder
+                if(!name.equals(dataType + "/")) {
+                	this.errorEncountered = true;
+                	this.errorMessage = "Invalid top level folder or file<br>encountered in zip file:<br>" + name;
+                	isValid = false;     
+                	break;
+                }
+            }
+        }
+
+		return isValid;
+	}
 
 }

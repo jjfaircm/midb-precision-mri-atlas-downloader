@@ -158,14 +158,16 @@ ul.menu {
  #ul_updateStudyFileList {
   list-style: none;
   display: table;
-  margin-left:10%;
+  margin-left:-7%;
 }
 
  
  /* added for test */
+
  li.zipList {
  	float: left;
  }
+
  
  figure.zipFigure {
  	display: table;
@@ -181,12 +183,14 @@ ul.menu {
   margin: 2px;
   text-align: center;
   font-size: 12px;
+  /*
   display: table-caption;
   caption-side: bottom;
+  */
 }
 
 #div_dropZone {
-    width:650px;
+    width:950px;
     height:185px;
     border: 2px dashed gray;
     display: inline-block;
@@ -198,7 +202,7 @@ ul.menu {
   }
   
   #div_dropZoneUpdateStudy {
-    width:300px;
+    width:340px;
     height:210px;
     border: 2px dashed gray;
     display: inline-block;
@@ -298,6 +302,10 @@ thead.fixedHead th {
 
 #fileDownloadsTable td, #emailAddressesTable td, #webHitsTable td, #adminAccessTable td {
     font-size: 15px;
+}
+
+#img_password:hover {
+	cursor: pointer;
 }
   
 

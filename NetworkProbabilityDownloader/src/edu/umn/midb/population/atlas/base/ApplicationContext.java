@@ -5,6 +5,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import edu.umn.midb.population.atlas.security.TokenManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import edu.umn.midb.population.atlas.study.handlers.CreateStudyHandler;
@@ -34,6 +38,9 @@ public class ApplicationContext {
 	private ArrayList<String> actionList = new ArrayList<String>();
 	private String currentActionFormattedTimestamp = null;
 	private HttpServletRequest currentReguest = null;
+	
+	private static final Logger LOGGER = LogManager.getLogger(ApplicationContext.class);
+
 	
 	/**
 	 * Default constructor

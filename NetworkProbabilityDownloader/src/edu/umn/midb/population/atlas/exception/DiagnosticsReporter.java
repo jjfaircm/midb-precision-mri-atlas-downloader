@@ -41,7 +41,7 @@ public class DiagnosticsReporter {
 	public static final String DIAGNOSTICS_DEMARCATION = "*********************************************************************";
 	private static final String LOGGER_ID = " ::LOGGERID=DiagnosticsReporter:: ";
 	private static final String NEW_LINE = "\r\n";
-	private static final String CLASS_NAME = "DiagnosticsReports";
+	private static final String CLASS_NAME = "DiagnosticsReporter";
 	
 	static {
 		LOGGER = LogManager.getLogger(DiagnosticsReporter.class);

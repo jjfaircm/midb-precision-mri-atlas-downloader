@@ -48,10 +48,10 @@
     border: 2px solid white;
     outline: 2px solid black;
     position: fixed;
-    width: 340px;
+    width: 560px;
     left: 50%;
     top: 50%;
-    margin-left: -150px;
+    margin-left: -280px;
     padding: 6px 8px 8px;
     box-sizing: border-box;
     text-align: center;

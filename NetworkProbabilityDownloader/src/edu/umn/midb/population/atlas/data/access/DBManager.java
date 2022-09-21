@@ -734,7 +734,7 @@ public class DBManager {
 		
 		Connection conn = getDBConnection();
 		PreparedStatement ps = conn.prepareStatement(deleteExtraneousWebHits);
-		ps.setString(1, "68.63.215.250");
+		ps.setString(1, "68.47.110.229");
 		ps.executeUpdate();
 		ps.close();
 		conn.close();

@@ -21,7 +21,6 @@
    var droppedFileRemovalPending = false;
    var networkFolderNamesMap = new Map();
    var menuCreationDisabled = false;
-   var unmaskedText = "";
    var global_studyToRemove = null;
    var adminLoginFocusPending = false;
    var global_networkTypeId = "combined_clusters";
@@ -49,9 +48,12 @@
 		   uploadFileNamesArray: new Array(),
 		   uploadFilesArray: new Array(),
 		   ul_uploadFileList: null,
+           div_updateStudyDetails: null,
    		   div_dropZone: null,
    		   div_progressUpload: null,
+           div_updateStudyProgress: null,
    		   div_unzipProgress: null,
+           div_updatePrefixProgress: null,
    		   progress_updateUpload: null,
    		   formData: new FormData()
    };
@@ -65,6 +67,8 @@
    var lastAdminActionRequest = null;
    var targetMap = null;
    var numberMapDisplays = 0;
+   //var global_submenu1_showing = false;
+   var mouseoutTimerHandle = null;
 
 
    function startupMenu() {
@@ -89,6 +93,9 @@
        updateStudy.div_progressUpload = document.getElementById("div_updateStudyProgress");
        updateStudy.progress_updateUpload = document.getElementById("progress_updateUpload");
        updateStudy.div_unzipProgress = document.getElementById("div_updateUnzipProgress");
+       updateStudy.div_updatePrefixProgress = document.getElementById("div_updatePrefixProgress");
+       updateStudy.div_updateStudyDetails = document.getElementById("div_updateStudyDetails");
+       updateStudy.div_updateStudyProgress = document.getElementById("div_updateStudyProgress");
        
        console.log("startUpMenu()...exit.");
    }
@@ -287,11 +294,12 @@
 		 th_adminAccessCount.innerHTML = "Admin Access Record Count: " + adminAccessRecordArray.length;
 		 var div_dataBaseProgress = document.getElementById("db_progress");
 		 div_dataBaseProgress.style.display = "none";
-		 var div_fileDownloadsView = document.getElementById("div_adminAccessView");
-		 div_fileDownloadsView.style.display = "block";
+		 var div_adminAccessView = document.getElementById("div_adminAccessView");
+		 div_adminAccessView.style.display = "block";
 	   	 console.log("buildAdminAccessTable()...exit.");	
 	}
 	
+	//displays history of user requests to download one of the threshold or dscalar files
 	function buildFileDownloadsTable(fileDownloadsJSON) {
 
 	   	 console.log("buildFileDownloadsTable()...invoked.");
@@ -443,6 +451,7 @@
 		   studyFolderName = studyFolderName.replaceAll(" ", "_");
 		   studyFolderName = studyFolderName.replaceAll("__", "_");
 		   studyFolderName = studyFolderName.trim();
+           newStudy.studyFolder = studyFolderName;
 		   
 		   var textInput_studyFolderName = document.getElementById("input_studyFolderName");
 		   textInput_studyFolderName.readonly = false;
@@ -574,7 +583,7 @@
 	    	 
 	   	 var networkTypes = document.getElementsByClassName("select_networkType");
 	   	 var select_NetworkTypeElement = null;
-	   	 var networkTypesArray = new Array();
+	   	 var networkEntryMap = new Map();
 	   	 var aSelectedNetworkType = null;
 	   	 var networkEntry = null;
 	   	 var networkFolderName = null;
@@ -587,8 +596,28 @@
 	   		 networkEntry = networkEntry.replace(networkDisplayNameReplacementMarker, aSelectedNetworkType);
 	   		 networkFolderName = networkFolderNamesMap.get(aSelectedNetworkType);
 	   		 networkEntry = networkEntry.replace(networkFolderNameReplacementMarker, networkFolderName);
-	       	 menuEntry += networkEntry;
+	       	 //menuEntry += networkEntry;
+             console.log("setting network entry in map, key=" + networkFolderName);
+             networkEntryMap.set(networkFolderName, networkEntry);
 	   	 }
+
+   	     networkEntry = networkEntryMap.get("single");
+         if(networkEntry != null) {
+	        console.log("adding networkEntry=" + networkEntry);
+			menuEntry += networkEntry;
+         }
+   	     networkEntry = networkEntryMap.get("combined_clusters");
+         if(networkEntry != null) {
+	        console.log("adding networkEntry=" + networkEntry);
+			menuEntry += networkEntry;
+         }
+   	     networkEntry = networkEntryMap.get("overlapping");
+         if(networkEntry != null) {
+	        console.log("adding networkEntry=" + networkEntry);
+			menuEntry += networkEntry;
+         }
+  
+
 	   	 menuEntry += template_endMenuEntry;
    	     console.log(menuEntry); 
 	   	 
@@ -684,6 +713,14 @@
    
    function handleAdminLoginRequest() {
           console.log("handleAdminLoginRequest()...invoked.");
+		  var div_admin = document.getElementById("div_admin");
+          
+          //we're already in the admin console
+		  if(div_admin.style.display==="block") {
+			 console.log("handleAdminLoginRequest()...admin console already active, exit.");
+			 return;
+		  }
+
 
           //var div_admin = document.getElementById("div_promptAdmin");
           //div_admin.style.display = "block";
@@ -865,7 +902,7 @@
            currentE.style.display = "none";
        }
 
-
+       //global_submenu1_showing = false;
        console.log("hideMenuAll()...exit");
 
    }
@@ -873,15 +910,19 @@
    function handleMapSelected(radioButton) {
 	    console.log("handleMapSelected()...invoked");
 	    var newInnerHTML = template_iframeMap;
+	    var div_iframeMap = document.getElementById("div_iframeMap"); 
 
+        //toggle display to force reload
+        div_iframeMap.style.display = "none";
+        
 		if(radioButton.id=="radio_webHitsMap") {
 			newInnerHTML = newInnerHTML.replace("url", webHitsMapURL);
 		}
 		else {
+			console.log("setting newInnerHTML to fileDownloadsMapUrl");
+			console.log(fileDownloadsMapUrl);
 			newInnerHTML = newInnerHTML.replace("url", fileDownloadsMapUrl);
 		}
-	   var div_iframeMap = document.getElementById("div_iframeMap"); 
-       div_iframeMap.style.display = "none";
 	   div_iframeMap.innerHTML = newInnerHTML;
        div_iframeMap.style.display = "block";
        console.log("handleMapSelected()...exit");
@@ -928,7 +969,7 @@
    }
    
    function handleUpdateMapURLResponse(responseText) {
-       console.log("handleUpdateMapURLResponse()()...invoked.");
+       console.log("handleUpdateMapURLResponse()...invoked.");
        
        var div_mapProgress = document.getElementById("div_map_progress");
        div_mapProgress.style.display = "none";
@@ -937,15 +978,17 @@
 	  
 	   webHitsMapURL = jsonResponseObject.webHitsMapURL;
 	   fileDownloadsMapURL = jsonResponseObject.downloadsMapURL;
+
+	   console.log("webHitsMapURL=" + webHitsMapURL);
+	   console.log("fileDownloadsMapURL=" + fileDownloadsMapURL);
        
-	   console.log(webHitsMapURL);
 	   var alertMessage = jsonResponseObject.message;
 	   
 	   var button_maps = document.getElementById("button_maps");
 	   button_maps.style.display = "inline-block";
       
        doAdminAlert(alertMessage);
-       console.log("handleUpdateMapURLResponse()()...exit.");
+       console.log("handleUpdateMapURLResponse()...exit.");
    }
    
    function handleRemoveStudyResponse(responseText) {
@@ -1002,6 +1045,7 @@
 	   	
 	   	updateStudy.div_unzipProgress.style.display = "none";
 	   	updateStudy.div_progressUpload.style.display = "none";
+        updateStudy.div_updatePrefixProgress.style.display = "none";
 	   	
 	    resetUpdateStudyForm();
 		doAdminAlert(responseText);
@@ -1075,10 +1119,24 @@
 				this.classList.remove("active");
 				var fileName = null;
 				var additionalHTML = null;
+				var text_studyFolderName = document.getElementById("input_studyFolderName");
+		        var studyFolderName = text_studyFolderName.value;
+				var requiredSurfaceZipName = studyFolderName + "_surface.zip";
+				var requiredVolumeZipName = studyFolderName + "_volume.zip";
+
 				
 			   	 var select_DataTypeElement = document.getElementById("select_dataType");
 			   	 var selectedDataTypes = select_DataTypeElement.options[select_DataTypeElement.selectedIndex].value;
 
+			   	 if(selectedDataTypes == "unselected") {
+			   		 doAdminAlert("Please select Available Data Type first");
+			   		 return;
+			   	 }
+			   	 if(studyFolderName===null || studyFolderName === "") {
+			   		 doAdminAlert("Please enter Study Name first");
+			   		 return;
+			   	 }
+                
 			   	 if(selectedDataTypes == "unselected") {
 			   		 doAdminAlert("Please select Available Data Type first");
 			   		 return;
@@ -1092,12 +1150,21 @@
 							doAdminAlert("surface.zip not allowed for Available Data Type of volume");
 							return;
 						}
+						if(!(fileName===requiredVolumeZipName)) {
+							doAdminAlert("the name of the zip file must be " + requiredVolumeZipName);
+							return;
+                        }
 					}
 					else if(selectedDataTypes == "surface") {
+						console.log("fileName=" + fileName);
 						if(fileName.includes("volume.zip")) {
 							doAdminAlert("volume.zip not allowed for Available Data Type of surface");
 							return;
 						}
+						if(fileName.includes(".zip") && !(fileName===requiredSurfaceZipName)) {
+							doAdminAlert("the name of the zip file must be " + requiredSurfaceZipName);
+							return;
+                        }					
 					}
 					
 					if(newStudy.uploadFileNamesArray.includes(fileName)) {
@@ -1105,9 +1172,9 @@
 						return;
 					}
 					
-					if(fileName != "surface.zip" && fileName != "volume.zip" 
+					if(fileName != requiredSurfaceZipName && fileName != requiredVolumeZipName 
 					   && fileName != "summary.txt" && fileName != "folders.txt") {
-						doAlert("file name must be surface.zip, volume.zip, summary.txt, or folders.txt");
+						doAdminAlert("file name must be " + requiredSurfaceZipName + ",<br>" + requiredVolumeZipName + ",<br>" + "summary.txt, or folders.txt");
 						return;
 					}
 
@@ -1180,13 +1247,18 @@
 				var fileName = null;
 				var additionalHTML = null;
 				
-			   	 var select_updateStudyId = document.getElementById("select_menuId_updateStudy");
-			   	 var studyId = select_updateStudyId.options[select_updateStudyId.selectedIndex].value;
-			   	 updateStudy.studyId = studyId;
+				var select_action_updateStudy = document.getElementById("select_action_updateStudy");
+		        var updateAction = select_action_updateStudy.options[select_action_updateStudy.selectedIndex].text;
+			   	var select_updateStudyId = document.getElementById("select_menuId_updateStudy");
+			    var studyId = select_updateStudyId.options[select_updateStudyId.selectedIndex].value;
+			   	updateStudy.studyId = studyId;
+				var requiredSurfaceZipName = studyId + "_surface.zip";
+				var requiredVolumeZipName = studyId + "_volume.zip";
+
 			   	 
-			   	 var select_updateStudyAction = document.getElementById("select_action_updateStudy");
-			   	 var selectedActionType = select_updateStudyAction.options[select_updateStudyAction.selectedIndex].value;
-			   	 updateStudy.actionName = selectedActionType;
+			   	var select_updateStudyAction = document.getElementById("select_action_updateStudy");
+			   	var selectedActionType = select_updateStudyAction.options[select_updateStudyAction.selectedIndex].value;
+			   	updateStudy.actionName = selectedActionType;
 
 			   	 if(selectedActionType == "unselected" || studyId == "none selected" ) {
 			   		 doAdminAlert("Please select a study and an action first");
@@ -1203,26 +1275,26 @@
 						}
 					}
 					else if(selectedActionType === "addVolumeData") {
-						if(!(fileName == "volume.zip")) {
-							doAdminAlert("only volume.zip file allowed for add volume data action");
+						if(!(fileName===requiredVolumeZipName)) {
+							doAdminAlert("the name of the zip file must be " + requiredVolumeZipName);
 							return;
-						}
+                        }
 					}
+			
 					else if(selectedActionType === "addSurfaceData") {
-						if(!(fileName == "surface.zip")) {
-							doAdminAlert("only surface.zip file allowed for add surface data action");
+						if(!(fileName === requiredSurfaceZipName)) {
+							doAdminAlert("the name of the zip file must be " + requiredSurfaceZipName);
 							return;
 						}
 					}
-					
 					
 					if(updateStudy.uploadFileNamesArray.includes(fileName)) {
 						doAdminAlert("duplicate file name");
 						return;
 					}
 					
-					if(fileName != "volume.zip" && fileName != "summary.txt" && fileName != "surface.zip") {
-						doAdminAlert("file name must be volume.zip, surface.zip, or summary.txt");
+					if(fileName != requiredVolumeZipName && fileName != "summary.txt" && fileName != requiredSurfaceZipName ) {
+						doAdminAlert("file name must be " + requiredVolumeNameZip + ", " + requiredSurfaceNameZip + ",  or summary.txt");
 						return;
 					}
 					
@@ -1295,34 +1367,6 @@
    }
 
    
-   function maskInput(inputElement) {
-	   var inputText = inputElement.value;
-	   var addSlash = false;
-	   if(inputText.endsWith("_")) {
-		   addSlash = true;
-	   }
-	   var tempText = inputText.replace(/\*/g,"");
-	   if(tempText == "")
-	   {
-	     unmaskedText = unmaskedText.substr(0, unmaskedText.length - 1);
-	   }
-	   else {
-		   unmaskedText += inputText.replace(/\*/g,"");
-		   //unmaskedText += inputText.replace(/./g, '*');
-		   
-	   }
-	   inputElement.value = "";
-	   for (var i=0;i<inputText.length;i++)
-	   {
-	     inputElement.value += "*";
-	   }
-	   if(addSlash) {
-		   unmaskedText += "_";
-	   }
-	   console.log(unmaskedText);
-	 }
-
-   
    function menuClicked(element, startupTrigger, actionRequired) {
 	       console.log("menuClicked()...invoked, id=" + element.id);
 	       console.log("menuClicked()...invoked, actionRequired=" + actionRequired);
@@ -1333,7 +1377,8 @@
 	      
 	      if(lastSelectedMenu != null) {
 		      if(lastSelectedMenu.id === element.id) {
-		    	  if(priorSelectedDataType === selectedDataType) {
+		    	  if(priorSelectedDataType === selectedStudy.selectedDataType) {
+			          displaySelectedMenu();
 		    		  return;
 		    	  }
 		      }
@@ -1500,11 +1545,9 @@
 
   function mouseOut(element) {
 	      console.log("mouseOut()...invoked, element.id=" + element.id);
-             
-	      //console.log("mouseOut()...invoked, menuHasBeenClicked=" + menuHasBeenClicked);
 
 	      var id = element.id;
-              var className = element.className;
+          var className = element.className;
 	      var selectedId = null;
 	    
               if(className.includes("subSubMenu")) {
@@ -1516,7 +1559,17 @@
 	         targetAnchor.style.color = "#777";
 	      }
 
-	      displaySelectedMenu();
+		  // the timer pevents flickering in chrome after selecting a new network or study
+          // in the study menu
+          if(mouseoutTimerHandle) {
+	         clearTimeout(mouseoutTimerHandle);
+             mouseoutTimerHandle = null;
+          }
+		  // this is the key line for preventing the flicker
+          // do this rather than invoking displaySelectedMenu() directly
+          mouseoutTimerHandle = setTimeout(displaySelectedMenu, 500);
+
+	      //displaySelectedMenu();
 	        
 	      console.log("mouseOut()...exit, id=" + element.id);
 	   }
@@ -1593,17 +1646,22 @@
  		}
  		
  	   
-
-     
          function showSubSubMenu(element) {
-               console.log("showSubSubMenu()...invoked, id=" + element.id);
+	           console.log("showSubSubMenu()...invoked, id=" + element.id);
+
+               if(mouseoutTimerHandle) {
+	              clearTimeout(mouseoutTimerHandle);
+                  mouseoutTimerHandle = null;
+               }
+
                var className = element.className;
                var targetUL = null;
 
-               hideSubmenu_All();
-               showSubmenuLevel_1();
+               //hideSubmenu_All();
+               //showSubmenuLevel_1();
              
                if(className == "submenu") {
+	              showSubmenuLevel_1();
                   targetUL = element.parentElement.getElementsByTagName("ul")[0];
                   targetUL.style.display = "block";
 
@@ -1621,6 +1679,7 @@
 
                   var targetLI = element.parentElement.parentElement.parentElement;
                   var targetAnchor = targetLI.getElementsByTagName("a")[0];
+                  
                   targetAnchor.style.background = "#3d85c6";
 		          targetAnchor.style.color = "white";
                   
@@ -1639,12 +1698,15 @@
               
                }
                console.log("showSubSubMenu()...exit, id=" + element.id);
-           }
-	      
+               
+
+         }
+
    
 	   function showSubmenuLevel_1() {
 	        console.log("showSubmenuLevel_1()...invoked.");
 
+			// grey-out the image panel so the study menu options are more legible
 	        var div_thresholdImageWrapper = document.getElementById("thresholdImageWrapper");
 	        div_thresholdImageWrapper.style.display = "block";
 	        
@@ -1656,14 +1718,14 @@
 
 	        hideSubmenu_All();
 
-                var elementArray = document.querySelectorAll("li.submenu");
-                var currentElement = null;
+            var elementArray = document.querySelectorAll("li.submenu");
+            var currentElement = null;
 
-                for(var i=0; i<elementArray.length; i++) {
-                    currentElement = elementArray[i];
-                    currentElement.style.display = "block";
-                }
-
+            for(var i=0; i<elementArray.length; i++) {
+                currentElement = elementArray[i];
+                currentElement.style.display = "block";
+            }
+            global_submenu1_showing = true;
 	        console.log("showSubmenuLevel_1()...exit.");
 	   }
 	   
@@ -1685,15 +1747,30 @@
 	   }
 	   
 		function preProcessAdminRequest(button, actionRequest) {
-		   	 console.log("preProcessUpdateStudyRequest()...invoked.");
+		   	 console.log("preProcessAdminRequest()...invoked, actionRequest=" + actionRequest);
 		   	 
 			 if(actionRequest == "updateStudy") {
-			   	 if(updateStudy.uploadFileNamesArray.length==0) {
+				
+				  var select_updateStudyAction = document.getElementById("select_action_updateStudy");
+			   	  var selectedActionType = select_updateStudyAction.options[select_updateStudyAction.selectedIndex].value;
+			   	  updateStudy.actionName = selectedActionType;
+
+				  var select_updateStudyId = document.getElementById("select_menuId_updateStudy")
+			      var studyId = select_updateStudyId.options[select_updateStudyId.selectedIndex].value;
+			   	  updateStudy.studyId = studyId;
+
+				
+			   	 if(!(updateStudy.actionName.includes("addStudyPrefix")) && updateStudy.uploadFileNamesArray.length==0) {
 			   		 doAdminAlert("You must drag/drop a file to upload.");
 			   		 return;
 			   	 }
 			 }
 			 if(actionRequest == "createStudy") {
+							
+				 if(newStudy.studyFolder==null || newStudy.studyFolder=="") {
+					 doAdminAlert("You must enter a study name and available data types first.");
+			   		 return;
+				 }
 			   	 if(newStudy.uploadFileNamesArray.length==0) {
 			   		 doAdminAlert("You must drag/drop a file to upload.");
 			   		 return;
@@ -1717,7 +1794,7 @@
 	    	 
 	    	 validateAdminAccessStatus();
 	    	 
-		   	 console.log("preProcessUpdateStudyRequest()...exit.");
+		   	 console.log("preProcessAdminRequest()...exit.");
 		}
 
 			   
@@ -1771,6 +1848,8 @@
 		   		   		   
 		   var isUpdateStudyAction = false;
 		   var actionType = liElement.getAttribute("data-actionType");
+   
+           console.log("actionType=" + actionType);
 		   
 		   if(actionType == "updateStudy") {
 			   isUpdateStudyAction = true;
@@ -1787,6 +1866,8 @@
 		   
 		   if(isUpdateStudyAction) {
 			   arrayIndex = updateStudy.uploadFileNamesArray.indexOf(fileName);
+ 			   console.log("isUpdateStudyAction, fileName=" + fileName);
+ 			   console.log("isUpdateStudyAction, index=" + arrayIndex);
 		   }
 		   else {
 		       arrayIndex = newStudy.uploadFileNamesArray.indexOf(fileName);
@@ -1886,11 +1967,8 @@
 		   	var button_updateStudy = document.getElementById("button_updateStudy");
 		   	button_updateStudy.disabled = false;
 		   	
-	      	var div_updateStudyDetails = document.getElementById("div_updateStudyDetails");
-	      	div_updateStudyDetails.style.display = "block";
-	   	 
-	      	var div_updateStudyProgress = document.getElementById("div_updateStudyProgress");
-			div_updateStudyProgress.style.display = "none";
+	      	updateStudy.div_updateStudyDetails.style.display = "block";
+	   		updateStudy.div_updateStudyProgress.style.display = "none";
 			
 		   	console.log("resetUpdateStudyForm()...exit.");
 
@@ -2130,7 +2208,7 @@
 	       	}
 	   
         	ajaxRequest.send();
-	        console.log("sendRemoveStudyRequest()...exit.");
+	        console.log("sendGetWebHitsRequest()...exit.");
 
 	   }
 	   
@@ -2325,15 +2403,36 @@
 		   doAdminAlert("Be sure to check server storage availability before adding surface or volume data.");
 		   console.log("showUpdateStudyHelp()...exit.");
 	   }
-	   
-	   
+
+     function toggleMasking() {
+        console.log("toggleMasking()...invoked");
+		var passwordField = document.getElementById("pwd_adminPasswordPrompt");
+        var currentType = passwordField.getAttribute("type");
+        var image_password = document.getElementById("img_password");
+        
+        if(currentType==="password") {
+	       console.log("type=password, changing to text");
+	       passwordField.setAttribute("type", "text");
+           image_password.src="/NetworkProbabilityDownloader/images/hide_password.png";
+        }
+        else {
+		   console.log("type=text, changing to password");
+           passwordField.setAttribute("type", "password");
+           image_password.src="/NetworkProbabilityDownloader/images/show_password.png";
+		}
+
+     }
+
 	   function validateAdminAccess() {
 
 	        console.log("validateAdminAccess()...invoked.");
 
+            var adminPasswordPrompt = document.getElementById("pwd_adminPasswordPrompt");
+            var pwd = adminPasswordPrompt.value;
+
         	var ajaxRequest = getAjaxRequest();
         	var paramString = "&token=" + token;
-        	paramString += "&mriVersion=" + unmaskedText;
+        	paramString += "&mriVersion=" + pwd;
         	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=validateAdminAccess"
         		    + paramString;
 
@@ -2409,7 +2508,12 @@
 			           			createStudyEntry(button_createStudy);
 			           		}
 			           		else if(lastAdminActionRequest == "updateStudy") {
-			           			updateStudyEntry();
+				                if(updateStudy.actionName.includes("addStudyPrefix")) {
+									updateStudyWithoutUpload();
+				                }
+								else {
+			           				updateStudyEntry();
+								}
 			           		}
 			           		return;
 			           	}
@@ -2439,6 +2543,7 @@
 		   
 		   var text_studyFolderName = document.getElementById("input_studyFolderName");;
 		   var studyFolderName = text_studyFolderName.value;
+           newStudy.studyFolder = studyFolderName;
 		   
 		   if(studyMenuIDArray.includes(studyFolderName)) {
 			   doAdminAlert("Duplicate Study name");
@@ -2475,17 +2580,21 @@
 
    function validateAddStudyDroppedFiles(select_DataTypeElement) {
 		   console.log("validateAddStudyDroppedFiles()...invoked.");
-		   
+
+		   var text_studyFolderName = document.getElementById("input_studyFolderName");
+		   var studyFolderName = text_studyFolderName.value;
+		   var requiredSurfaceZipName = studyFolderName + "_surface.zip";
+		   var requiredVolumeZipName = studyFolderName + "_volume.zip";
 		   var selectedDataTypes = select_DataTypeElement.options[select_DataTypeElement.selectedIndex].value;
 		   var arrayIndex = 0;
 		   
 		   console.log("before: array=" + newStudy.uploadFileNamesArray);
 		   
 		   if(selectedDataTypes == "surface") {
-			   if(newStudy.uploadFileNamesArray.includes("volume.zip")) {
-				   console.log("validateDroppedFiles()...removing volume.zip");
+			   if(newStudy.uploadFileNamesArray.includes(requiredVolumeZipName)) {
+				   console.log("validateDroppedFiles()...removing " + requiredVolumeZipName);
 				   zipFormData.delete("volume.zip");
-				   arrayIndex = newStudy.uploadFileNamesArray.indexOf("volume.zip");
+				   arrayIndex = newStudy.uploadFileNamesArray.indexOf(requiredVolumeZipName);
 				   newStudy.uploadFileNamesArray.splice(arrayIndex,1);
 				   newStudy.uploadFilesArray.splice(arrayIndex,1);
 				   var targetLI = document.getElementById("volume.zip");
@@ -2493,10 +2602,10 @@
 			   }
 		   }
 		   else if(selectedDataTypes == "volume") {
-			   if(newStudy.uploadFileNamesArray.includes("surface.zip")) {
-				   console.log("validateDroppedFiles()...removing surface.zip");
+			   if(newStudy.uploadFileNamesArray.includes(requiredSurfaceZipName)) {
+				   console.log("validateDroppedFiles()...removing " + requiredSurfaceZipName);
 				   zipFormData.delete("surface.zip");
-				   arrayIndex = newStudy.uploadFileNamesArray.indexOf("surface.zip");
+				   arrayIndex = newStudy.uploadFileNamesArray.indexOf(requiredSurfaceZipName);
 				   newStudy.uploadFileNamesArray.splice(arrayIndex,1);
 				   newStudy.uploadFilesArray.splice(arrayIndex,1);
 				   var targetLI = document.getElementById("surface.zip");
@@ -2518,6 +2627,17 @@
 		   var selectedAction = select_ActionElement.options[select_ActionElement.selectedIndex].value;
 		   var arrayIndex = 0;
            var namesToDelete = new Array();
+           var divDropZone = document.getElementById("div_dropZoneUpdateStudy");
+
+           if(selectedAction.includes("addStudyPrefix")) {
+	            
+                divDropZone.style.display = "none";
+                return;
+           }
+           else {
+				divDropZone.style.display = "block";
+           }
+
 
 		   if(selectedAction == "updateSummary") {
 				namesToDelete.push("volume.zip");

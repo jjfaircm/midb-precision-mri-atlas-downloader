@@ -54,6 +54,7 @@ public class Tracker extends Thread {
     protected String jdbcInsertString = null;
     private Connection jdbcConnection = null;;
     private AtomicReference<String> failedConnectionMessageRef = new AtomicReference<String>();
+    //lastExecutionTimeMS represents the last time the database connection was used
     private long lastExecutionTimeMS = 0;
     private long autoConnectionCheckTimeout = 1000*60*120;
     private boolean firstHealthCheckSent = false;
@@ -62,6 +63,7 @@ public class Tracker extends Thread {
 	protected FileReader fileReader = null;
 	protected BufferedReader bufReader = null;
 	protected String subclassName = null;
+	private boolean healthCheckNotificationPending = false;
 	
 
 	/**
@@ -511,6 +513,11 @@ public class Tracker extends Thread {
 		int adjustedTargetHour2 = 0;
 		
 		
+		// the target hour is always 1 hour less than the actual target hour, otherwise
+		// we would end up being late. We then add 60 minutes as a buffer and then subtract
+		// the current minutes of the hour. So if the target hour is 8 then we use 7 as the
+		// target hour and then if the current hour is actually 7 then we wait 60 minutes minus
+		// the current minutes of the current time. 
 		if(this.healthCheckTargetHour1 == 0) {
 			adjustedTargetHour1 = 23;
 		}
@@ -537,6 +544,13 @@ public class Tracker extends Thread {
 				remainingNotificationSeconds = remainingNotificationSeconds - seconds;
 			}
 		}
+		else if(this.healthCheckNotificationPending) {
+			// the polling thread may have woke up due to an entry arriving while it was waiting
+			// to send a health check notification. This may have caused the current hour to go
+			// beyond the target hour. This is a slim possibility, but this will prevent a possible
+			// missed notification.
+			remainingNotificationSeconds = 0;
+		}
 		//LOGGER.trace(LOGGER_ID + "getRemainingNotificationTime()...exit, remainingSeconds=" + remainingNotificationSeconds);
 		return remainingNotificationSeconds;
 }
@@ -555,8 +569,9 @@ public class Tracker extends Thread {
 			LOGGER.info(LOGGER_ID + "initializeJDBCConnection()...successfully retrieved JDBC connection and prepared statement.");
 		} 
 		catch (SQLException e) {
-			DiagnosticsReporter.createDiagnosticsEntry(e);
+			DiagnosticsReporter.createDiagnosticsEntry(e, true);
 			LOGGER.fatal(LOGGER_ID + "Unable to get connection and/or prepare statement with new connection.");
+			LOGGER.fatal(LOGGER_ID + "SUBCLASS_NAME=" + this.subclassName);
 			LOGGER.fatal(e.getMessage(), e);
 		}
 	
@@ -605,11 +620,17 @@ public class Tracker extends Thread {
 				long alternatePollingTimeoutSeconds = this.getRemainingNotificationTime();
 				if(alternatePollingTimeoutSeconds == 0) {
 					sendHealthCheckNotification(connectionOK);
+					this.healthCheckNotificationPending = false;
 					currentTaskEntry = this.blockingQueue.poll(pollingTimeoutSeconds, TimeUnit.SECONDS);
 				}
 				else if(alternatePollingTimeoutSeconds > 0) {
+					this.healthCheckNotificationPending = true;
 					currentTaskEntry = this.blockingQueue.poll(alternatePollingTimeoutSeconds, TimeUnit.SECONDS);
-					sendHealthCheckNotification(connectionOK);
+					if(currentTaskEntry==null) {
+						// we woke up due to alternatePollingTimeout, therefore send notification
+						sendHealthCheckNotification(connectionOK);
+						this.healthCheckNotificationPending = false;
+					}
 				}
 				else {
 					currentTaskEntry = this.blockingQueue.poll(pollingTimeoutSeconds, TimeUnit.SECONDS);
