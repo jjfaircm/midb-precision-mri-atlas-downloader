@@ -1,4 +1,4 @@
-		 var version_buildString = BUILD_DATE = "Version beta_97.0  0919_2045_2022:17:30__war=NPDownloader_0919_2045_2022.war";
+		 var version_buildString = "Version beta_99.2  0124_0005_2023__war=NPDownloader_0124_0005_2023.war";
 		 var enableTracing = true; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";

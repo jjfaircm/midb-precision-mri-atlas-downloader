@@ -16,7 +16,6 @@
    var selectedSubmenuAnchor = null;
    var firstTimeSelectingSingle = true;
    var priorSelectedDataType = "surface";
-   var zipFormData = new FormData();
    var div_dropZone = null;
    var droppedFileRemovalPending = false;
    var networkFolderNamesMap = new Map();
@@ -37,7 +36,8 @@
 		   currentFileNumber: 1,
 		   totalFileNumber: 0,
 		   span_progress_0: null,
-		   span_progress_1: null
+		   span_progress_1: null,
+   		   formData: new FormData()
        };
    
    var updateStudy = {
@@ -83,7 +83,7 @@
        networkFolderNamesMap.set("Single Networks", "single");
        
        div_dropZone = document.getElementById("div_dropZone");
-       zipFormData.id = "form_uploadZipFiles";
+       newStudy.formData.id = "form_uploadZipFiles";
        updateStudy.formData.id ="form_uploadUpdateFiles";
        
        newStudy.ul_uploadFileList = document.getElementById("ul_zipList");
@@ -441,23 +441,48 @@
 		console.log("cancelUpdateURL()...exit.");
 	}
 	
+	   function clearEncryptionTable() {
+	       console.log("clearEncryptionTable()...invoked.");
+           var input_encryptedText = document.getElementById("input_encryptedText");
+           input_encryptedText.value = "";
+	       console.log("clearEncryptionTable()...exit.");		
+	   }
+	
 	   function convertStudyNameToFolderId(studyNameTextInput) {
 	       console.log("convertStudyNameToFolderId()...invoked.");
 
-		   var studyName = studyNameTextInput.value;
+		   var studyName = studyNameTextInput.value.trim();
+           var textInput_studyFolderName = document.getElementById("input_studyFolderName");
+		   var textInput_studyPrefix = document.getElementById("input_studyPrefix");
+
+		   if(studyName.length==0) {
+              textInput_studyFolderName.value = "";
+              textInput_studyPrefix.value = "";
+              console.log("convertStudyNameToFolderId()...exit.");
+              return;
+		   }
+
 		   var studyFolderName = studyName.replaceAll("  ", " ");
 		   studyFolderName = studyFolderName.trim();
 		   studyFolderName = studyFolderName.replaceAll(" - ", "_");
 		   studyFolderName = studyFolderName.replaceAll(" ", "_");
 		   studyFolderName = studyFolderName.replaceAll("__", "_");
 		   studyFolderName = studyFolderName.trim();
+           studyFolderName = studyFolderName.toLowerCase();
+
+		   if(studyMenuIDArray.includes(studyFolderName)) {
+			   studyNameTextInput.value = "";
+			   doAdminAlert("Duplicate Study name - study already exists");
+			   return false;
+		   }
+
            newStudy.studyFolder = studyFolderName;
 		   
-		   var textInput_studyFolderName = document.getElementById("input_studyFolderName");
 		   textInput_studyFolderName.readonly = false;
-		   textInput_studyFolderName.value = studyFolderName.toLowerCase();
+		   textInput_studyFolderName.value = studyFolderName;
+		   textInput_studyPrefix.value = studyFolderName + "_";
 		   textInput_studyFolderName.readonly = true;
-		   
+		   console.log(textInput_studyFolderName.value);
 	       console.log("convertStudyNameToFolderId()...exit.");
 	   }
 	   
@@ -469,6 +494,8 @@
 	   	 	   	 	   	 
 	   	 var select_DataTypeElement = document.getElementById("select_dataType");
 	   	 var selectedDataTypes = select_DataTypeElement.options[select_DataTypeElement.selectedIndex].value;
+	     var requiredSurfaceZipName = newStudy.studyFolder + "_surface.zip";
+		 var requiredVolumeZipName = newStudy.studyFolder + "_volume.zip";
 
 	   	 if(selectedDataTypes == "unselected") {
 	   		 createButton.disabled = false;
@@ -478,7 +505,7 @@
 	   	 
 	   	 if(selectedDataTypes == "surface_volume") {
 		   	 if(newStudy.uploadFileNamesArray.length<4){
-		   		 if(!droppedFileNamesArray.includes("summary.txt")) {
+		   		 if(!newStudy.uploadFileNamesArray.includes("summary.txt")) {
 			   		 createButton.disabled = false;
 		   			 doAdminAlert("summary.txt file must be added");
 		   			 return;
@@ -488,14 +515,16 @@
 		   			 doAdminAlert("folders.txt file must be added");
 		   			 return;
 		   		 }
-		   		 else if(!newStudy.uploadFileNamesArray.includes("surface.zip")) {
+		   		 else if(!newStudy.uploadFileNamesArray.includes(requiredSurfaceZipName)) {
+			         console.log(requiredSurfaceZipName);
 			   		 createButton.disabled = false;
-		   			 doAdminAlert("surface.zip file must be added");
+		   			 doAdminAlert(requiredSurfaceZipName + " file must be added for available data type of 'surface and volume'");
 		   			 return;
 		   		 }
-		   		 else if(!newStudy.uploadFileNamesArray.includes("volume.zip")) {
+		   		 else if(!newStudy.uploadFileNamesArray.includes(requiredVolumeZipName)) {
+			         console.log(requiredVolumeZipName);
 			   		 createButton.disabled = false;
-		   			 doAdminAlert("volume.zip file must be added");
+		   			 doAdminAlert(requiredVolumeZipName + " file must be added for available data type of 'surface and volume'");
 		   			 return;
 		   		 }
 		   	 }
@@ -513,7 +542,7 @@
 		   			 doAdminAlert("folders.txt file must be added");
 		   			 return;
 		   		 }
-		   		 else if(!newStudy.uploadFileNamesArray.includes("surface.zip")) {
+		   		 else if(!newStudy.uploadFileNamesArray.includes(requiredSurfaceZipName)) {
 			   		 createButton.disabled = false;
 		   			 doAdminAlert("surface.zip file must be added");
 		   			 return;
@@ -533,7 +562,7 @@
 		   			 doAdminAlert("folders.txt file must be added");
 		   			 return;
 		   		 }
-		   		 else if(!newStudy.uploadFileNamesArray.includes("volume.zip")) {
+		   		 else if(!newStudy.uploadFileNamesArray.includes(requiredVolumeZipName)) {
 			   		 createButton.disabled = false;
 		   			 doAdminAlert("volume.zip file must be added");
 		   			 return;
@@ -569,14 +598,12 @@
 	   	 var text_studyDisplayName = document.getElementById("input_studyDisplayName");
 	   	 var studyDisplayName = text_studyDisplayName.value;
 	   	 
-	   	 var text_studyFolderName = document.getElementById("input_studyFolderName");;
-	   	 var studyFolderName = text_studyFolderName.value;
 	   	 var menuEntry = template_beginMenuEntry;
-	     menuEntry = menuEntry.replace(menuIdReplacementMarker, studyFolderName);
+	     menuEntry = menuEntry.replace(menuIdReplacementMarker, newStudy.studyFolder);
 	   	    	 
 	   	 var studyEntry = template_studyNameEntry;
 	   	 studyEntry = studyEntry.replace(studyDisplayReplacementMarker, studyDisplayName);
-	   	 studyEntry = studyEntry.replace(studyFolderReplacementMarker, studyFolderName);
+	   	 studyEntry = studyEntry.replace(studyFolderReplacementMarker, newStudy.studyFolder);
 	   	 studyEntry = studyEntry.replace(dataTypesReplacementMarker, selectedDataTypes);
 	   	 
 	   	 menuEntry += studyEntry;
@@ -621,7 +648,6 @@
 	   	 menuEntry += template_endMenuEntry;
    	     console.log(menuEntry); 
 	   	 
-	   	 newStudy.studyFolder = studyFolderName;
 	   	 newStudy.selectedDataTypes = selectedDataTypes;
 	   	 newStudy.menuEntry = menuEntry;
 	   	 newStudy.totalFileNumber = newStudy.uploadFileNamesArray.length;
@@ -798,6 +824,8 @@
 	   var div_downloadSamples = document.getElementById("div_downloadSamples");
 	   var div_updateMaps = document.getElementById("div_updateMaps");
 	   var div_viewMaps = document.getElementById("div_viewMapsWrapper");
+	   var div_encryptTool = document.getElementById("div_encryptTool");
+
 
 	   
 	   div_addStudy.style.display = "none";
@@ -807,6 +835,8 @@
 	   div_downloadSamples.style.display = "none";
 	   div_updateMaps.style.display = "none";
 	   div_viewMaps.style.display = "none";
+	   div_encryptTool.style.display = "none";
+
 
 	   var anchor_addStudy = document.getElementById("a_addStudy");
 	   var anchor_removeStudy = document.getElementById("a_removeStudy");
@@ -815,6 +845,8 @@
 	   var anchor_downloadSamples = document.getElementById("a_downloadSamples");
 	   var anchor_updateMaps = document.getElementById("a_updateMaps");
 	   var anchor_viewMaps = document.getElementById("a_viewMaps");
+	   var anchor_encryptTool = document.getElementById("a_encryptTool");
+
 
 	   
 	   anchor_addStudy.style.color = "white";
@@ -824,6 +856,8 @@
 	   anchor_downloadSamples.style.color = "white";
 	   anchor_updateMaps.style.color = "white";
 	   anchor_viewMaps.style.color = "white";
+	   anchor_encryptTool.style.color = "white";
+
 
 	   
 	   switch (anchor.id) {
@@ -877,6 +911,11 @@
 	   case "a_updateMaps":
 		   div_updateMaps.style.display = "block";
 		   anchor_updateMaps.style.color = "#FFC300";
+		   break;
+
+       case "a_encryptTool":
+		   div_encryptTool.style.display = "block";
+		   anchor_encryptTool.style.color = "#FFC300";
 		   break;
 	   }
 
@@ -949,8 +988,8 @@
        var studyToRemove = select_MenuId.options[select_MenuId.selectedIndex].value;
        
        if(studyToRemove.includes("abcd_template_matching")) {
-       	doAdminAlert("Sorry " + studyToRemove + " is not eligible for removal");
-       	return;
+       	//doAdminAlert("Sorry " + studyToRemove + " is not eligible for removal");
+       	//return;
        }
        else if(studyToRemove.includes("none")) {
        	doAdminAlert("Please choose a study id");
@@ -1180,7 +1219,6 @@
 
 					console.log("fileName=" + fileName);
 					newStudy.uploadFileNamesArray.push(fileName);
-					//zipFormData.append(fileName, e.dataTransfer.files[x]);
 					newStudy.uploadFilesArray.push(e.dataTransfer.files[x]);
 					//fileNamesArray.push(fileName);
 				}
@@ -1372,7 +1410,7 @@
 	       console.log("menuClicked()...invoked, actionRequired=" + actionRequired);
 
            var study = element.getAttribute("data-study");
-           selectedStudy.studyId= study; //ie: abcd_template_matching
+           selectedStudy.studyId = study; //ie: abcd_template_matching
            console.log("menuClicked()...invoked, study=" + study);
 	      
 	      if(lastSelectedMenu != null) {
@@ -1731,18 +1769,18 @@
 	   
 	   function manageFileUploads() {
 		   console.log("manageFileUploads()...invoked");
-		   zipFormData = new FormData();
+		   newStudy.formData = new FormData();
 		   var index = newStudy.currentIndex;
 		   var currentFile = newStudy.uploadFilesArray[index];
 		   var currentFileSize = currentFile.size;
 		   var currentFileName = newStudy.uploadFileNamesArray[index];
-		   zipFormData.append(currentFileName, currentFile);
+		   newStudy.formData.append(currentFileName, currentFile);
 		   
 		   if(index==0) {
 				var div_addStudyDetails = document.getElementById("div_addStudyDetails");
 				div_addStudyDetails.style.display = "none";
 			}
-		   uploadAddStudyFile(zipFormData, currentFileName, currentFileSize);
+		   uploadAddStudyFile(newStudy.formData, currentFileName, currentFileSize);
 		   console.log("manageFileUploads()...exit");
 	   }
 	   
@@ -1819,6 +1857,17 @@
 	        //put a slight delay so user can see the radio button change
 	        setTimeout(preProcessGetThresholdImages, 200);
 	        console.log("processDataModeChoice()...eit.");
+	   }
+
+	   function processEncryptionResponse(ajaxReponseText) {
+		    console.log("processEncryptionResponse()...invoked.");
+            var div_encryptProgress = document.getElementById("div_encryptProgress");
+            div_encryptProgress.style.display = "none";
+            var input_encryptedText = document.getElementById("input_encryptedText");
+            input_encryptedText.value = ajaxReponseText;
+			var button_encryptButton = document.getElementById("button_encryptTool");
+			button_encryptButton.disabled = false;
+		    console.log("processEncryptionResponse()...exit.");
 	   }
 	   
 	   function processFileChunks() {
@@ -1911,6 +1960,29 @@
 
          }
 
+         /*
+            Encodes the text that is to be encrypted before being sent to the server.
+            This is done because some data may include special characters. For example,
+            if a telephone number to be used in the twilio SMS service is being encrypted,
+            the telephone number will begin with a '+' sign:  +15071234567
+            The '+' sign must be encoded or it will appear on the server as a space character.
+            The server would see the text as: ' 15071234567'
+         */
+	     function requestEncryption() {
+       	    console.log("requestEncryption()...invoked.");
+			var button_encryptButton = document.getElementById("button_encryptTool");
+			button_encryptButton.disabled = true;
+			var input_encryptionText = document.getElementById("input_encryptTarget");
+			var textToEncrypt = input_encryptionText.value;
+			//we can not rely on the encodeURI method/function used in sendEncryptionRequest()
+			//because that function will not encode certain characters such as a '+' sign
+			textToEncrypt = encodeURIComponent(textToEncrypt);
+			var div_progress =  document.getElementById("div_encryptProgress");
+			div_progress.style.display = "block";
+			sendEncryptionRequest(textToEncrypt);
+       	    console.log("requestEncryption()...exit.");
+	     }
+
          function resetAddStudyForm() {
        	    console.log("resetAddStudyForm()...invoked.");
   			var table = document.getElementById("adminTable");
@@ -1973,6 +2045,56 @@
 		   	console.log("resetUpdateStudyForm()...exit.");
 
 	   }
+
+
+	   function sendEncryptionRequest(textToEncrypt) {
+
+	        console.log("sendEncryptionRequest()...invoked.");
+
+	       	var ajaxRequest = getAjaxRequest();
+	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=encryptData";	
+            url += "&encryptionTarget=" + textToEncrypt;
+	       	var encodedUrl = encodeURI(url);
+	       	ajaxRequest.open('get', encodedUrl, true);
+	      
+	       	ajaxRequest.onreadystatechange=function() {
+	
+	              //console.log(ajaxRequest.responseText);
+	              if(ajaxRequest.responseText.includes("Unexpected Error")) {
+	              	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+	           		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+	           		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+	               	var errorArray = errorData.split("&");
+	              	var msg1 = errorArray[0];
+	              	var msg2 = errorArray[1];
+	              	stackTraceData = errorArray[2];
+	              	var divSubmitNotification = document.getElementById("div_submitNotification");
+	              	divSubmitNotification.style.display = "none";
+	              	console.log("uploadMenuFiles()...onreadystatechange...error");
+	              	console.log("msg1=" + msg1);
+	              	console.log("msg2=" + msg2);
+	              	console.log(stackTraceData);
+	              	doErrorAlert(msg1, msg2, errorAlertOK);
+
+	              	return;
+	              }
+	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+			           	
+	            	  if(ajaxRequest.responseText.includes("Access denied")) {
+	            		  var div_encryptionProgress = document.getElementById("div_encryptProgress");
+	            		  div_encryptionProgress.style.display = "none";
+	            		  doAdminAlert(ajaxRequest.responseText);
+	            	  }
+	            	  else {
+	            		  processEncryptionResponse(ajaxRequest.responseText);
+	            	  }
+	   	       	  }
+	       	}
+	   
+      	    ajaxRequest.send();
+	        console.log("sendEncryptionRequest()...exit.");
+	   }
+
 	   
 	   function sendGetAdminAccessRecordsJSON() {
 
@@ -2543,6 +2665,7 @@
 		   
 		   var text_studyFolderName = document.getElementById("input_studyFolderName");;
 		   var studyFolderName = text_studyFolderName.value;
+           console.log("studyFolderName=" + studyFolderName);
            newStudy.studyFolder = studyFolderName;
 		   
 		   if(studyMenuIDArray.includes(studyFolderName)) {
@@ -2593,7 +2716,7 @@
 		   if(selectedDataTypes == "surface") {
 			   if(newStudy.uploadFileNamesArray.includes(requiredVolumeZipName)) {
 				   console.log("validateDroppedFiles()...removing " + requiredVolumeZipName);
-				   zipFormData.delete("volume.zip");
+				   newStudy.formData.delete("volume.zip");
 				   arrayIndex = newStudy.uploadFileNamesArray.indexOf(requiredVolumeZipName);
 				   newStudy.uploadFileNamesArray.splice(arrayIndex,1);
 				   newStudy.uploadFilesArray.splice(arrayIndex,1);
@@ -2604,7 +2727,7 @@
 		   else if(selectedDataTypes == "volume") {
 			   if(newStudy.uploadFileNamesArray.includes(requiredSurfaceZipName)) {
 				   console.log("validateDroppedFiles()...removing " + requiredSurfaceZipName);
-				   zipFormData.delete("surface.zip");
+				   newStudy.formData.delete("surface.zip");
 				   arrayIndex = newStudy.uploadFileNamesArray.indexOf(requiredSurfaceZipName);
 				   newStudy.uploadFileNamesArray.splice(arrayIndex,1);
 				   newStudy.uploadFilesArray.splice(arrayIndex,1);
@@ -2614,8 +2737,8 @@
 		   }
 		   
 		   console.log("after: array=" + newStudy.uploadFileNamesArray);
-		   console.log("zipFormData keys follow...");
-		   for (var key of zipFormData.keys()) {
+		   console.log("newStudy.formData keys follow...");
+		   for (var key of newStudy.formData.keys()) {
 			   console.log(key);
 			}
 		   console.log("validateAddStudyDroppedFiles()...exit.");

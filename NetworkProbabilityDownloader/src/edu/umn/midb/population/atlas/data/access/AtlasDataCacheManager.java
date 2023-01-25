@@ -414,7 +414,7 @@ public class AtlasDataCacheManager {
 	 * Loads the key used for encryption operations.
 	 * 
 	 */
-	public void loadKeyFromFile() {
+	public String loadKeyFromFile() {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "loadKeyFromFile()...invoked.");
 
@@ -424,7 +424,7 @@ public class AtlasDataCacheManager {
 		File file = new File(KEY_CONFIG_PATH);
 		
 		if(!file.exists()) {
-			return;
+			return null;
 		}
 		
 		try {
@@ -452,7 +452,7 @@ public class AtlasDataCacheManager {
 		}		
 		
 		LOGGER.trace(loggerId + "loadKeyFromFile()...exit.");
-	
+		return key;
 	}
 	
 	/**

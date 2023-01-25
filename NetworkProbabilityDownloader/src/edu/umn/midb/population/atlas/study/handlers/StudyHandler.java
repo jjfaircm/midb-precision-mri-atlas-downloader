@@ -231,7 +231,7 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 	/**
 	 * Creates zip files for the various types of available network data. This is done
 	 * so that the user can download the files for all 'thresholds' if desired. This method
-	 * run asynchronously so the administrator does not have to wait for it to complete when
+	 * runs asynchronously so the administrator does not have to wait for it to complete when
 	 * adding/creating a new study.
 	 * 
 	 * @return success - boolean indicating if the subfolders were zipped successfully

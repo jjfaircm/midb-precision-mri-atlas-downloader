@@ -56,6 +56,9 @@ public class Tracker extends Thread {
     private AtomicReference<String> failedConnectionMessageRef = new AtomicReference<String>();
     //lastExecutionTimeMS represents the last time the database connection was used
     private long lastExecutionTimeMS = 0;
+    //timeout set to 120 minutes...if the connection is idle longer than this
+    //then the checkDatabaseConnection() method will be executed to refresh the
+    //idle time to 0 which will prevent a StaleConnection or MySQLNonTransientConnectionException error
     private long autoConnectionCheckTimeout = 1000*60*120;
     private boolean firstHealthCheckSent = false;
     private int healthCheckTargetHour1 = 8;

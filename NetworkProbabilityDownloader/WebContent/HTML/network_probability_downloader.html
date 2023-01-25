@@ -7,9 +7,9 @@
 <head>
 
   <script src="/NetworkProbabilityDownloader/javascript/jquery.js"></script>
-  <script src="/NetworkProbabilityDownloader/javascript/np_downloader.js?id=.war_0919_2045_2022"></script>
-  <script src="/NetworkProbabilityDownloader/javascript/np_menu.js?id=.war_0919_2045_2022"></script>
-  <script src="/NetworkProbabilityDownloader/javascript/menuTemplates.js?id=.war_0919_2045_2022"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/np_downloader.js?id=.war_0124_0005_2023"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/np_menu.js?id=.war_0124_0005_2023"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/menuTemplates.js?id=.war_0124_0005_2023"></script>
   
   
 
@@ -57,10 +57,10 @@
 <link href='https://fonts.googleapis.com/css?family=Amaranth:ital@1&display=swap' rel='stylesheet'>
 
 
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/np_downloader.css?id=.war_0919_2045_2022" media="all" />
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/alert.css?id=.war_0919_2045_2022" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/np_downloader.css?id=.war_0124_0005_2023" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/alert.css?id=.war_0124_0005_2023" media="all" />
 
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/menu_generic.css?id=.war_0919_2045_2022" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/menu_generic.css?id=.war_0124_0005_2023" media="all" />
 
 
 <!--[if lte IE 8]>
@@ -205,7 +205,7 @@
        <img id="img_splashImage"  class="splashImage" alt="image not available" src="/NetworkProbabilityDownloader/images/brain_splash.png" height="320" width=100% style="object-fit: cover;">
    </div>
    <div id="div_overlayImage" style="position: absolute; z-index: 1; top:0px; right:10px;">
-      <img class="centerImageXX" title="Version: .war_0919_2045_2022" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75" ondblclick="handleAdminLoginRequest()">
+      <img class="centerImageXX" title="Version: .war_0124_0005_2023" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75" ondblclick="handleAdminLoginRequest()">
    </div>
    <!--
    <div id="midb_atlases_text" style="position: absolute; z-index: 1; bottom:10px; right:16px">
@@ -723,6 +723,7 @@ As unestablished research software, these files are provided on an "as is'' basi
   <li class="studyMenu"><a href="javascript:;" id="a_downloadSamples" onclick="handleStudyMenuClicked(this)">Download Documentation/Samples</a></li>
   <li class="studyMenu"><a href="javascript:;" id="a_updateMaps" onclick="handleStudyMenuClicked(this)">Update Maps</a></li>
   <li class="studyMenu"><a href="javascript:;" id="a_viewMaps" onclick="handleStudyMenuClicked(this)">View Maps</a></li>
+  <li class="studyMenu"><a href="javascript:;" id="a_encryptTool" onclick="handleStudyMenuClicked(this)">Encrypt Tool</a></li>
 </ul>
 
 
@@ -750,8 +751,11 @@ As unestablished research software, these files are provided on an "as is'' basi
  <td class="admin"><input class="admin" type="text" onblur="convertStudyNameToFolderId(this)" id="input_studyDisplayName" size="25" placeholder="e.g.  Name - Template Matching"></td>
  </tr>
   <tr class="admin">
- <td class="admin">Study Folder Name</td>
+ <td class="admin">Study Folder Name - Study Id</td>
  <td class="admin"><input class="admin" type="text" id="input_studyFolderName" size="25" readonly style="background-color: lightgrey;"></td>
+ <tr>
+ <td class="admin">Study Prefix</td>
+ <td class="admin"><input class="admin" type="text" id="input_studyPrefix" size="25" readonly style="background-color: lightgrey;"></td>
  </tr>
  <!--
  <tr class="admin">
@@ -892,7 +896,7 @@ As unestablished research software, these files are provided on an "as is'' basi
 <table class="admin" id="table_updateStudy">
  <thead class="admin">
  <tr class="admin">
- <th class="admin" colspan="2">Update A STUDY</th>
+ <th class="admin" colspan="2">UPDATE A STUDY</th>
  </tr>
  </thead>
  <tr class="admin">
@@ -914,10 +918,8 @@ As unestablished research software, these files are provided on an "as is'' basi
       <option value="addSurfaceData" class="updateOption">add/update surface data</option>
       <option value="addVolumeData" class="updateOption">add/update volume data</option>
       <option value="updateSummary" class="updateOption">update summary</option>
-      <!--
       <option value="addStudyPrefixToSurface" class="updateOption">add study prefix to surface data files</option>
       <option value="addStudyPrefixToVolume" class="updateOption">add study prefix to volume data files</option>
-        -->
       </select>
   </td>
   </tr>
@@ -1222,6 +1224,43 @@ As unestablished research software, these files are provided on an "as is'' basi
   <embed type="text/html" src="https://www.google.com/maps/d/edit?mid=1edPGpORnrgP2lo6vNmDqeeIVXSf7Dxym" width="100%" height="680"> 
    -->  
 </div>
+
+
+<div id="div_encryptTool" style="display: none;">
+
+<br><br>
+<table class="admin" id="encryptToolTable">
+ <thead class="admin">
+ <tr class="admin">
+ <th class="admin" colspan="2">ENCRYPTION TOOL</th>
+ </thead>
+ <tr class="admin">
+ <td class="admin">Enter text to encrypt</td>
+ <td class="admin">
+<input type="text" id="input_encryptTarget" class="admin" size="32" maxlength="30" 
+ placeholder="enter text, maximum length of 30" onfocus="clearEncryptionTable()">
+</td>
+</tr>
+<tr class="admin">
+ <td class="admin">Encrypted text</td>
+ <td class="admin"><input type="text" id="input_encryptedText" class="admin" size="32" readonly style="background-color: lightgrey;">
+ </td>
+ </tr>
+</table>
+
+<br><br>
+<span>&nbsp;&nbsp;</span><button id="button_encryptTool"  class="downloader"  onclick="requestEncryption()"><img alt="" src="/NetworkProbabilityDownloader/images/button_submit_db.png"></img></button>
+
+<div id="div_encryptProgress" style="text-align:center; display:none;">
+		    <figure>
+		    	<img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+		    	<figcaption class="ziplist" style="color: green; font-weight: 500;">Processing Request</figcaption>
+		    </figure>
+
+</div>
+
+
+</div> <!-- div_encryptTool -->
 
 </div> <!-- end div_admin -->
 

@@ -40,6 +40,8 @@ public class SMSNotifier  {
 
 	private static  String ACCOUNT_SID = null;
 	private static  String AUTH_TOKEN =  null;
+	//NOTE: The phone numbers must always begin with a '+' sign, followed
+	//      by the country code.
 	private static  String TO_PHONE_NUMBER = null;
 	private static  String FROM_PHONE_NUMBER = null;
 	
@@ -72,7 +74,7 @@ public class SMSNotifier  {
 	
 	/**
 	 * 
-	 * Sets the ACCOUNT_SID which represents the twillio account used to send
+	 * Sets the ACCOUNT_SID which represents the twilio account used to send
 	 * SMS notifications.
 	 * 
 	 * @param accSidE - the encrypted account sid (type is String)
@@ -86,7 +88,7 @@ public class SMSNotifier  {
 	
 	/**
 	 * 
-	 * Sets the AUTH_TOKEN used to authenticate with the twillio.com service
+	 * Sets the AUTH_TOKEN used to authenticate with the twilio.com service
 	 * 
 	 * @param authTokenE - the encrypted authorization token
 	 */

@@ -60,6 +60,8 @@ public class UpdateStudyHandler extends StudyHandler {
 	private ArrayList<String> newSummaryConfLines = new ArrayList<String>();
 	private ArrayList<String> existingMenuConfigLines = new ArrayList<String>();
 	
+	private int totalNumFilesRenamed = 0;
+	
 	/**
 	 * Public constructor
 	 * 
@@ -194,9 +196,24 @@ public class UpdateStudyHandler extends StudyHandler {
 		LOGGER.trace(loggerId + "addStudyPrefixToFileNames()...invoked.");
 		
 		boolean success = true;
+		
+		if(dataType.equals("surface")) {
+			this.surfaceZipFilePath = absoluteStudyFolder;
+		}
+		else if(dataType.equals("volume")) {
+			this.volumeZipFilePath = absoluteStudyFolder;
+		}
 
 	    ArrayList<String> subDirs = new ArrayList<String>();
 	    String targetRootPath = this.absoluteStudyFolder + dataType + "/";	
+	    
+	    File targetRootPathFile = new File(targetRootPath);
+	    if(!targetRootPathFile.exists()) {
+	    	this.errorMessage = "Data type=" + dataType + " for study=" + this.studyFolder + "<br>does not exist";
+	    	this.errorEncountered = true;
+	    	return false;
+	    }
+	    
 	    try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(targetRootPath))) {
 	        for (Path path : stream) {
 	            if (Files.isDirectory(path)) {
@@ -218,9 +235,11 @@ public class UpdateStudyHandler extends StudyHandler {
 	   Iterator<String> fileNamesIt = null;
 	   String subDirName = null;
 	   long count = 0;
+	   int numFilesRenamed = 0;
 	   
 	   while(dirIt.hasNext()) {
 		    subDirName = dirIt.next();
+		    numFilesRenamed = 0;
 
 		    try {
 			   count = Files.list(Paths.get(subDirName))
@@ -257,8 +276,11 @@ public class UpdateStudyHandler extends StudyHandler {
                 origFile = new File(absoluteOrigFileName);
                 newFile = new File(newAbsoluteFileName);
                 origFile.renameTo(newFile);
+                numFilesRenamed++;
+                this.totalNumFilesRenamed++;
 		    }
 		    try {
+		    	LOGGER.trace(loggerId + "subdir name=" + subDirName + "==>>number files renamed=" + numFilesRenamed);
 				count = Files.list(Paths.get(subDirName))
 				        .filter(p -> p.toFile().isFile())
 				        .count();
@@ -268,7 +290,15 @@ public class UpdateStudyHandler extends StudyHandler {
 				LOGGER.error(loggerId + e.getMessage(), e);
 			}
 	   }
-	    
+	    LOGGER.trace(loggerId + "addStudyPrefixToFileNames()...completed renaming files...");
+	    if(this.totalNumFilesRenamed>0) {
+	    	this.recreateSubFolderZips(dataType);
+	    }
+	    else {
+	    	this.errorMessage = "All file names already begin with study prefix.<br>No action performed.";
+	    	this.errorEncountered = true;
+	    	LOGGER.trace(loggerId + "No files renamed, not recreating subFolder zip files.");
+	    }
 		LOGGER.trace(loggerId + "addStudyPrefixToFileNames()...exit.");
 		return success;
 	}
@@ -504,7 +534,7 @@ public class UpdateStudyHandler extends StudyHandler {
 			return false;
 		}
 
-		success = updateMenuConfig();
+		success = updateMenuConfig(false);
 		cleanup("surface");
 		
 		asyncRunner.start();
@@ -556,7 +586,7 @@ public class UpdateStudyHandler extends StudyHandler {
 			return false;
 		}
 			
-		success = updateMenuConfig();
+		success = updateMenuConfig(true);
 		
 		File uploadedZipFile = new File(this.volumeZipFilePath);
 		
@@ -574,6 +604,28 @@ public class UpdateStudyHandler extends StudyHandler {
 	 */
 	public String getStudyId() {
 		return this.studyFolder;
+	}
+	
+	private boolean removeExistingZipsSubFolder(String targetPath) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "removeExistingZipsSubFolder()...invoked.");
+		
+		boolean success = true;
+		
+		File targetDirectory = new File(targetPath);
+		if(!targetDirectory.exists()) {
+			return false;
+		}
+		
+		// removes directory recursively so directory and all contents removed
+		try {
+			FileUtils.deleteDirectory(targetDirectory);
+		}
+		catch(IOException ioE) {
+			LOGGER.error(ioE.getMessage(), ioE);
+			success = false;
+		}
+		return success;
 	}
 	
 	/**
@@ -596,6 +648,64 @@ public class UpdateStudyHandler extends StudyHandler {
 		}
 		
 		LOGGER.trace(loggerId + "removeFile()...exit.");
+		return success;
+	}
+	
+	private boolean recreateSubFolderZips(String dataType) {
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "recreateSubFolderZips()...invoked...war=NPDownloader_0116_2315_2023.war");
+		
+		boolean success = true;
+		boolean existingZipsFolderFound = false;
+		
+    	String targetDirectory = this.absoluteStudyFolder + dataType;
+
+    	File[] directories = new File(targetDirectory).listFiles();
+    	File currentFile = null;
+    	
+    	String currentFolderName = null;
+    	for(int i=0; i<directories.length; i++) {
+    		currentFile = directories[i];
+    		currentFolderName = currentFile.getName();
+    		//ignore this file...may happen on MAC platform
+    		if(currentFolderName.contains(".DS_Store")) {
+    			continue;
+    		}
+    		if(!currentFile.isDirectory()) {
+    			this.errorEncountered = true;
+    			this.errorMessage = "Unexpected file found in " + dataType + " folder: " + currentFolderName;
+    			LOGGER.trace(loggerId + errorMessage);
+    			return false;
+    		}
+    		//we're creating a list of the single network names so we
+    		//exclude combined_clusters and overlapping_networks
+    		currentFolderName = directories[i].getName();
+    		
+    		if(currentFolderName.contentEquals("zips")) {
+    			existingZipsFolderFound = true;
+    			continue;
+    		}
+    		
+    		
+    		if(currentFolderName.contentEquals("combined_clusters")) {
+    			this.combinedClustersFolderExists = true;
+    			continue;
+    		}
+    		if(currentFolderName.contentEquals("overlapping_networks")) {
+    			this.overlappingNetworksFolderExists = true;
+    			continue;
+    		}
+    		this.zippedFoldersList.add(directories[i].getName());
+    		LOGGER.trace(loggerId + "added entry to zippedFoldersList:" + directories[i].getName());
+    	}
+    	
+    	if(existingZipsFolderFound) {
+    		removeExistingZipsSubFolder(targetDirectory + "/zips");
+    	}
+    	
+    	this.asyncRunner.start();
+    	
+		LOGGER.trace(loggerId + "recreateSubfolderZips()...exit.");
 		return success;
 	}
 	
@@ -883,7 +993,7 @@ public class UpdateStudyHandler extends StudyHandler {
 	 * 
 	 * @return success - boolean
 	 */
-	public boolean updateMenuConfig() {
+	public boolean updateMenuConfig(boolean isVolumeData) {
 		String loggerId = this.appContext.getLoggerId();
 		LOGGER.trace(loggerId + "updateMenuConfig()...invoked.");
 		
@@ -901,8 +1011,10 @@ public class UpdateStudyHandler extends StudyHandler {
 				if(configLine.contains(MENU_ID_STRING) && configLine.contains(this.studyFolder)) {
 					pw.println(configLine);
 					configLine = configLinesIt.next();
-					// in case we are just adding a newer version of volume data
-					if(!configLine.contains("surface_volume")) {
+					// we assume that all studies have surface data
+					// if we are adding volume data, we change available data types
+					// from surface to surface_volume
+					if(isVolumeData && !configLine.contains("surface_volume")) {
 						configLine = configLine.replace("surface", "surface_volume");
 					}
 				}

@@ -978,6 +978,30 @@ public class WebResponder {
 	}
 	
 	/**
+	 * Sends the encrypted result of a String input by an admin user
+	 * 
+	 * @param response - HttpServletResponse
+	 * @param appContext - {@link ApplicationContext}
+	 * @param encryptedText - String
+	 */
+	public static void sendEncrytpionRequestResponse(HttpServletResponse response, ApplicationContext appContext, String encryptedText) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendEncrytpionRequestResponse()...invoked");
+
+		try {
+			  response.getWriter().println(encryptedText);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		LOGGER.trace(loggerId + "sendEncrytpionRequestResponse()...exit");
+	}
+	
+	
+	
+	
+	/**
 	 * Sends the collection of {@link WebHitRecord}	objects as a json string to the client. 
 	 * @param response - HttpServletResponse
 	 * @param appContext - {@link ApplicationContext}

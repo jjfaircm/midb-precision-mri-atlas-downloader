@@ -64,13 +64,15 @@ public class DirectoryAccessor {
 	 */
 	public static byte[] getFileBytes(String filePath, String selectedStudy) {
 		
-		//String loggerId = ThreadLocalLogTracker.get();
-		//LOGGER.trace(loggerId + "getFileBytes()...invoked.");
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "getFileBytes()...invoked.");
+		LOGGER.trace(loggerId + "getFileBytes(), filePath=" + filePath);
 
 		
 		byte[] allBytes = null;
 		
 		int index = filePath.lastIndexOf("/");
+		boolean isZipFile = filePath.contains(".zip");
 		
 		String fileDirectory = filePath.substring(0, index+1);
 		String fileName = filePath.substring(index+1);
@@ -80,10 +82,10 @@ public class DirectoryAccessor {
 		boolean fileFound = targetFile.exists();
 		
 		//this is a temporary circumvention to handle studies that do not have
-		//the appropriate naming convention where files names should begin with
-		//the study prefix. The javascript client code assumes that files all
+		//the appropriate naming convention for zip files.  Normally these names should begin with
+		//the study prefix. The javascript client code assumes that all zip file names
 		//begin with the study prefix
-		if(!fileFound) {
+		if(!fileFound && isZipFile) {
 			if(selectedStudy != null) {
 				String studyPrefix = selectedStudy.trim() + "_";
 				int studyPrefixLength = studyPrefix.length();

@@ -1,8 +1,10 @@
 package edu.umn.midb.population.atlas.servlet;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -52,6 +54,7 @@ import edu.umn.midb.population.atlas.utils.IPInfoRequestor;
 import edu.umn.midb.population.atlas.utils.IPLocator;
 import edu.umn.midb.population.atlas.utils.SMSNotifier;
 import edu.umn.midb.population.atlas.utils.ServerStorageStats;
+import edu.umn.midb.population.atlas.utils.Utils;
 import edu.umn.midb.population.response.handlers.WebResponder;
 import logs.ThreadLocalLogTracker;
 
@@ -95,7 +98,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
 	
 	private static final long serialVersionUID = 1L;
-	public static final String BUILD_DATE = "Version beta_98.0  0919_2045_2022:17:30__war=NPDownloader_0919_2045_2022.war"; 
+	public static final String BUILD_DATE = "Version beta_99.2  0124_0005_2023__war=NPDownloader_0124_0005_2023.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";
@@ -119,6 +122,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	private static String DOMAIN_NAME = null;
 	private static int HIT_COUNT = 0;
 	private static ArrayList<String> privilegedList = null;
+	private static String ENCRYPTION_KEY = null;
 	
 	
 	/**
@@ -366,6 +370,9 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			case "updateStudyFile":
 				handleUpdateStudy(appContext, request, response);
 				break;
+			case "encryptData":
+				handleEncryptData(appContext, request, response);
+				break;				
 			}
 		
 		}
@@ -703,6 +710,34 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		return;
 		
 	}
+	
+	/**
+	 * Handles a request to encrypt text sent from an admin user. Certain environment variables
+	 * are stored on the server in an encrypted format. For example, the account key for the
+	 * twilio account which is used to send SMS notifications. The encryption tool in the admin
+	 * console provides a way for an admin user to encrypt data that should not be stored in 
+	 * plain text.
+	 * 
+	 * @param appContext - {@link ApplicationContext}
+	 * @param request - HttpServletRequest
+	 * @param response - HttpServletResponse
+	 */
+	protected void handleEncryptData(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException {
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleEncryptData()...invoked");
+		
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			return;
+		}
+
+		String textToEncrypt = request.getParameter("encryptionTarget");
+		textToEncrypt = URLDecoder.decode(textToEncrypt, "UTF-8");
+		String encryptedText = Utils.encryptJsypt(textToEncrypt, ENCRYPTION_KEY);
+		WebResponder.sendEncrytpionRequestResponse(response, appContext, encryptedText);
+		LOGGER.trace(loggerId + "handleEncryptData()...exit");
+	}
+
 	
 	
 	/**
@@ -1260,7 +1295,8 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		
 		if(localHostName.contains("MacBook-Pro") || localHostName.contains("Jims-Mac-mini") ) {
-			AtlasDataCacheManager.getInstance().loadKeyFromFile();
+			String key = AtlasDataCacheManager.getInstance().loadKeyFromFile();
+			ENCRYPTION_KEY = key;
 			AtlasDataCacheManager.getInstance().loadSettingsConfig();
 		}
 		else {
@@ -1286,6 +1322,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		//key must be processed before other env vars
 		String key = envMap.get("MIDB_KEY");
+		ENCRYPTION_KEY = key;
 		
 		if(key != null) {
 			LOGGER.trace("Processing MIDB_KEY...");
@@ -1310,6 +1347,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			//LOGGER.trace(envKey + "==" + envValue);
 			
 			switch(envKey) {
+			/*
 			case	"MIDB_SERIALIZATION" :
 				LOGGER.trace("Processing MIDB_SERIALIZATION");
 				String[] encryptedArray = envValue.split("::");
@@ -1318,6 +1356,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				LOGGER.trace("Processing MIDB_VERSION");
 				String encryptedRecipient = envValue;
 				break;
+			*/
 			case	"MIDB_ADMIN" :
 				LOGGER.trace("Processing MIDB_ADMIN");
 				String encryptedPassword = envValue;
@@ -1424,6 +1463,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		LOGGER.trace(DEFAULT_LOGGER_ID + "initSMSNotifier()...exit.");
 		
 	}
+	
 	
 	
 	/**
