@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -69,11 +70,18 @@ public class DiagnosticsReporter {
 	 * @return incidentId - String
 	 */
 	public static String createDiagnosticsEntry(Exception e, boolean sendSMS) {
-		LOGGER.fatal(LOGGER_ID + "createDiagnosticsEntry(e)...invoked.");
+		String loggerId = ThreadLocalLogTracker.get();
+		if(loggerId == null) {
+			loggerId = LOGGER_ID;
+		}
+		
+		LOGGER.fatal(loggerId + "createDiagnosticsEntry(e)...invoked.");
 		
 		StackTraceElement[] stackTraceEntries = e.getStackTrace();
 	    int stackEntriesCount = stackTraceEntries.length;
-	    String timeStringID = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+	    //String timeStringID = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+	    String timeStringID = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+	    
 	    timeStringID = "INCIDENT_ID=" + timeStringID;
 	    
 	    String stackTraceData = timeStringID + NEW_LINE;
@@ -98,6 +106,7 @@ public class DiagnosticsReporter {
 		return timeStringID;
 	}
 	
+	
 	public static String createDiagnosticsEntry(Exception e) {
 		
 		return createDiagnosticsEntry(e, true);
@@ -121,7 +130,9 @@ public class DiagnosticsReporter {
 		String loggerId = appContext.getLoggerId();
 		LOGGER.fatal(loggerId + "createDiagnosticsEntry(...)...invoked");
 
-	    String timeString = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+	    //String timeString2 = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+	    String timeString = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
 		String id = appContext.getLoggerId();
 		id += "__";
 		id += timeString;
@@ -205,6 +216,9 @@ public class DiagnosticsReporter {
 	static private void addDiagnosticEntryToFile(String entry) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
+		if(loggerId == null) {
+			loggerId = LOGGER_ID;
+		}
 		LOGGER.trace(loggerId + "createDiagnosticEntry()...invoked.");
 		
 		try {
@@ -224,7 +238,7 @@ public class DiagnosticsReporter {
 			LOGGER.error(loggerId + e.getMessage(), e);
 		}
 		
-		LOGGER.trace(loggerId + "createDiagnosticEntry()...invoked.");
+		LOGGER.trace(loggerId + "createDiagnosticEntry()...exit.");
 
 	}
 

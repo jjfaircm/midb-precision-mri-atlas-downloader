@@ -225,7 +225,7 @@ ul.menu {
   list-style-type: none;
   margin: 0;
   /*padding: 0;*/
-  padding: 4px 3%;
+  padding: 4px 2%;
   overflow: hidden;
   background-color: #7a0019;
 }
@@ -246,7 +246,7 @@ li.studyMenu a:hover {
   text-decoration: underline;;
 }
 
-select.select_networkType, #select_dataType {
+select.select_networkType, #select_dataType, #select_configProperty {
 	width:100%;
 }
 

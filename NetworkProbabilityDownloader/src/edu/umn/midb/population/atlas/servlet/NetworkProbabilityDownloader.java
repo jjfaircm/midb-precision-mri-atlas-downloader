@@ -98,78 +98,29 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
 	
 	private static final long serialVersionUID = 1L;
-	public static final String BUILD_DATE = "Version beta_99.2  0124_0005_2023__war=NPDownloader_0124_0005_2023.war"; 
+	public static final String BUILD_DATE = "Version beta_103.0  0703_2204_2023__war=NPDownloader_0703_2204_2023.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";
 	public static final String STUDY_NAME_PLACEHOLDER = "${STUDY_NAME}";
 	public static final String DATA_TYPE_PLACEHOLDER = "${DATA_TYPE}";
 	public static final String ROOT_PATH = "/midb/studies/${STUDY_NAME}/${DATA_TYPE}/"; 
-	//public static final String ROOT_PATH = "/Users/jjfair/midb_old/"; 
 	public static final String DEFAULT_NEURAL_NETWORK = "combined_clusters";
 	public static final String DIAGNOSTICS_FILE = "/midb/diagnostics/diagnostics.txt";
 	public static final String DIAGNOSTICS_DEMARCATION = "*********************************************************************";
-	public static final String ADMIN_ACCESS_FILE = "/midb/tracking/admin_access.csv";
 	public static Logger LOGGER = null;
 	public static final String DOWNLOAD_ENTRY_TEMPLATE = "ID,IP_ADDRESS,TIMESTAMP,DOWNLOAD_REQUESTED_FILE";
-
-    //private static final SimpleDateFormat SDF1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    //private static final DateTimeFormatter DT_FORMATTER_1 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final DateTimeFormatter DT_FORMATTER_FOR_ID = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
 
 	public static final String ECLIPSE_RESOURCES_PATH = "/Users/jjfair/git/network_probability_downloader/NetworkProbabilityDownloader/build/classes/edu/umn/midb/population/atlas/config/files/";
-	private static final String DEFAULT_LOGGER_ID = " ::LOGGERID=SERVLET_INIT:: ";
-	private static String DOMAIN_NAME = null;
+	public static final String DEFAULT_LOGGER_ID = " ::LOGGERID=SERVLET_INIT:: ";
+	private static String DOMAIN_NAME = "midbatlas.io";
 	private static int HIT_COUNT = 0;
-	private static ArrayList<String> privilegedList = null;
+	private static Object HIT_COUNT_LOCK = new Object();
 	private static String ENCRYPTION_KEY = null;
 	
-	
-	/**
-	 * Allows requests only coming from certain ip address when the domain is not
-	 * midbatlas.io.  This is so a backup server used as a test environment may only
-	 * be used by specific users. If the requestor ip address does not belong to a
-	 * trusted developer, then access will be denied, which will cause the doGet() method
-	 * to redirect the request to https://midbatlas.io.
-	 * 
-	 * @param request An instance of @see HttpServletRequest
-	 * @param ipAddress The ip address of the original requestor forwarded by NGINX
-	 * 
-	 * @return boolean indicating if access is allowed for the requestor ip address
-	 */
-	protected static boolean checkAccessAllowed(HttpServletRequest request, String ipAddress) {
-		LOGGER.trace("checkAccessAllowed()...invoked, ipAddress=" + ipAddress);
-		
-		String loggerId = " ::LOGGERID=ACCESS_CHECKER:: ";
-		boolean accessAllowed = true;
-		
-		//this method kept in place in case there arises a need to block certain ip addresses
-		//etc.
-		String serverName = request.getServerName();
-		LOGGER.trace("checkAccessAllowed()...serverName=" + serverName);
-		
-		if(request.getServerName().contains("midbatlas.io")) {
-			accessAllowed = true;
-		}
-		else {
-			if(privilegedList.contains(ipAddress)) {
-				accessAllowed = true;
-			}
-			else if(ipAddress.contains("127.0.0.1") || ipAddress.contains("0:0:0:0:0:0:0:1")) {
-				accessAllowed = true;
-			}
-			else {
-				accessAllowed = false;
-			}
-		}
-		if(!accessAllowed) {
-			LOGGER.fatal(loggerId + "ACCESS DENIED, ip=" + ipAddress);
-		}
-		else {
-			LOGGER.trace(loggerId + "ACCESS ALLOWED, ip=" + ipAddress);
-		}
-		return accessAllowed;
-	}
+	private String localHostName = "UNKNOWN";
+
 	
 	
 	/**
@@ -183,15 +134,6 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	public static String getDomainName() {
 		return DOMAIN_NAME;
 	}
-	
-	
-	protected static synchronized void updateHitCount(HttpServletRequest request) {
-		HIT_COUNT++;
-		String domainName = request.getServerName();
-		DOMAIN_NAME = domainName;
-	}
-	
-	private String localHostName = "UNKNOWN";
 	
 	
 	/**
@@ -218,14 +160,6 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			}
 		}
 		
-		/*
-		if(requestorIPAddress.contains("127.0.0.1")) {
-			action = request.getParameter("action");
-			LOGGER.warn("Duplicate request received: action=" + action);
-			isDuplicate = true;
-		}
-		*/
-		
 		return isDuplicate;
 	}
 	
@@ -243,43 +177,13 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		String action = request.getParameter("action");
-		
-		//do this so we can set the DOMAIN_NAME
-		if(HIT_COUNT==0) {
-			updateHitCount(request);
-		}
-				
+			
 		if(checkDuplicateRequest(request)) {
 			return;
 		}
 		
 		String ipAddress = getOriginalIPAddress(request);
 
-		//this.shallowAccessIPAddresses.add(ipAddress);
-		
-		// NOTE: IMPORTANT!!!!! IF THIS BLOCK IS REMOVED CHANGE THE WEB.XML FILE
-		// SO THAT IT INCLUDES THE FOLLOWING WELCOME FILE
-		//     <welcome-file>/HTML/network_probability_downloader.html</welcome-file>
-        
-		/*
-		boolean accessAllowed = true;
-		if(action==null || action.equals("initialRequest")) {
-			accessAllowed = checkAccessAllowed(request, ipAddress);
-
-			if(!accessAllowed) {
-				response.setContentType("text/html");  
-				response.sendRedirect("https://midbatlas.io");
-				response.getWriter().flush();
-				response.getWriter().close();
-				return;
-			}
-			else {
-				ServletContext sc = getServletContext();
-				sc.getRequestDispatcher("/HTML/network_probability_downloader.html").forward(request, response);
-				return;
-			}
-		}
-	    */	
 		
 		HttpSession session = request.getSession();
 		ApplicationContext appContext = (ApplicationContext)session.getAttribute("applicationContext");
@@ -291,6 +195,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			appContext.setSessionId(session.getId());
 			//ThreadLocalLogTracker.set(appContext.getLoggerId());
 			request.getSession().setAttribute("applicationContext", appContext);
+			appContext.setBrowserType(request.getHeader("User-Agent"));
 		}
 		appContext.setCurrentAction(action);
 		appContext.setCurrentReguest(request);
@@ -331,7 +236,6 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				LOGGER.info("Processing time in ms for getThresholdImages=" + gtiProcessingTime);
 				break;
 			case "removeStudy":
-				//this updates the csv text file - does not insert database record
 				handleRemoveStudy(appContext, request, response);
 				break;
 			case "validateAdminAccess":
@@ -372,7 +276,12 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				break;
 			case "encryptData":
 				handleEncryptData(appContext, request, response);
-				break;				
+				break;	
+			case "updateConfig":
+				handleUpdateConfigProperty(appContext, request, response);
+				break;	
+			case "sms":
+				handleSMSReceived(request, response, appContext);
 			}
 		
 		}
@@ -532,7 +441,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	
 	/**
 	 * Handles a request to download one of the admin files, such as email_addresses.csv. 
-	 * The {@link DirectoryAccessor#getFileBytes(String)} method will be invoked to get
+	 * The {@link DirectoryAccessor#getFileBytes(String, String)} method will be invoked to get
 	 * the binary file bytes as a byte array. The byte array will then be passed to the
 	 * {@link WebResponder#sendFileDownloadResponse(HttpServletResponse, byte[], String, String)}
 	 * method.
@@ -546,6 +455,12 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		String loggerId = appContext.getLoggerId();
 		LOGGER.trace(loggerId + "handleDownloadAdminFile()...invoked.");
+		
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			LOGGER.trace(loggerId + "handleDownloadAdminFile()...exit.");
+			return;
+		}
 		
 		/* now allowing file downloads even if session expired, etc.
 		if(!appContext.isAdminActionValidated()) {
@@ -584,7 +499,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	
 	/**
 	 * Handles a request to download an NII file that maps to the selected probabilistic threshold percentage.
-	 * The {@link DirectoryAccessor#getFileBytes(String)} method will be invoked to get the binary file bytes
+	 * The {@link DirectoryAccessor#getFileBytes(String, String)} method will be invoked to get the binary file bytes
 	 * that will be sent back to the client via the {@link WebResponder#sendFileDownloadResponse(HttpServletResponse, byte[], String, String)}
 	 * 
 	 * @param appContext {@link ApplicationContext}
@@ -619,8 +534,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			}
 		}
 		
-		//exclude developer ipAddress 
-		if(!ipAddress.equals("68.63.215.250")) {
+		if(SMSNotifier.shouldNotifyDownloads()) {
 			String message = "MIDB_APP_FILE_DOWNLOAD::::" + DOMAIN_NAME + "::::IP=" + ipAddress;
 			SMSNotifier.sendNotification(message, "NetworkProbabilityDownloader");
 		}
@@ -721,6 +635,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	 * @param appContext - {@link ApplicationContext}
 	 * @param request - HttpServletRequest
 	 * @param response - HttpServletResponse
+	 * @throws UnsupportedEncodingException - exception
 	 */
 	protected void handleEncryptData(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException {
 		String loggerId = appContext.getLoggerId();
@@ -760,6 +675,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		if(!appContext.isAdminActionValidated()) {
 			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			LOGGER.trace(loggerId + "handleGetAdminAccessRecords()...exit.");
 			return;
 		}
 
@@ -788,6 +704,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		if(!appContext.isAdminActionValidated()) {
 			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			LOGGER.trace(loggerId + "handleGetEmailAddresses()...exit.");
 			return;
 		}
 
@@ -864,6 +781,13 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		LOGGER.trace(loggerId + "handleGetNetworkFolderNamesConfig()...invoked.");
 	}
 	
+	/**
+	 * Handles the request to get server storage stats. An admin client may issue this
+	 * request to determine if there is enough storage to add a study.
+	 * 
+	 * @param appContext - {@link ApplicationContext}
+	 * @param response - HttpServletResponse
+	 */
 	protected void handleGetStorageStats(ApplicationContext appContext, HttpServletResponse response) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "handleGetStorageStats()...invoked.");
@@ -895,7 +819,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	 * @param response A reference to the current HttpServletResponse
 	 */
 	protected void handleGetThresholdImages(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
-
+		
 		String loggerId = appContext.getLoggerId();
 		LOGGER.trace(loggerId + "handleGetThresholdImages()...invoked.");
 		
@@ -950,6 +874,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		if(!appContext.isAdminActionValidated()) {
 			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			LOGGER.trace(loggerId + "handleGetWebHits()...exit.");
 			return;
 		}
 
@@ -1021,6 +946,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				
 		if(!appContext.isAdminActionValidated()) {
 			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			LOGGER.trace(loggerId + "handleRemoveStudy()...exit");
 			return;
 		}
 		
@@ -1038,9 +964,18 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
 		DBManager.getInstance().insertAdminAccessRecord(aaEntry, appContext);
 		String studyFolder = request.getParameter("studyFolder");
+		
+		String removeStudyDisabled = PropertyManager.getInstance().getApplicationConfigProperty("removeStudyDisabled");
+		
+		if(removeStudyDisabled.equalsIgnoreCase("true")) {
+			WebResponder.sendRemoveStudyResponse(response, studyFolder, true);
+			LOGGER.trace(loggerId + "handleRemoveStudy()...exit");
+			return;
+		}
+		
 		RemoveStudyHandler rsh = new RemoveStudyHandler(studyFolder);
 		rsh.removeStudy();
-		WebResponder.sendRemoveStudyResponse(response, studyFolder);
+		WebResponder.sendRemoveStudyResponse(response, studyFolder, false);
 		LOGGER.trace(loggerId + "handleRemoveStudy()...exit");
 	}
 	
@@ -1087,6 +1022,13 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
 	}
 	
+	protected void handleSMSReceived(HttpServletRequest request, HttpServletResponse response, ApplicationContext appContext) {
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleSMSReceived()...invoked.");
+		SMSNotifier.handleSMSReceived(request, response);
+		LOGGER.trace(loggerId + "handleSMSReceived()...exit.");
+	}
+	
 	/**
 	 * Handles a request to be removed from the mailing list, which means the 
 	 * email address will be removed from the email_addresses table in MYSQL.
@@ -1127,6 +1069,34 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			LOGGER.fatal(loggerId + e.getMessage(), e);
 		}
 
+	}
+	
+	/**
+	 * Handles the request to update a configuration property
+	 * 
+	 * @param appContext - {@link ApplicationContext}
+	 * @param request - HttpServletRequest
+	 * @param response - HttpServletResponse
+	 */
+	protected synchronized void handleUpdateConfigProperty(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleUpdateConfigProperty()...invoked.");
+		
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			LOGGER.trace(loggerId + "handleUpdateConfigProperty()...exit.");
+			return;
+		}
+		
+		String propertyKey = request.getParameter("configPropertyKey");
+		String propertyValue = request.getParameter("configPropertyValue");
+		
+		appContext.setConfigErrorExists(false);
+		appContext.setConfigError(null);
+		PropertyManager.getInstance().updateConfigProperty(appContext, propertyKey, propertyValue);
+		WebResponder.sendUpdateConfigResponse(appContext, response);
+		
+		LOGGER.trace(loggerId + "handleUpdateConfigProperty()...exit.");
 	}
 	
 	/**
@@ -1179,9 +1149,22 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
 	}
 	
+	/**
+	 * Handles the request to update a study, such as adding/updating volume data.
+	 * 
+	 * @param appContext - {@link ApplicationContext}
+	 * @param request - HttpServletRequest
+	 * @param response - HttpServletResponse
+	 */
 	protected void handleUpdateStudy(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
 		String loggerId = appContext.getLoggerId();
 		LOGGER.trace(loggerId + "handleUpdateStudy()...invoked.");
+		
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			LOGGER.trace(loggerId + "handleUpdateStudy()...exit.");
+			return;
+		}
 		
 		String studyId = request.getParameter("studyFolderName");
 		String updateAction = request.getParameter("updateAction");
@@ -1267,53 +1250,33 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		//DO NOT USE LOGGER YET BECAUSE LogConfigurator has not run yet
 		System.out.println("NetworkProbabilityDownloader.init()...invoked...version=" + BUILD_DATE);
 		
-		//we preload PropertyManager because it will invoke the LogConfigurator
+		//we preload PropertyManager because it will invoke the LogConfigurator and also
+		//load properties required for startup
 		PropertyManager.getInstance();
 		LOGGER = LogManager.getLogger(NetworkProbabilityDownloader.class);
 		
-		try {
-		    InetAddress addr;
-		    addr = InetAddress.getLocalHost();
-		    localHostName = addr.getHostName();
-		    //set the domain to local host name for now
-		    //when the first servlet request comes in the domain name 
-		    //will be properly set (midbatlas.io)
-		    DOMAIN_NAME = localHostName;
-		    LOGGER.info("local machine name=" + localHostName);
-		}
-		catch (UnknownHostException ex) {
-		    LOGGER.error("Hostname can not be resolved");
-		    LOGGER.error(ex.getLocalizedMessage(), ex);
-		}
-		
 		// AtlasDataCacheManager.getInstance() will cause the AtlasDataCacheManager
 		// to preload the default image data
-		AtlasDataCacheManager.getInstance().setLocalHostName(localHostName);
+		AtlasDataCacheManager.getInstance().setLocalHostName(localHostName);	
 		
-		privilegedList = AtlasDataCacheManager.getInstance().getPrivilegedList();
-		LOGGER.trace(DEFAULT_LOGGER_ID + "acl loaded:::" + privilegedList);
+		initFromEnvVars();
 		
-		
-		if(localHostName.contains("MacBook-Pro") || localHostName.contains("Jims-Mac-mini") ) {
-			String key = AtlasDataCacheManager.getInstance().loadKeyFromFile();
-			ENCRYPTION_KEY = key;
-			AtlasDataCacheManager.getInstance().loadSettingsConfig();
-		}
-		else {
-			initFromEnvVars();
-		}
-		
+		//initialize Singleton instances
 		DownloadTracker.getInstance();
 		WebHitsTracker.getInstance();
 		EmailTracker.getInstance();
 		CountryNamesResolver.getInstance();
-		
-		privilegedList = AtlasDataCacheManager.getInstance().getPrivilegedList();
-		LOGGER.trace(DEFAULT_LOGGER_ID + "acl loaded:::" + privilegedList);
-		
+				
 		LOGGER.info("exiting init().");
 	}
 	
+	
+	/**
+	 * Initializes certain configuration properties from environment variables. These are
+	 * variables hold the encrypted values of properties that are very seldom (if ever)
+	 * changes. Other configuration properties are stored in the /midb/midb_app.properties
+	 * and are loaded by the {@link PropertyManager#loadSettingsConfig()} method.
+	 */
 	private void initFromEnvVars() {
 		LOGGER.trace(DEFAULT_LOGGER_ID + "initFromEnvVars()...invoked");
 		
@@ -1326,6 +1289,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		
 		if(key != null) {
 			LOGGER.trace("Processing MIDB_KEY...");
+			PropertyManager.getInstance().setEncryptionKey(key);
 			TokenManager.setKey(key);
 			initSMSNotifier(key);
 			initIPLocator(key);
@@ -1347,16 +1311,6 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			//LOGGER.trace(envKey + "==" + envValue);
 			
 			switch(envKey) {
-			/*
-			case	"MIDB_SERIALIZATION" :
-				LOGGER.trace("Processing MIDB_SERIALIZATION");
-				String[] encryptedArray = envValue.split("::");
-				break;
-			case	"MIDB_VERSION" :
-				LOGGER.trace("Processing MIDB_VERSION");
-				String encryptedRecipient = envValue;
-				break;
-			*/
 			case	"MIDB_ADMIN" :
 				LOGGER.trace("Processing MIDB_ADMIN");
 				String encryptedPassword = envValue;
@@ -1382,8 +1336,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
 		LOGGER.trace(DEFAULT_LOGGER_ID + "initIPInfoRequestor()...invoked");
 		
-		Map<String,String> envMap = System.getenv();
-		String ipInfoToken = envMap.get("MIDB_IPINF_TAU");
+		String ipInfoToken = PropertyManager.getInstance().getApplicationConfigProperty("MIDB_IPINF_TAU");
 		IPInfoRequestor.initAuthentication(key, ipInfoToken);
 		
 		LOGGER.trace(DEFAULT_LOGGER_ID + "initIPInfoRequestor()...exit");
@@ -1398,10 +1351,8 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	private void initIPLocator(String key) {
 		LOGGER.trace(DEFAULT_LOGGER_ID + "initIPLocator()...invoked");
 		
-		Map<String,String> envMap = System.getenv();
-
-		String ipLocatorAccountId = envMap.get("MIDB_IPLOC_ACC");
-		String ipLocatorLicenseKey = envMap.get("MIDB_IPLOC_AUT");
+		String ipLocatorAccountId = PropertyManager.getInstance().getApplicationConfigProperty("MIDB_IPLOC_ACC");
+		String ipLocatorLicenseKey = PropertyManager.getInstance().getApplicationConfigProperty("MIDB_IPLOC_AUT");
 		
 		IPLocator.initAuthentication(key, ipLocatorAccountId, ipLocatorLicenseKey);
 		
@@ -1420,46 +1371,54 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		int successCount = 0;
 		
 		SMSNotifier.setEncryptionKey(key);
+		PropertyManager propMgr = PropertyManager.getInstance();
 		
-		Map<String,String> envMap = System.getenv();
 		
-		String accSidE = envMap.get("MIDB_TAC");
+		String accSidE = propMgr.getApplicationConfigProperty("MIDB_TAC");
 		if(accSidE != null) {
 			SMSNotifier.setAccountSIDE(accSidE);
 			successCount++;
 		}
 
 		
-		String accAuthE = envMap.get("MIDB_TAU");
+		String accAuthE = propMgr.getApplicationConfigProperty("MIDB_TAU");
 		if(accAuthE != null) {
 			SMSNotifier.setAuthTokenE(accAuthE);
 			successCount++;
 		}
 
-		String toPhone = envMap.get("MIDB_TTP");
+		String toPhone = propMgr.getApplicationConfigProperty("MIDB_TTP");
 		if(toPhone != null) {
 			SMSNotifier.setToNumberE(toPhone);
 			successCount++;
 		}
 
-		String fromPhone = envMap.get("MIDB_FTP");
+		String fromPhone = propMgr.getApplicationConfigProperty("MIDB_FTP");
 		if(fromPhone != null) {
 			SMSNotifier.setFromNumberE(fromPhone);
 			successCount++;
 		}
 		
-		String textBeltKey = envMap.get("MIDB_TBELT");
+		String textBeltKey = propMgr.getApplicationConfigProperty("MIDB_TBELT");
 		if(textBeltKey != null) {
 			SMSNotifier.setTextBeltKey(textBeltKey);
 		}
 		
-		String smsMode = envMap.get("MIDB_SMS_MODE");
+		String smsMode = propMgr.getApplicationConfigProperty("MIDB_SMS_MODE");
 		if(smsMode != null) {
 			SMSNotifier.setSendMode(smsMode);
 		}
 		
+		String notifyDownloads = propMgr.getApplicationConfigProperty("MIDB_DOWNLOAD_NOTIFICATIONS");
+		if(notifyDownloads.equalsIgnoreCase("ON")) { //the default is OFF
+			SMSNotifier.setDownloadNotificationMode(true);
+		}
 		
-		
+		String disableSMSNotificationsProp = propMgr.getApplicationConfigProperty("MIDB_DISABLE_SMS_NOTIFICATIONS");
+		if(disableSMSNotificationsProp != null && disableSMSNotificationsProp.equalsIgnoreCase("true")) {
+			SMSNotifier.disableSMSNotifications(true);
+		}
+				
 		LOGGER.trace(DEFAULT_LOGGER_ID + "initSMSNotifier()...exit.");
 		
 	}

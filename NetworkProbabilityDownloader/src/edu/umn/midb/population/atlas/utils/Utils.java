@@ -11,6 +11,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 
+/**
+ * Encapsulates miscellaneous functionality.
+ * 
+ * @author jjfair
+ *
+ */
 public class Utils {
 	
 	private static Logger LOGGER = null;
@@ -20,8 +26,13 @@ public class Utils {
 		LOGGER = LogManager.getLogger(DBManager.class);
 	}
 
-
-	
+	/**
+	 * Returns non-encrypted value of an encrypted String.
+	 * 
+	 * @param encrypted - String
+	 * @param strkey - String representing the encryption key
+	 * @return decrypted - String
+	 */
 	public static String convertJcpyt(String encrypted, String strkey) {
 		LOGGER.trace(LOGGER_ID + "convertJcpyt()...invoked");
 		StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
@@ -32,6 +43,13 @@ public class Utils {
 		return decrypted;
 	}
 		
+	/**
+	 * Encrypts a string
+	 * 
+	 * @param to_encrypt - String to encrypt
+	 * @param strkey - encryption key
+	 * @return encrypted - String representing the encrypted value
+	 */
 	public static String encryptJsypt(String to_encrypt, String strkey) {
 		LOGGER.trace(LOGGER_ID + "encryptJsypt()...invoked");
 
@@ -42,6 +60,11 @@ public class Utils {
 		return encrypted;
 	}
 	
+	/**
+	 * Executes the Thread.sleep(long) method
+	 * 
+	 * @param pauseMS - long
+	 */
 	public static void pause(long pauseMS) {
 		String loggerId = ThreadLocalLogTracker.get();
 		//LOGGER.trace(loggerId + "pause()...invoked.");
@@ -56,6 +79,12 @@ public class Utils {
 		//LOGGER.trace(loggerId + "pause()...exit...");
 	}
 	
+	/**
+	 * Parses a setting entry
+	 * 
+	 * @param entry - String
+	 * @return returnArray - String[]
+	 */
 	public static String[] parseSettingEntry(String entry) {
 		
 		boolean endsWithEqual = false;
@@ -81,7 +110,5 @@ public class Utils {
 		return returnArray;
 		
 	}
-
-	
 
 }

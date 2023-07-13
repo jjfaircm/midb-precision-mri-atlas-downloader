@@ -28,7 +28,9 @@ import logs.ThreadLocalLogTracker;
  * for any given neural network type. After the first request for a neural network type, subsequent requests
  * are fulfilled by retrieving the data from the cache.
  * 
- * Additionally, this class loads properties from files when not running in a Linux environment.
+ * Additionally, this class loads the menu configuration entries from the menu.conf, netork_folder_names.conf,
+ * and the summary.conf files. These files provide the data needed for the javascript component in the browser
+ * client to dynamically build the study menu that is displayed.
  * 
  * @author jjfair
  *
@@ -41,11 +43,41 @@ public class AtlasDataCacheManager {
 	private static String DEFAULT_LOGGER_ID = " ::LOGGERID=AtlasDataCacheManager_Init:: ";
 	private static final String MENU_CONFIG_PATH = "/midb/menu.conf";
 	private static final String ACL_CONFIG_PATH = "/midb/acl.conf";
-	private static final String SETTINGS_CONFIG_PATH = "/midb/settings.conf";
-	private static final String KEY_CONFIG_PATH = "/midb/key.conf";
 	private static final String SUMMARY_CONFIG_PATH = "/midb/summary.conf";
 	private static final String NETWORK_FOLDERS_CONFIG_PATH = "/midb/network_folder_names.conf";
 	private static final String NEW_LINE = "\n";
+	
+	//contains collection of base64NetworkImageStrings keyed by the different 
+	//neural network types
+	private Hashtable<String, ArrayList<String>> base64NetworkImageStringsCache = new Hashtable<String, ArrayList<String>>();
+	//private Hashtable<String, ArrayList<byte[]>> binaryNetworkImageBuffers = new Hashtable<String, ArrayList<byte[]>>();
+	private Hashtable<String, ArrayList<String>> imagePathNamesCache = new Hashtable<String, ArrayList<String>>();
+	private Hashtable<String, NetworkMapData> networkMapDataCache = new Hashtable<String, NetworkMapData>();
+	//the menuStudyName is actually the 2nd line in a menuEntry which are stored in the menu.conf file
+	//the menuStudyName contains the menuDisplayName, the menuId, and the types of data contained such as surface, volume, or surface_volume
+	//here is an example of the complete menuStudyName:
+	// ABCD - Template Matching (abcd_template_matching) (surface)
+	private ArrayList<String> menuStudyComplexNames = new ArrayList<String>();
+	private Hashtable<String, ArrayList<String>> menuChoicesCache = new Hashtable<String, ArrayList<String>>();
+	private ArrayList<String> summaryStudyNames = new ArrayList<String>();
+	private ArrayList<String> menuStudyIds = new ArrayList<String>();
+	private Hashtable<String, ArrayList<String>> summaryEntriesCache = new Hashtable<String, ArrayList<String>>();
+	private Hashtable<String, ArrayList<String>> singleNetworkFolderNamesCache = new Hashtable<String, ArrayList<String>>();
+
+
+	private String localHostName = null;
+
+	private String key = null;
+	private ArrayList<String> privilegedIPs = new ArrayList<String>();
+
+	
+	private final Object menuLock = new Object();
+	
+	private final Object configLock = new Object();
+	
+
+	
+	
 	
 	static {
 	      LOGGER = LogManager.getLogger(AtlasDataCacheManager.class);
@@ -69,29 +101,6 @@ public class AtlasDataCacheManager {
 		return instance;
 	}
 
-	//contains collection of base64NetworkImageStrings keyed by the different 
-	//neural network types
-	private Hashtable<String, ArrayList<String>> base64NetworkImageStringsCache = new Hashtable<String, ArrayList<String>>();
-	//private Hashtable<String, ArrayList<byte[]>> binaryNetworkImageBuffers = new Hashtable<String, ArrayList<byte[]>>();
-	private Hashtable<String, ArrayList<String>> imagePathNamesCache = new Hashtable<String, ArrayList<String>>();
-	private Hashtable<String, NetworkMapData> networkMapDataCache = new Hashtable<String, NetworkMapData>();
-	private ArrayList<String> menuStudyNames = new ArrayList<String>();
-	private Hashtable<String, ArrayList<String>> menuChoicesCache = new Hashtable<String, ArrayList<String>>();
-	private ArrayList<String> summaryStudyNames = new ArrayList<String>();
-	private Hashtable<String, ArrayList<String>> summaryEntriesCache = new Hashtable<String, ArrayList<String>>();
-	private Hashtable<String, ArrayList<String>> singleNetworkFolderNamesCache = new Hashtable<String, ArrayList<String>>();
-
-
-	private String localHostName = null;
-
-	private String key = null;
-	private ArrayList<String> privilegedIPs = new ArrayList<String>();
-
-	
-	private final Object menuLock = new Object();
-	
-	private final Object configLock = new Object();
-	
 
 	/**
 	 * Hide constructor to enforce Singleton pattern.
@@ -204,13 +213,15 @@ public class AtlasDataCacheManager {
 	}
 
 	/**
-	 * Returns the names of all the studies contained in the /midb/studies folder.
+	 * Returns the 'complex' names of all configured studies. The complex name contains the
+	 * display name, the id, and data type(s). An example is: 
+	 * ABCD - Template Matching (abcd_template_matching) (surface)
 	 * 
 	 * @return menuStudyNames - ArrayList of String
 	 */
-	public ArrayList<String> getMenuStudyNames() {
+	public ArrayList<String> getMenuStudyComplexNames() {
 		synchronized(configLock) {
-			return this.menuStudyNames;
+			return this.menuStudyComplexNames;
 		}
 	}
 	
@@ -411,51 +422,6 @@ public class AtlasDataCacheManager {
 	}
 	
 	/**
-	 * Loads the key used for encryption operations.
-	 * 
-	 */
-	public String loadKeyFromFile() {
-		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "loadKeyFromFile()...invoked.");
-
-		boolean shouldContinue = true;
-		String[] keyArray = null;
-		
-		File file = new File(KEY_CONFIG_PATH);
-		
-		if(!file.exists()) {
-			return null;
-		}
-		
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(file));
-			String outputLine = null;
-			
-			while ((outputLine = br.readLine()) != null && shouldContinue) {
-				
-				if(outputLine.trim().length() == 0) {
-					continue;
-				}
-				if(outputLine.startsWith("#")) {
-					continue;
-				}
-				if(outputLine.contains("key")) {
-					keyArray = outputLine.split("=");
-					key = keyArray[1];
-					shouldContinue = false;
-				}
-			}
-			br.close();
-		}
-		catch(Exception e) {
-			LOGGER.error(e.getMessage(), e);
-		}		
-		
-		LOGGER.trace(loggerId + "loadKeyFromFile()...exit.");
-		return key;
-	}
-	
-	/**
 	 * Loads the study menu entries from the /midb/menu.conf file.
 	 * 
 	 */
@@ -466,6 +432,9 @@ public class AtlasDataCacheManager {
 		File file = new File(MENU_CONFIG_PATH);
 		boolean menuEntryNamePending = true;
 		boolean menuSubEntriesPending = false;
+		int beginIndex = 0;
+		int endIndex = 0;
+		String menuStudyId = null;
 		String menuStudyName = null;
 		String menuSubEntry = null;
 		ArrayList<String> subMenuEntries = null;
@@ -485,13 +454,27 @@ public class AtlasDataCacheManager {
 				if(outputLine.trim().length() == 0) {
 					continue;
 				}
-				if(outputLine.contains("MENU ENTRY")) {
+				if(outputLine.contains("MENU ENTRY") && outputLine.contains("ID=")) {
+					beginIndex = outputLine.indexOf("=");
+					endIndex = outputLine.indexOf(")");
+					menuStudyId = outputLine.substring(beginIndex+1, endIndex);
+					this.menuStudyIds.add(menuStudyId);
+					//the menuId is just the shortId portion of the menuStudyName
+					//the menuId is also the name of the subfolder containing the specific study
+					//for example, the abcd_template_matching subfolder under the /midb/studies
+					//folder contains the study which has an id of abcd_template_matching
+					
+					//menuEntryName a.k.a. menuStudyName is a complex name which contains the menuDisplayName, 
+					//the menuId, and the types of data contained such as surface, volume, or surface_volume
 					menuEntryNamePending = true;
 					continue;
 				}
 				if(menuEntryNamePending) {
+					//the menuStudyName contains the menuDisplayName, the menuId, and the types of data contained such as surface, volume, or surface_volume
+					//here is an example of the complete menuStudyName:
+					// ABCD - Template Matching (abcd_template_matching) (surface)
 					menuStudyName = outputLine;
-					this.menuStudyNames.add(menuStudyName);
+					this.menuStudyComplexNames.add(menuStudyName);
 					menuEntryNamePending = false;
 					menuSubEntriesPending = true;
 					subMenuEntries = new ArrayList<String>();
@@ -507,7 +490,7 @@ public class AtlasDataCacheManager {
 				}
 			}
 			
-			Collections.sort(this.menuStudyNames);
+			Collections.sort(this.menuStudyComplexNames);
 			
 			Enumeration<String> keys = this.menuChoicesCache.keys();
 			String currentKey = null;
@@ -584,133 +567,12 @@ public class AtlasDataCacheManager {
 		
 	}
 	
-	/**
-	 * Load settings from a config file. This is used in a Mac development
-	 * environment. In the linux ec-2 environment the values are loaded
-	 * via environment values stored in the tomcat_service.conf file which
-	 * is loaded via the tomcat.service unit.
-	 * 
-	 */
-	public void loadSettingsConfig() {
-
-		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "loadSettingsConfig()...invoked.");
-
-		String concatenatedUP = null;
-		String[] upArray = null;
-		boolean shouldContinue = true;
-		
-		File file = new File(SETTINGS_CONFIG_PATH);
-		
-		if(!file.exists()) {
-			return;
-		}
-		
-		String key = null;
-		
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(file));
-			String outputLine = null;
-			
-			String accSidE = null;
-			String accAuthE = null;
-			String toPhoneE = null;
-			String fromPhoneE = null;
-			String ipLocatorAccountId = null;
-			String ipLocatorLicenseKey = null;
-			String ipInfoToken = null;
-			String textBeltKey = null;
-			String smsMode = null;
-			String propName = null;
-			int endIndex = 0;
-			String equalSign = "=";
-			String[] rawArray = null;
-			
-			while ((outputLine = br.readLine()) != null && shouldContinue) {
-				
-				outputLine = outputLine.trim();
-				
-				if(outputLine.length() == 0) {
-					continue;
-				}
-				if(outputLine.startsWith("#")) {
-					continue;
-				}
-				endIndex = outputLine.indexOf(equalSign);
-				propName = outputLine.substring(0, endIndex).trim();
-				
-				switch(propName) {
-				case "MIDB_KEY":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					key = rawArray[1];
-					TokenManager.setKey(key);
-					break;
-				case "MIDB_ADMIN":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					String encryptedAdminPassword = rawArray[1];
-					TokenManager.setPassword(encryptedAdminPassword);
-					break;
-				case "MIDB_DB":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					String encryptedDBPassword = rawArray[1];
-					DBManager.getInstance().initAuthentication(encryptedDBPassword, key);
-					break;
-				case "MIDB_TTP":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					toPhoneE = rawArray[1];
-					break;
-				case "MIDB_FTP":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					fromPhoneE = rawArray[1];
-					break;
-				case "MIDB_TAC":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					accSidE = rawArray[1];
-					break;
-				case "MIDB_TAU":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					accAuthE = rawArray[1];
-					break;
-				case "MIDB_IPLOC_AUT":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					ipLocatorLicenseKey = rawArray[1];
-					break;
-				case "MIDB_IPLOC_ACC":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					ipLocatorAccountId = rawArray[1];
-					break;
-				case "MIDB_IPINF_TAU":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					ipInfoToken = rawArray[1];
-					break;
-				case "MIDB_TBELT":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					textBeltKey = rawArray[1];
-					break;
-				case "MIDB_SMS_MODE":
-					rawArray = Utils.parseSettingEntry(outputLine.trim());
-					smsMode = rawArray[1];
-					break;
-			}
-		}
-			
-			br.close();
-			initSMSNotifier(accSidE, accAuthE, toPhoneE, fromPhoneE, textBeltKey, smsMode);
-			IPLocator.initAuthentication(key, ipLocatorAccountId, ipLocatorLicenseKey);
-			IPInfoRequestor.initAuthentication(key, ipLocatorLicenseKey);
-		}
-		catch(Exception e) {
-			LOGGER.error("Unable to process settings.conf");
-			LOGGER.error(e.getMessage(), e);
-		}
-		LOGGER.trace(loggerId + "loadSettingsConfig()...exit.");
-	}
 
 	/**
 	 * Loads the entries in the /midb/summary.conf file.
 	 * 
 	 */
-	public void loadSummaryConfig() {
+	private void loadSummaryConfig() {
 
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "loadSummaryConfig()...invoked.");
@@ -795,7 +657,8 @@ public class AtlasDataCacheManager {
 			String loggerId = ThreadLocalLogTracker.get();
 			LOGGER.trace(loggerId + "reloadMenuConfig()...invoked.");
 		
-			this.menuStudyNames = new ArrayList<String>();
+			this.menuStudyIds = new ArrayList<String>();
+			this.menuStudyComplexNames = new ArrayList<String>();
 			this.menuChoicesCache = new Hashtable<String, ArrayList<String>>();
 			loadMenuConfig();
 			LOGGER.trace(loggerId + "reloadMenuConfig()...exit.");
@@ -831,8 +694,20 @@ public class AtlasDataCacheManager {
 		}
 	}
 	
+	/**
+	 * Sets the local host name.
+	 * @param localHostName - String
+	 */
 	public void setLocalHostName(String localHostName) {
 		this.localHostName = localHostName;
+	}
+	
+	/**
+	 * Returns the list of menu study ids.
+	 * @return menuStudyIds - ArrayList<String>
+	 */
+	public ArrayList<String> getMenuStudyIds() {
+		return this.menuStudyIds;
 	}
 	
 	

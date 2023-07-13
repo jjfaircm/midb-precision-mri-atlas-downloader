@@ -706,5 +706,4 @@ public class Tracker extends Thread {
 		LOGGER.trace(LOGGER_ID + "sendHealthCheckNotification()...exit, class=" + this.subclassName);
 	}
 	
-	
 }

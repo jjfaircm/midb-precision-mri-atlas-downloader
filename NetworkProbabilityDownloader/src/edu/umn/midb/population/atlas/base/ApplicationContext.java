@@ -38,6 +38,10 @@ public class ApplicationContext {
 	private ArrayList<String> actionList = new ArrayList<String>();
 	private String currentActionFormattedTimestamp = null;
 	private HttpServletRequest currentReguest = null;
+	private boolean configErrorExists = false;
+	private String configError = null;
+	private String configUpdateMessage = null;
+	private String browserType = null;
 	
 	private static final Logger LOGGER = LogManager.getLogger(ApplicationContext.class);
 
@@ -319,6 +323,69 @@ public class ApplicationContext {
 	 */
 	public void setTokenManager(TokenManager tokenManager) {
 		this.tokenManager = tokenManager;
+	}
+
+	/**
+	 * Returns boolean indicating if an error condition occurred during the current http session
+	 * @return configErrorExists - boolean value
+	 */
+	public boolean configErrorExists() {
+		return configErrorExists;
+	}
+
+	/**
+	 * Sets boolean indicating if an error occurred during the current http session
+	 * @param configErrorExists - boolean
+	 */
+	public void setConfigErrorExists(boolean configErrorExists) {
+		this.configErrorExists = configErrorExists;
+	}
+
+	/**
+	 * Returns the description of the current configuration error condition. If there is no error, null is returned.
+	 * @return configError - String
+	 */
+	public String getConfigError() {
+		return configError;
+	}
+
+	/**
+	 * Sets the current configuration error.
+	 * @param configError - String
+	 */
+	public void setConfigError(String configError) {
+		this.configError = configError;
+	}
+
+	/**
+	 * Returns the current configuration update message. For example: 'configuration successfully updated'
+	 * @return configUpdateMessage - String
+	 */
+	public String getConfigUpdateMessage() {
+		return configUpdateMessage;
+	}
+
+	/**
+	 * Sets the current configuration update message.
+	 * @param configUpdateMessage - String
+	 */
+	public void setConfigUpdateMessage(String configUpdateMessage) {
+		this.configUpdateMessage = configUpdateMessage;
+	}
+
+	/**
+	 * @return the browserType
+	 */
+	public String getBrowserType() {
+		return browserType;
+	}
+
+	/**
+	 * @param browserType the browserType to set
+	 */
+	public void setBrowserType(String browserType) {
+		this.browserType = browserType;
+		this.queryStringChain.add("browser=" + browserType + NEW_LINE);
 	}
 
 }

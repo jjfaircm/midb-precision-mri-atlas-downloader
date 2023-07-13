@@ -127,7 +127,7 @@ public class WebResponder {
 		
 		menuResponse = summaryData + "&&&";
 		
-        ArrayList<String> menuStudyNames = AtlasDataCacheManager.getInstance().getMenuStudyNames();
+        ArrayList<String> menuStudyNames = AtlasDataCacheManager.getInstance().getMenuStudyComplexNames();
         Hashtable<String, ArrayList<String>> menuSubOptionsMap = AtlasDataCacheManager.getInstance().getMenuOptionsMap();
 		
         //buildMenuData(menuStudyNames, menuSubOptionsMap);
@@ -315,17 +315,17 @@ public class WebResponder {
 		
 		String folderNamesConfigJSON = null;
 		ArrayList<SingleNetworkFoldersConfig> folderNamesConfigList = new ArrayList<SingleNetworkFoldersConfig>();
-		ArrayList<String> studyNames = AtlasDataCacheManager.getInstance().getSummaryStudyNames();
+		ArrayList<String> studyIds = AtlasDataCacheManager.getInstance().getMenuStudyIds();
 		
-		Iterator<String> studyNamesIt = studyNames.iterator();
+		Iterator<String> studyIdsIt = studyIds.iterator();
 		String studyName = null;
 		SingleNetworkFoldersConfig foldersConfig = null;
 		ArrayList<String> folderNamesList = null;
 		
-		while(studyNamesIt.hasNext()) {
+		while(studyIdsIt.hasNext()) {
 			//object representing folder names config for a specific study
 			foldersConfig = new SingleNetworkFoldersConfig();
-			studyName = studyNamesIt.next();
+			studyName = studyIdsIt.next();
 			foldersConfig.setId(studyName);
 			//folderNamesList contains config for the current study name
 			folderNamesList = AtlasDataCacheManager.getInstance().getNeuralNetworkFolderNamesConfig(studyName);
@@ -622,13 +622,13 @@ public class WebResponder {
 			//if this is the first action, the session has timed out because the
 			//user has signed in to the admin console, but left the screen idle for
 			//more than a half hour
-			responseString = "Access denied: Session has expired.<br> Please refresh browser page.";
+			responseString = "Access denied<br>Error 100";
 		}
 		else {
 			aaEntry = new AdminAccessEntry();
 			//even if the actionCount>1 the user may still just try again after first alert
 			//so just repeat same message
-			responseString = "Access denied: Session has expired.<br> Please refresh browser page.";
+			responseString = "Access denied<br>Error 100";
 			aaEntry.setAction(appContext.getCurrentAction());
 			aaEntry.setRequestorIPAddress(appContext.getRemoteAddress());
 			aaEntry.setFormattedTimeStamp(appContext.getCurrentActionFormattedTimestamp());
@@ -756,13 +756,20 @@ public class WebResponder {
 	 * @param response - HttpServletResponse
 	 * @param studyFolder - The name of the study folder which serves as the study id.
 	 */
-	public static void sendRemoveStudyResponse(HttpServletResponse response, String studyFolder) {
+	public static void sendRemoveStudyResponse(HttpServletResponse response, String studyFolder, boolean isRemoveDisabled) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendRemoveStudyResponse()...invoked.");
 		
-		String responseString = "Study successfully removed:<br> " + studyFolder
+		String responseString = null;
+		
+		if(isRemoveDisabled) {
+			responseString = "Remove study option has been disabled";
+		}
+		else {
+			responseString = "Study successfully removed:<br> " + studyFolder
 				              + "<br>Please refresh page to see current menu";
+		}
 
 		try {
 			  response.getWriter().println(responseString);
@@ -814,6 +821,37 @@ public class WebResponder {
 	    	  LOGGER.error(e.getMessage(), e);
 	    }
 		LOGGER.trace(loggerId + "sendStorageStatsResponse()...exit");
+	}
+	
+	/**
+	 * Sends the response message for an updateConfig request
+	 * @param appContext - {@link ApplicationContext}
+	 * @param response - HttpServletResponse
+	 */
+	public static void sendUpdateConfigResponse(ApplicationContext appContext, HttpServletResponse response) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendUpdateConfigResponse()...invoked");
+
+		String responseString = null;
+		
+		if(appContext.configErrorExists()) {
+			responseString = appContext.getConfigError();
+		}
+		else {
+			responseString = appContext.getConfigUpdateMessage();
+		}
+		
+		try {
+			  response.getWriter().println(responseString);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		
+		LOGGER.trace(loggerId + "sendUpdateConfigResponse()...exit");
+
+
 	}
 	
 	/**

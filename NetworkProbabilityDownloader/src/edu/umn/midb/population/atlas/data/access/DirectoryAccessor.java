@@ -58,15 +58,17 @@ public class DirectoryAccessor {
 	/**
 	 * Returns the binary byte buffer for the specified file.
 	 * 
-	 * @param filePath  The absolute path and file name of the file specified
+	 * @param filePath - The absolute path and file name of the file specified
+	 * 
+	 * @param selectedStudy - The name of the current selected study
 	 * 
 	 * @return byte[] A byte array containing the binary data of the file 
 	 */
 	public static byte[] getFileBytes(String filePath, String selectedStudy) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "getFileBytes()...invoked.");
-		LOGGER.trace(loggerId + "getFileBytes(), filePath=" + filePath);
+		//LOGGER.trace(loggerId + "getFileBytes()...invoked.");
+		//LOGGER.trace(loggerId + "getFileBytes(), filePath=" + filePath);
 
 		
 		byte[] allBytes = null;

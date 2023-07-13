@@ -24,19 +24,10 @@ public class ShutdownMonitor implements ServletContextListener {
 	//       LOAD DURING THE WEBAPP STARTUP, WHICH IS BEFORE THE LOG4J
 	//       DYNAMIC CONFIGURATION AND WILL CAUSE ALL LOGGING TO FAIL
 	
-	//private static Logger LOGGER = null;
-	
-	/*
-	static {
-		LOGGER = LogManager.getLogger(ShutdownMonitor.class);
-	}
-	*/
 	
 	@Override
 	public void contextInitialized(ServletContextEvent sce) {
-		//LogConfigurator.configureLOG4J2();
 		//add any code you want/need to do at startup
-		//System.out.println("DadsAppContextListener.contextInitialized()...dads-app starting.");
 	}
 	
 	/**

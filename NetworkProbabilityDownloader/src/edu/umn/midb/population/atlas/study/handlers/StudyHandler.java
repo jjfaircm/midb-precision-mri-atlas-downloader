@@ -260,7 +260,7 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 					File zipDirectory = new File(zipDirPath);
 					zipDirectory.mkdir();
 				}
-				success = runSystemZipFolderCommand(currentFolder, surfaceRootFolder);
+				success = runSystemZipFolderCommand(currentFolder, surfaceRootFolder, "surface");
 				if(!success) {
 					return success;
 				}
@@ -271,7 +271,7 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 					File zipDirectory = new File(zipDirPath);
 					zipDirectory.mkdir();
 				}
-				success = runSystemZipFolderCommand(currentFolder, volumeRootFolder);
+				success = runSystemZipFolderCommand(currentFolder, volumeRootFolder, "volume");
 				if(!success) {
 					return success;
 				}
@@ -282,14 +282,14 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 		if(this.combinedClustersFolderExists) {
 			if(this.surfaceZipFilePath != null) {
 				currentFolder = "combined_clusters";
-				success = runSystemZipFolderCommand(currentFolder, surfaceRootFolder);
+				success = runSystemZipFolderCommand(currentFolder, surfaceRootFolder, "surface");
 				if(!success) {
 					return success;
 				}
 			}
 			if(this.volumeZipFilePath != null) {
 				currentFolder = "combined_clusters";
-				success = runSystemZipFolderCommand(currentFolder, volumeRootFolder);
+				success = runSystemZipFolderCommand(currentFolder, volumeRootFolder, "volume");
 				if(!success) {
 					return success;
 				}
@@ -299,14 +299,14 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 		if(this.overlappingNetworksFolderExists) {
 			if(this.surfaceZipFilePath != null) {
 				currentFolder = "overlapping_networks";
-				success = runSystemZipFolderCommand(currentFolder, surfaceRootFolder);
+				success = runSystemZipFolderCommand(currentFolder, surfaceRootFolder, "surface");
 				if(!success) {
 					return success;
 				}
 			}
 			if(this.volumeZipFilePath != null) {
 				currentFolder = "overlapping_networks";
-				success = runSystemZipFolderCommand(currentFolder, volumeRootFolder);
+				success = runSystemZipFolderCommand(currentFolder, volumeRootFolder, "volume");
 				if(!success) {
 					return success;
 				}
@@ -510,18 +510,19 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 	 * 
 	 * @param folderName - String that is the folder to zip
 	 * @param workingDirectoryPath - what the working directory should be
+	 * @param dataType - String specifying 'surface' or 'volume'
 	 * 
 	 * @return success - boolean indicating if the zip command completed successfully
 	 */
-    protected boolean runSystemZipFolderCommand(String folderName, String workingDirectoryPath) {
+    protected boolean runSystemZipFolderCommand(String folderName, String workingDirectoryPath, String dataType) {
     	
     	String loggerId = this.appContext.getLoggerId();
 		LOGGER.trace(loggerId + "runSystemZipFolderCommand()...invoked.");
 
 		boolean success = true;
     	int returnCode = -1;
-    	//String zipFileName = this.studyFolder + "_" + dataType + "_" folderName;
-    	String commandToExecute = TEMPLATE_ZIP_COMMAND.replace(REPLACE_ZIP_FILE_NAME, this.studyFolder + "_" + folderName);
+    	String zipFileName = this.studyFolder + "_" + dataType + "_" + folderName;
+    	String commandToExecute = TEMPLATE_ZIP_COMMAND.replace(REPLACE_ZIP_FILE_NAME, zipFileName);
     	commandToExecute = commandToExecute.replace(REPLACE_FOLDER_NAME, folderName);
 
     	//Runtime runtime = Runtime.getRuntime();
@@ -608,7 +609,11 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 		LOGGER.trace(loggerId + "validateFileNames()...invoked.");
 		
 		boolean success = true;
-
+		String requiredPrefix = this.studyFolder + "_";
+		if(dataType.equals("volume")) {
+			requiredPrefix += "vol_";
+		}
+		
 	    ArrayList<String> subDirs = new ArrayList<String>();
 	    String targetRootPath = this.absoluteStudyFolder + dataType + "/";	
 	    try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(targetRootPath))) {
@@ -653,14 +658,16 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 		    
 		    while(fileNamesIt.hasNext()) {
 		    	fileName = fileNamesIt.next();
-		    	if(!fileName.startsWith(this.studyFolder)) {
+		    	if(!fileName.startsWith(requiredPrefix)) {
 		    		this.errorEncountered = true;
 		    		this.errorMessage = "study prefix missing for file: " + shortSubDirName + "/" + fileName;
+		    		this.errorMessage += "<br>All file names for data type of " + dataType
+		    				+ " must begin with: " + requiredPrefix;
 		    		if(!isUpdate) {
-		    			this.errorMessage += "<br>Study not created";
+		    			this.errorMessage += "<br><br>Study not created";
 		    		}
 		    		else {
-		    			this.errorMessage += "<br>Study not updated";
+		    			this.errorMessage += "<br><br>Study not updated";
 		    		}
 		    		return false;
 		    	}
@@ -748,7 +755,7 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 		}
 		else if(dataType.equalsIgnoreCase("volume")) {
 			directoryPath = this.absoluteStudyFolder + "volume/";
-			targetDirectory = new File(this.volumeZipFilePath);
+			targetDirectory = new File(directoryPath);
 		}
 		
 		String[] folderArray = targetDirectory.list();
@@ -797,7 +804,8 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 				if(currentFileName.endsWith(".dscalar.nii")) {
 					dscalar_nii_found = true;
 				}
-				else if(currentFileName.endsWith("network_probability.png")) {
+				else if(currentFileName.endsWith("network_probability.png") ||
+						currentFileName.endsWith("number_of_nets.png")) {
 					dscalar_png_found = true;
 				}
 				if(dscalar_nii_found && dscalar_png_found) {
@@ -949,6 +957,11 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
     	return isValid;
     }
 	
+	/**
+	 * Validates the files contained in the overlapping_networks folder
+	 * @param isUpdate - boolean indicating if this is part of a study update
+	 * @return isValid - boolean
+	 */
 	protected boolean validateOverlappingNetworksConfig(boolean isUpdate) {
 		String loggerId = this.appContext.getLoggerId();
 		LOGGER.trace(loggerId + "validateOverlappingNetworksConfig()...invoked.");

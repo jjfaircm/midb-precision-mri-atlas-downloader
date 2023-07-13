@@ -57,6 +57,7 @@ public class IPLocator {
 		try {
 			String ipAddressString = tEntry.getRequestorIPAddress();
 			
+			//for dev environment
 			if(ipAddressString.equals("127.0.0.1")) {
 				ipAddressString = "68.63.215.250";
 				tEntry.setRequestorIPAddress("68.63.215.250");

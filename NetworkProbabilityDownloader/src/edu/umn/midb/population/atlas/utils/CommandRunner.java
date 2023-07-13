@@ -12,7 +12,8 @@ import logs.ThreadLocalLogTracker;
 
 /**
  * 
- * Convenience class for changing ownership of a system object or getting available disk storage.
+ * Convenience class for running native bash commands such as changing ownership
+ * of a system object ('chown' command) or getting available disk storage ('df -h' command).
  * 
  * @author jjfair
  *
@@ -104,6 +105,11 @@ public class CommandRunner {
 
 	}
 	
+	/**
+	 * Executes the 'df -h' command via a bash command
+	 * 
+	 * @return stats - {@link ServerStorageStats}
+	 */
 	public static ServerStorageStats getFreeStorageStats() {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "executeCommand()...invoked");
@@ -205,6 +211,12 @@ public class CommandRunner {
 		return stats;
 	}
 	
+	/**
+	 * Parses the statsLine that is returned when running the 'df -h' command
+	 * 
+	 * @param statsLine - String
+	 * @return statsLine - String
+	 */
 	private static String parseFreeStorageAmount(String statsLine) {
 		int beginIndex = -1;
 		int endIndex = -1;

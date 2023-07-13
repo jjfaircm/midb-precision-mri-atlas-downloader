@@ -64,7 +64,5 @@ public class AdminAccessRecord extends BaseRecord {
 	public void setValidPassword(String validPassword) {
 		this.validPassword = validPassword;
 	}
-	
-
 
 }

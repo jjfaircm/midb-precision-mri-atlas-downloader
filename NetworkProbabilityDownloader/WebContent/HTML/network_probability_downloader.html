@@ -7,9 +7,9 @@
 <head>
 
   <script src="/NetworkProbabilityDownloader/javascript/jquery.js"></script>
-  <script src="/NetworkProbabilityDownloader/javascript/np_downloader.js?id=.war_0124_0005_2023"></script>
-  <script src="/NetworkProbabilityDownloader/javascript/np_menu.js?id=.war_0124_0005_2023"></script>
-  <script src="/NetworkProbabilityDownloader/javascript/menuTemplates.js?id=.war_0124_0005_2023"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/np_downloader.js?id=.war_0703_2204_2023"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/np_menu.js?id=.war_0703_2204_2023"></script>
+  <script src="/NetworkProbabilityDownloader/javascript/menuTemplates.js?id=.war_0703_2204_2023"></script>
   
   
 
@@ -57,10 +57,10 @@
 <link href='https://fonts.googleapis.com/css?family=Amaranth:ital@1&display=swap' rel='stylesheet'>
 
 
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/np_downloader.css?id=.war_0124_0005_2023" media="all" />
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/alert.css?id=.war_0124_0005_2023" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/np_downloader.css?id=.war_0703_2204_2023" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/alert.css?id=.war_0703_2204_2023" media="all" />
 
-<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/menu_generic.css?id=.war_0124_0005_2023" media="all" />
+<link rel="stylesheet" href="/NetworkProbabilityDownloader/css/menu_generic.css?id=.war_0703_2204_2023" media="all" />
 
 
 <!--[if lte IE 8]>
@@ -205,7 +205,7 @@
        <img id="img_splashImage"  class="splashImage" alt="image not available" src="/NetworkProbabilityDownloader/images/brain_splash.png" height="320" width=100% style="object-fit: cover;">
    </div>
    <div id="div_overlayImage" style="position: absolute; z-index: 1; top:0px; right:10px;">
-      <img class="centerImageXX" title="Version: .war_0124_0005_2023" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75" ondblclick="handleAdminLoginRequest()">
+      <img class="centerImageXX" title="Version: .war_0703_2204_2023" alt="image not available" src="/NetworkProbabilityDownloader/images/DCAN.png" height="75" width="75" ondblclick="handleAdminLoginRequest()">
    </div>
    <!--
    <div id="midb_atlases_text" style="position: absolute; z-index: 1; bottom:10px; right:16px">
@@ -720,10 +720,11 @@ As unestablished research software, these files are provided on an "as is'' basi
   <li class="studyMenu"><a href="javascript:;" id="a_removeStudy" onclick="handleStudyMenuClicked(this)">Remove Study</a></li>
   <li class="studyMenu"><a href="javascript:;" id="a_updateStudy" onclick="handleStudyMenuClicked(this)">Update Study</a></li>
   <li class="studyMenu"><a href="javascript:;" id="a_databaseAccess" onclick="handleStudyMenuClicked(this)">Website Stats</a></li>
-  <li class="studyMenu"><a href="javascript:;" id="a_downloadSamples" onclick="handleStudyMenuClicked(this)">Download Documentation/Samples</a></li>
+  <li class="studyMenu"><a href="javascript:;" id="a_downloadSamples" onclick="handleStudyMenuClicked(this)">Download Documentation</a></li>
   <li class="studyMenu"><a href="javascript:;" id="a_updateMaps" onclick="handleStudyMenuClicked(this)">Update Maps</a></li>
   <li class="studyMenu"><a href="javascript:;" id="a_viewMaps" onclick="handleStudyMenuClicked(this)">View Maps</a></li>
   <li class="studyMenu"><a href="javascript:;" id="a_encryptTool" onclick="handleStudyMenuClicked(this)">Encrypt Tool</a></li>
+  <li class="studyMenu"><a href="javascript:;" id="a_configTool" onclick="handleStudyMenuClicked(this)">Config</a></li>
 </ul>
 
 
@@ -1261,6 +1262,53 @@ As unestablished research software, these files are provided on an "as is'' basi
 
 
 </div> <!-- div_encryptTool -->
+
+
+<div id="div_configTool" style="display: none;">
+<br><br>
+<table class="admin" id="configToolTable">
+ <thead class="admin">
+ <tr class="admin">
+ <th class="admin" colspan="2">CONFIG TOOL</th>
+ </thead>
+ <tr class="admin">
+ <td class="admin">Select property to change</td>
+ <td class="admin">
+ <select class="admin" name="select_configProperty" id="select_configProperty">
+  <option value="unselected">Select a property</option>
+  <option value="MIDB_TTP">SMS Recipient Telephone</option>
+  <option value="MIDB_FTP">SMS Sender Telephone</option>
+  <option value="MIDB_TAC">Twilio account SID</option> 
+  <option value="MIDB_TAU">Twilio authentication token</option>
+</select> 
+</td>
+</tr>
+<tr class="admin">
+<td class="admin">Enter new value</td>
+<td class="admin>"><input type="text" id="input_configValue" class="admin" size="32" maxlength="30" 
+ placeholder="enter text, maximum length of 30">
+</td>
+</tr>
+</table>
+
+<br><br>
+<span>&nbsp;&nbsp;</span><button id="button_configTool"  class="downloader"  onclick="requestUpdateConfig()"><img alt="" src="/NetworkProbabilityDownloader/images/button_submit_db.png"></img></button>
+
+<div id="div_configProgress" style="text-align:center; display:none;">
+		    <figure>
+		    	<img id="img_working" class="img_working" alt="image not available" src="/NetworkProbabilityDownloader/images/giphy.gif" height="50" width="100" style="max-width: 100%; height: auto;">
+		    	<figcaption class="ziplist" style="color: green; font-weight: 500;">Processing Request</figcaption>
+		    </figure>
+
+</div>
+
+
+
+
+
+</div> <!-- end div_config -->
+
+
 
 </div> <!-- end div_admin -->
 

@@ -472,7 +472,7 @@
 
 		   if(studyMenuIDArray.includes(studyFolderName)) {
 			   studyNameTextInput.value = "";
-			   doAdminAlert("Duplicate Study name - study already exists");
+			   doAdminAlert("Duplicate Study name - study already exists<br>You can Update existing studies or Delete them first");
 			   return false;
 		   }
 
@@ -825,6 +825,7 @@
 	   var div_updateMaps = document.getElementById("div_updateMaps");
 	   var div_viewMaps = document.getElementById("div_viewMapsWrapper");
 	   var div_encryptTool = document.getElementById("div_encryptTool");
+	   var div_configTool = document.getElementById("div_configTool");
 
 
 	   
@@ -836,6 +837,7 @@
 	   div_updateMaps.style.display = "none";
 	   div_viewMaps.style.display = "none";
 	   div_encryptTool.style.display = "none";
+	   div_configTool.style.display = "none";
 
 
 	   var anchor_addStudy = document.getElementById("a_addStudy");
@@ -846,6 +848,7 @@
 	   var anchor_updateMaps = document.getElementById("a_updateMaps");
 	   var anchor_viewMaps = document.getElementById("a_viewMaps");
 	   var anchor_encryptTool = document.getElementById("a_encryptTool");
+	   var anchor_configTool = document.getElementById("a_configTool");
 
 
 	   
@@ -916,6 +919,10 @@
        case "a_encryptTool":
 		   div_encryptTool.style.display = "block";
 		   anchor_encryptTool.style.color = "#FFC300";
+		   break;
+       case "a_configTool":
+		   div_configTool.style.display = "block";
+		   anchor_configTool.style.color = "#FFC300";
 		   break;
 	   }
 
@@ -1032,18 +1039,21 @@
    
    function handleRemoveStudyResponse(responseText) {
         console.log("handleRemoveStudyResponse()...invoked.");
-       
-        const index = studyMenuIDArray.indexOf(global_studyToRemove);
-        if (index > -1) {
-        	studyMenuIDArray.splice(index, 1);
-        }
-        buildMenuIdDropdownForRemoveStudy();
-        buildMenuIdDropdownForUpdateStudy();
 
-	   	var div_removeStudy = document.getElementById("div_removeStudy");
-	   	div_removeStudy.style.display = "block";
-	   	
+	    var div_removeStudy = document.getElementById("div_removeStudy");
 	   	var div_removeStudyProgress = document.getElementById("div_removeStudyProgress");
+
+
+		if(!responseText.includes("disabled")) {
+        	const index = studyMenuIDArray.indexOf(global_studyToRemove);
+        	if (index > -1) {
+        		studyMenuIDArray.splice(index, 1);
+        	}
+        	buildMenuIdDropdownForRemoveStudy();
+        	buildMenuIdDropdownForUpdateStudy();
+		}
+
+	   	div_removeStudy.style.display = "block";	   	
 	   	div_removeStudyProgress.style.display = "none";
 
 	   	doAdminAlert(responseText);
@@ -1189,7 +1199,16 @@
 							doAdminAlert("surface.zip not allowed for Available Data Type of volume");
 							return;
 						}
-						if(!(fileName===requiredVolumeZipName)) {
+						
+						
+						if(fileName != requiredSurfaceZipName && fileName != requiredVolumeZipName 
+					       && fileName != "summary.txt" && fileName != "folders.txt") {
+						
+						   doAdminAlert("file name must be " + requiredSurfaceZipName + ",<br>" + requiredVolumeZipName + ",<br>" + "summary.txt, or folders.txt");
+						   return;
+					    }
+												
+						if(fileName.includes("volume.zip") &&  !(fileName===requiredVolumeZipName)) {
 							doAdminAlert("the name of the zip file must be " + requiredVolumeZipName);
 							return;
                         }
@@ -1200,20 +1219,16 @@
 							doAdminAlert("volume.zip not allowed for Available Data Type of surface");
 							return;
 						}
-						if(fileName.includes(".zip") && !(fileName===requiredSurfaceZipName)) {
+						
+						if(fileName.includes("surface.zip") &&  !(fileName===requiredSurfaceZipName)) {
 							doAdminAlert("the name of the zip file must be " + requiredSurfaceZipName);
 							return;
-                        }					
+                        }
 					}
+										
 					
 					if(newStudy.uploadFileNamesArray.includes(fileName)) {
 						doAdminAlert("duplicate file name");
-						return;
-					}
-					
-					if(fileName != requiredSurfaceZipName && fileName != requiredVolumeZipName 
-					   && fileName != "summary.txt" && fileName != "folders.txt") {
-						doAdminAlert("file name must be " + requiredSurfaceZipName + ",<br>" + requiredVolumeZipName + ",<br>" + "summary.txt, or folders.txt");
 						return;
 					}
 
@@ -1891,6 +1906,17 @@
 	       console.log("processFileChunks()...exit.");
 
        }
+
+	   function processUpdateConfigResponse(responseText) {
+		    console.log("processUpdateConfigResponse()...invoked");
+		    doAdminAlert(responseText);
+			var configButton = document.getElementById("button_configTool");
+			configButton.disabled = false;
+			var progressDiv = document.getElementById("div_configProgress");
+			progressDiv.style.display = "none";
+	
+		   console.log("processUpdateConfigResponse()...exit");
+	   }
 	   
 	   function removeDroppedFile(liElement) {
 		   console.log("removeDroppedFile()...invoked, event=" + event);
@@ -1983,6 +2009,27 @@
        	    console.log("requestEncryption()...exit.");
 	     }
 
+		 function requestUpdateConfig() {
+       	    console.log("requestUpdateConfig()...invoked.");
+
+			var button_configButton = document.getElementById("button_configTool");
+			button_configButton.disabled = true;
+			var selectElement = document.getElementById("select_configProperty");
+		    var selectedPropertyKey = selectElement.options[selectElement.selectedIndex].value; 
+			var input_configText = document.getElementById("input_configValue");
+			var configPropertyValue = input_configText.value;
+			var encodedConfigPropValue = encodeURIComponent(configPropertyValue);
+			
+			var configButton = document.getElementById("button_configTool");
+			configButton.disabled = true;
+			var progressDiv = document.getElementById("div_configProgress");
+			progressDiv.style.display = "block";
+			
+			sendUpdateConfigRequest(selectedPropertyKey, encodedConfigPropValue);
+   
+       	    console.log("requestUpdateConfig()...exit.");
+		 }
+
          function resetAddStudyForm() {
        	    console.log("resetAddStudyForm()...invoked.");
   			var table = document.getElementById("adminTable");
@@ -2001,6 +2048,9 @@
 	   	 
    	   	 	var text_studyFolderName = document.getElementById("input_studyFolderName");;
    	   	 	text_studyFolderName.value = "";
+
+   	   	 	var text_studyPrefixName = document.getElementById("input_studyPrefix");;
+   	   	 	text_studyPrefixName.value = "";
 
  		    var selectElement = document.getElementById("select_dataType");
 		    selectElement.selectedIndex = 0; 
@@ -2047,14 +2097,18 @@
 	   }
 
 
-	   function sendEncryptionRequest(textToEncrypt) {
+	   function sendEncryptionRequest(encodedTextToEncrypt) {
 
 	        console.log("sendEncryptionRequest()...invoked.");
 
 	       	var ajaxRequest = getAjaxRequest();
+            //do not include parameters when invoking encodeURI()
+            //the parameter is already encoded with encodeURIComponent()
+            //which treats parameter data differently than the address portion
+            //of a url
 	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=encryptData";	
-            url += "&encryptionTarget=" + textToEncrypt;
-	       	var encodedUrl = encodeURI(url);
+            var encodedUrl = encodeURI(url);
+            encodedUrl += "&encryptionTarget=" + encodedTextToEncrypt;
 	       	ajaxRequest.open('get', encodedUrl, true);
 	      
 	       	ajaxRequest.onreadystatechange=function() {
@@ -2237,6 +2291,69 @@
       	    ajaxRequest.send();
  		    console.log("sendGetFileDownloadsJSON()...exit.");
 	   }
+
+
+
+
+	   function sendUpdateConfigRequest(configPropertyKey, encodedConfigPropertyValue) {
+
+	        console.log("sendUpdateConfigRequest()...invoked.");
+
+	       	var ajaxRequest = getAjaxRequest();
+	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=updateConfig";
+            //only encode the http address and not the parameters
+            //the parameters are already encoded with encodeURIComponent() function which handles
+            //encoding different for parameters vs. the http address
+            var encodedUrl = encodeURI(url);	
+            encodedUrl += "&configPropertyKey=" + configPropertyKey;
+            encodedUrl += "&configPropertyValue=" + encodedConfigPropertyValue;
+	       	ajaxRequest.open('get', encodedUrl, true);
+	      
+	       	ajaxRequest.onreadystatechange=function() {
+	
+	              //console.log(ajaxRequest.responseText);
+	              if(ajaxRequest.responseText.includes("Unexpected Error")) {
+	              	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+	           		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+	           		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+	               	var errorArray = errorData.split("&");
+	              	var msg1 = errorArray[0];
+	              	var msg2 = errorArray[1];
+	              	stackTraceData = errorArray[2];
+	              	var divSubmitNotification = document.getElementById("div_submitNotification");
+	              	divSubmitNotification.style.display = "none";
+	              	console.log("uploadMenuFiles()...onreadystatechange...error");
+	              	console.log("msg1=" + msg1);
+	              	console.log("msg2=" + msg2);
+	              	console.log(stackTraceData);
+	              	doErrorAlert(msg1, msg2, errorAlertOK);
+
+	              	return;
+	              }
+	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+			           	
+	            	  if(ajaxRequest.responseText.includes("Access denied")) {
+	            		  var div_encryptionProgress = document.getElementById("div_encryptProgress");
+	            		  div_encryptionProgress.style.display = "none";
+	            		  doAdminAlert(ajaxRequest.responseText);
+	            	  }
+	            	  else {
+	            		  processUpdateConfigResponse(ajaxRequest.responseText);
+	            	  }
+	   	       	  }
+	       	}
+	   
+      	    ajaxRequest.send();
+	        console.log("sendUpdateConfigRequest()...exit.");
+	   }
+
+	   
+
+
+
+
+
+
 
 	   function getStorageStats(ssButton) {
 		    console.log("getStorageStats()...invoked.");
@@ -2669,7 +2786,7 @@
            newStudy.studyFolder = studyFolderName;
 		   
 		   if(studyMenuIDArray.includes(studyFolderName)) {
-			   doAdminAlert("Duplicate Study name");
+			   doAdminAlert("Duplicate Study name<br>You can Update existing studies or Delete them");
 			   return false;
 		   }
 		   

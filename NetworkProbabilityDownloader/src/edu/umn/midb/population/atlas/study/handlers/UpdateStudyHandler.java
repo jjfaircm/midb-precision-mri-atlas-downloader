@@ -62,6 +62,7 @@ public class UpdateStudyHandler extends StudyHandler {
 	
 	private int totalNumFilesRenamed = 0;
 	
+	
 	/**
 	 * Public constructor
 	 * 
@@ -651,6 +652,11 @@ public class UpdateStudyHandler extends StudyHandler {
 		return success;
 	}
 	
+	/**
+	 * Recreates the zip files contained in the 'zips' folder
+	 * @param dataType - String indicating 'surface' or 'volume' data
+	 * @return success - boolean
+	 */
 	private boolean recreateSubFolderZips(String dataType) {
 		String loggerId = this.appContext.getLoggerId();
 		LOGGER.trace(loggerId + "recreateSubFolderZips()...invoked...war=NPDownloader_0116_2315_2023.war");
@@ -903,6 +909,12 @@ public class UpdateStudyHandler extends StudyHandler {
 		return success;
 	}
 	
+	/**
+	 * Removes the backup volume zip file. This file is only deleted once the study update
+	 * has been successfully completed.
+	 * 
+	 * @return success - boolean
+	 */
 	protected boolean renameBackupVolumeZipFile() {
 		String loggerId = this.appContext.getLoggerId();
 		LOGGER.trace(loggerId + "renameBackupVolumeZipFile()...invoked.");
@@ -990,6 +1002,8 @@ public class UpdateStudyHandler extends StudyHandler {
 	
 	/**
 	 * Updates the /midb/menu.conf file
+	 * 
+	 * @param isVolumeData - boolean specifying if the update is adding volume data
 	 * 
 	 * @return success - boolean
 	 */
@@ -1167,5 +1181,4 @@ public class UpdateStudyHandler extends StudyHandler {
 		
 	}
 	
-
 }

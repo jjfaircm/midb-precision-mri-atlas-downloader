@@ -5,9 +5,14 @@ import com.twilio.exception.ApiException;
 import com.twilio.rest.api.v2010.Account.Status;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
+import com.twilio.twiml.messaging.Body;
+import com.twilio.twiml.MessagingResponse;
+import com.twilio.twiml.TwiMLException;
 import edu.umn.midb.population.atlas.exception.DiagnosticsReporter;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import logs.ThreadLocalLogTracker;
+
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -23,6 +28,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import java.util.Arrays;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,6 +58,12 @@ public class SMSNotifier  {
 	private static  String FROM_PHONE_NUMBER_ENC = null;
 	private static  String TEXT_BELT_KEY = null;
 	private static  String SEND_MODE = "TWILIO";
+	//set true to disable download SMS notifications
+	private static boolean NOTIFY_DOWNLOADS = false;
+	//set true in midb_app.properties to disable all SMS notifications
+	private static boolean DISABLE_SMS_NOTIFICATIONS = false;
+	//Adding opt-out message to satisfy SMS delivery requirements in twilio
+	private static String OPT_OUT_MSG = "::::Reply STOP to opt out";
 	
 	private static String localHostName = null;
 	
@@ -109,6 +122,14 @@ public class SMSNotifier  {
 		LOGGER.trace(LOGGER_ID + "setToNumberE()...invoked");
 		TO_PHONE_NUMBER_ENC = toNumberE;
 		TO_PHONE_NUMBER = Utils.convertJcpyt(TO_PHONE_NUMBER_ENC, ENCRYPTION_KEY);
+		if(!TO_PHONE_NUMBER.startsWith("+1")) {
+			if(TO_PHONE_NUMBER.startsWith("1")) {
+				TO_PHONE_NUMBER = "+" + TO_PHONE_NUMBER;
+			}
+			else {
+				TO_PHONE_NUMBER = "+1" + TO_PHONE_NUMBER;
+			}
+		}
 		LOGGER.trace(LOGGER_ID + "setToNumberE()...exit");
 	}
 	
@@ -122,6 +143,14 @@ public class SMSNotifier  {
 		LOGGER.trace(LOGGER_ID + "setFromNumberE()...invoked");
 		FROM_PHONE_NUMBER_ENC = fromNumberE;
 		FROM_PHONE_NUMBER = Utils.convertJcpyt(FROM_PHONE_NUMBER_ENC, ENCRYPTION_KEY);
+		if(!FROM_PHONE_NUMBER.startsWith("+1")) {
+			if(FROM_PHONE_NUMBER.startsWith("1")) {
+				FROM_PHONE_NUMBER = "+" + FROM_PHONE_NUMBER;
+			}
+			else {
+				FROM_PHONE_NUMBER = "+1" + FROM_PHONE_NUMBER;
+			}
+		}
 		LOGGER.trace(LOGGER_ID + "setFromNumberE()...exit");
 	}
 	
@@ -136,36 +165,57 @@ public class SMSNotifier  {
 		LOGGER.trace(LOGGER_ID + "setKey()...exit");
 	}
 	
+	/**
+	 * Sets the sendMode which indicates whether the twilio or textBelt service should be used
+	 * to send SMS notifications.
+	 * 
+	 * @param mode - String
+	 */
 	public static void setSendMode(String mode) {
 		LOGGER.trace(LOGGER_ID + "setSendMode()...invoked");
 		SEND_MODE = mode;
 		LOGGER.trace(LOGGER_ID + "setSendMode()...exit");
 	}
 	
+	/**
+	 * Sets the TEXT_BELT_KEY which is the api key required by textBelt
+	 * 
+	 * @param encTextBeltKey - String
+	 */
 	public static void setTextBeltKey(String encTextBeltKey) {
 		LOGGER.trace(LOGGER_ID + "setTextBeltKey()...invoked");
 		TEXT_BELT_KEY = Utils.convertJcpyt(encTextBeltKey, ENCRYPTION_KEY);
 		LOGGER.trace(LOGGER_ID + "setTextBeltKey()...exit");
 	}
 	
-	
+	/**
+	 * Sends an SMS notification
+	 * @param textMessage - String
+	 * @param invokerClassName - String
+	 */
 	public static synchronized void sendNotification(String textMessage, String invokerClassName) {
 		
-		String domainName = NetworkProbabilityDownloader.getDomainName();
-		if(domainName.contains("localhost") || domainName.contains("MacBook")) {
-			LOGGER.trace(LOGGER_ID + "sendNotification()...not sending SMS because localhost is JAMESs-MacBook");
+		LOGGER.trace(LOGGER_ID + "sendNotification()...invoked, invoker=" + invokerClassName);
+		
+		textMessage = textMessage + OPT_OUT_MSG;
+
+		if(DISABLE_SMS_NOTIFICATIONS) {
+			LOGGER.trace(LOGGER_ID + "sendNotification()...notifications disabled, exit");
 			return;
 		}
-		
 		if(SEND_MODE.equalsIgnoreCase("TWILIO")) {
 			sendViaTwilio(textMessage, invokerClassName);
 		}
 		else if(SEND_MODE.equalsIgnoreCase("TEXT_BELT")) {
 			sendViaTextBelt(textMessage, invokerClassName);
 		}
-
 	}
 	
+	/**
+	 * Sends an SMS notification via the twilio service (visit https://twilio.com)
+	 * @param textMessage - String
+	 * @param invokerClassName - String
+	 */
 	private static void sendViaTwilio(String textMessage, String invokerClassName) {
 
 		LOGGER.trace(LOGGER_ID + "sendViaTwilio()...invoked, invoker=" + invokerClassName);
@@ -192,6 +242,11 @@ public class SMSNotifier  {
 	
 	}
 	
+	/**
+	 * Sends an SMS notification via the textBelt visit (see textbelt.com)
+	 * @param message - String
+	 * @param invokerClassName - String
+	 */
 	private static void sendViaTextBelt(String message, String invokerClassName) {
 		String loggerId = ThreadLocalLogTracker.get();
 		if(loggerId == null) {
@@ -229,6 +284,64 @@ public class SMSNotifier  {
 			DiagnosticsReporter.createDiagnosticsEntry(e, false);
 		}
 		LOGGER.trace(loggerId + "sendViaTextBelt()...exit, invoker=" + invokerClassName);
+	}
+	
+	/**
+	 * Sets the boolean indicating if fileDownload events should trigger an SMS notification.
+	 * 
+	 * @param shouldNotify - boolean
+	 */
+	public static void setDownloadNotificationMode(boolean shouldNotify) {
+		NOTIFY_DOWNLOADS = shouldNotify;
+	}
+	
+	/**
+	 * Returns a boolean indicating if file download events should trigger an SMS notification.
+	 * 
+	 * @return NOTIFY_DOWNLOADS - boolean
+	 */
+	public static boolean shouldNotifyDownloads() {
+		return NOTIFY_DOWNLOADS;
+	}
+	
+	public static void disableSMSNotifications(boolean disableFlag) {
+		DISABLE_SMS_NOTIFICATIONS = disableFlag;
+	}
+	
+    /**
+     * This fulfills a requirement by twilio and SMS standards that require the ability for
+     * notification recipients to reply with 'STOP' to prevent further messaging. This will
+     * actually never happen in this application since we only send notifications to the registered
+     * developer telephone number (which is specified in midb_app.properties in the /midb 
+     * folder).
+     * @param request - HttpServletRequest
+     * @param response - HttpServletResponse
+     */
+	public static void handleSMSReceived(HttpServletRequest request, HttpServletResponse response) {
+	    
+		//If we were to receive requests coming from different telephone numbers, 
+		//we could get the telephone number of the sender and the received message by
+		//examining the following query parameters:
+		//request.getParameter("From")  this is the sender's telephone number
+		//request.getParameter("Body")  this is the message
+		LOGGER.trace(LOGGER_ID + "handleSMSReceived()...invoked.");
+		String message = "Confirmed!";
+		Body messageBody = new Body.Builder(message).build();
+		com.twilio.twiml.messaging.Message sms = new com.twilio.twiml.messaging.Message.Builder().body(messageBody).build();
+	    MessagingResponse twiml = new MessagingResponse.Builder().message(sms).build();
+
+	    response.setContentType("application/xml");
+	    
+	    try {
+	    	response.getWriter().print(twiml.toXml());
+	    }
+	    catch(TwiMLException tE) {
+	    	LOGGER.error(tE.getMessage(), tE);
+	    }
+	    catch(IOException ioE) {
+	    	LOGGER.error(ioE.getMessage(), ioE);
+	    }
+		LOGGER.trace(LOGGER_ID + "handleSMSReceived()...exit.");
 	}
 
 

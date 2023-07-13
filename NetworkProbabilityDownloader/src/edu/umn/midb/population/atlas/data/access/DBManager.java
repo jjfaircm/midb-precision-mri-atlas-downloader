@@ -98,8 +98,6 @@ public class DBManager {
 		return instance;
 	}
 	
-	
-	
 	/**
 	 * 
 	 * Adds an {@link AdminAccessEntry} to the /midb/tracking/admin_access.csv file.
@@ -238,6 +236,13 @@ public class DBManager {
 		LOGGER.trace(loggerId + "createNewEmailAddressesCSVFile()...exit, recordCount=" + recordCount);
 	}
 	
+	/**
+	 * Create a new version of the file_downloads_geoloc.csv file in the /midb folder. This file is
+	 * used by google maps to create a new map that depicts locations where all file download requests
+	 * originated from.
+	 * 
+	 * @param downloadHits - ArrayList of {@link FileDownloadRecord}
+	 */
 	private void createNewFileDownloadHitsGeoCSVFile(ArrayList<FileDownloadRecord> downloadHits) {
 
 		String loggerId = ThreadLocalLogTracker.get();
@@ -600,6 +605,15 @@ public class DBManager {
 		return webHits;
 	}
 	
+	/**
+	 * Returns the url used to embed the FILE_DOWNLOADS_MAP in the web page. This url is
+	 * a link to a google generated map. The url is stored in the map_urls table in the
+	 * mysql database. Refer to the NetworkProbabilityDownloader_Application_Overview
+	 * document for more information on how this map is generated.
+	 * 
+	 * @return mapURL - String
+	 * @throws SQLException - SQLException
+	 */
 	public String getDownloadHitsMapURL() throws SQLException {
 
 		String loggerId = ThreadLocalLogTracker.get();
@@ -624,9 +638,13 @@ public class DBManager {
 	
 	/**
 	 * 
-	 * Returns the url for the current WEB_HITS_MAP
+	 * Returns the url used to embed the WEB_HITS_MAP in the web page. This url is
+	 * a link to a google generated map. The url is stored in the map_urls table in the
+	 * mysql database. Refer to the NetworkProbabilityDownloader_Application_Overview
+	 * document for more information on how this map is generated.
 	 * 
-	 * @return url - String
+	 * 
+	 * @return mapURL - String
 	 * @throws SQLException - unhandled exception
 	 */
 	public String getWebHitsMapURL() throws SQLException {
@@ -774,8 +792,8 @@ public class DBManager {
 	
 	/**
 	 * 
-	 * 
-	 * Updates the url associated with either the WEB_HITS_MAP or the FILE_DOWNLOADS_MAP
+	 * Updates the url associated with either the WEB_HITS_MAP or the FILE_DOWNLOADS_MAP. 
+	 * These records are located in the map_urls in the mysql database.
 	 * 
 	 * @param url - String 
 	 * @param targetMap - Map name
@@ -802,6 +820,14 @@ public class DBManager {
 		return updatedRowCount;
 	}
 	
+	/**
+	 * Creates a new version of the /midb/web_hits_geoloc.csv file. This file is used to generate
+	 * a new web hits map in google maps. Refer to the  NetworkProbabilityDownloader_Application_Overview
+	 * for more information.
+	 * 
+	 * @return success - boolean
+	 * @throws Exception - Exception
+	 */
 	public boolean updateDownloadHitsGeoLocCSVFile() throws Exception {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "updateDownloadbHitsGeoLocCSVFile()...invoked");		
@@ -847,10 +873,5 @@ public class DBManager {
 		LOGGER.info(loggerId + "updateWebHitsGeoLocCSVFile()...Successfully updated " + WEB_HITS_GEOLOC_CSV_FILE);
 		return success;
 	}
-
-	
-	
-	
-
 
 } // end class defintion

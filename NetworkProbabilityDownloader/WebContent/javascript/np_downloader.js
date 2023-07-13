@@ -1,4 +1,4 @@
-		 var version_buildString = "Version beta_99.2  0124_0005_2023__war=NPDownloader_0124_0005_2023.war";
+		 var version_buildString = "Version beta_103.0  0703_2204_2023__war=NPDownloader_0703_2204_2023.war";
 		 var enableTracing = true; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
@@ -73,6 +73,7 @@
          
          
          function startup() {
+	         //alert("pathname=" + window.location.pathname);
         	 console.log("startup()...invoked");
  		     console.log("navigator=" + navigator.userAgent);
 
@@ -2132,12 +2133,12 @@
           	
           	ajaxRequest.upload.onprogress = function(e) {
           		
-          		console.log("progress update...received.");
+          		//console.log("progress update...received.");
           		// https://stackoverflow.com/questions/32045093/xmlhttprequest-upload-addeventlistenerprogress-not-working
                  //div_uploadProgress.style.display = "block";
  				// if the file upload length is known, then show progress bar
  				if (e.lengthComputable) {
- 	          		console.log("progress update...e.lengthComputable=true");
+ 	          		//console.log("progress update...e.lengthComputable=true");
  					//uploadProgress.classList.remove("hide-me");
  					// total number of bytes being uploaded
  	          		updateStudy.progress_updateUpload.setAttribute("max", e.total);

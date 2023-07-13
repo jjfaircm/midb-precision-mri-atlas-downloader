@@ -22,7 +22,7 @@ import logs.ThreadLocalLogTracker;
 
 /**
  * 
- * Creates a new study. This task requires creating a folder under the /midb/studies
+ * Provides functionality for creating a new study. This task requires creating a folder under the /midb/studies
  * root folder. The new folder will map to the name of the study. For example, the
  * 'ABCD - Template Matching' study has a root folder of: /midb/studies/abcd_template_matching 
  * The image files and .nii files associated with the study are stored in either the
@@ -75,12 +75,11 @@ public class CreateStudyHandler extends StudyHandler {
 	private ArrayList<String> summaryEntryLines = new ArrayList<String>();
 	private ArrayList<String> networkFoldersEntryLines = new ArrayList<String>();
 	
-    
-
-	
 	private static final Logger LOGGER = LogManager.getLogger(CreateStudyHandler.class);
+	
+	
 	/**
-	 * Cretes a a new folder required by the new study.
+	 * Creates a new folder required by the new study.
 	 * 
 	 * @param absolutePath - String
 	 * @throws IOException - unhandled exception
@@ -533,6 +532,5 @@ public class CreateStudyHandler extends StudyHandler {
 		LOGGER.trace(loggerId + "uploadFile()...exit.");
 		return fileName;
 	}
-
     
 }
