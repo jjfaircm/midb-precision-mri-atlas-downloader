@@ -110,14 +110,26 @@ public final class PropertyManager {
 		
 		boolean success = true;
 		String valueToStore = null;
+		propKey = propKey.trim();
+		propValue = propValue.trim();
 		
-    	propKey = propKey.trim();
-    	propValue = propValue.trim();
+		//if the property is either the 'from' or 'to' telephone number then remove
+		//any digits or parenthesis around the area code
+		//for example 1-(507)-555-1212 should be 15075551212
+		if(propKey.equals("MIDB_TTP") || propKey.equals("MIDB_FTP")) {
+			propValue = propValue.replace("-", "");
+			propValue = propValue.replace("(", "");
+			propValue = propValue.replace(")", "");
+            //also make sure number starts with the digit 1
+			if(!propValue.startsWith("1")) {
+				propValue = "1" + propValue;
+			}
+		}
+		
     	//all values requiring encryption should be encrypted before writing to props file
     	if(!propKey.equalsIgnoreCase("MIDB_SMS_MODE")) {
     		valueToStore = Utils.encryptJsypt(propValue, encryptionKey);
         }
-    	Properties props = new Properties();
     	
     	try {
 	    	File propsFile = new File(applicationPropertiesFile);

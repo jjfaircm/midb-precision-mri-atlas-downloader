@@ -53,9 +53,9 @@ public class IPLocator {
 	//public static void locateIP(String ipAddressString) {
 		
 		LOGGER.trace(LOGGER_ID + "locateIP()...invoked");
+		String ipAddressString = tEntry.getRequestorIPAddress();
 				
 		try {
-			String ipAddressString = tEntry.getRequestorIPAddress();
 			
 			//for dev environment
 			if(ipAddressString.equals("127.0.0.1")) {
@@ -90,6 +90,7 @@ public class IPLocator {
 		}
 		catch(Exception e) {
 			LOGGER.error(LOGGER_ID + "locateIP()...error calling geoLite IP Locator web service");
+			LOGGER.error(LOGGER_ID + "ipAddressString=" + ipAddressString);
 			LOGGER.error(e.getMessage(), e);
 			DiagnosticsReporter.createDiagnosticsEntry(e);
 		}

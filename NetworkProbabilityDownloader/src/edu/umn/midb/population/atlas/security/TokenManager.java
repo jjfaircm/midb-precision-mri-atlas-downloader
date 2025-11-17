@@ -25,9 +25,17 @@ public class TokenManager {
 	private static String password = null;
 	private static String encPassword = null;
 	private static String key = null;
-	private static long MAX_ELAPSED_TIME_MS = 30000;
+	private static long MAX_ELAPSED_TIME_MS = 60000;
 	private static Logger LOGGER = LogManager.getLogger(TokenManager.class);
 	private static String INIT_LOGGER_ID = " ::LOGGERID=TokenManager:: ";
+	private String currentToken = null;
+	private boolean currentTokenAlreadyUsed = false;
+	private long tokenGenerationTime = 0;
+	
+	private boolean tokenExpired = false;
+	
+	private boolean validPassword = false;
+	private ApplicationContext appContext = null;
 	
 	
 	/**
@@ -56,13 +64,7 @@ public class TokenManager {
 			password = Utils.convertJcpyt(encryptedPassword, key);
 		}
 	}
-	private String currentToken = null;
-	private long tokenGenerationTime = 0;
-	
-	private boolean tokenExpired = false;
-	
-	private boolean validPassword = false;
-	private ApplicationContext appContext = null;
+
 	
 	/**
 	 * Public constructor
@@ -156,7 +158,7 @@ public class TokenManager {
 	 * 
 	 * @return isValid - boolean
 	 */
-	public boolean validateToken(String token, String passwordParm, String ipAddress) {
+	public boolean validateToken(String tokenParm, String passwordParm, String ipAddress) {
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "validateToken()...invoked, ipAddress=" + ipAddress);
 
@@ -169,7 +171,11 @@ public class TokenManager {
 			}
 		}
 		
-		if(this.currentToken==null) {
+		if(this.currentToken==null || tokenParm==null) { //null tokenParm indicates hack attempt
+			return false;
+		}
+		if(passwordParm==null) { //indicates hack attempt
+			this.validPassword = false;
 			return false;
 		}
 		
@@ -178,12 +184,12 @@ public class TokenManager {
 		long lapsedTimeMS = currentTimeMS - this.tokenGenerationTime;
 		LOGGER.trace(loggerId + "lapsedTimeMS=" + lapsedTimeMS);
 		
-		if(this.currentToken.contentEquals(token)) {
-			if(lapsedTimeMS < MAX_ELAPSED_TIME_MS) {
+		if(this.currentToken.contentEquals(tokenParm)) {
+			if(lapsedTimeMS < MAX_ELAPSED_TIME_MS && !this.currentTokenAlreadyUsed) {
 				if(passwordParm.contentEquals(password)) {
 					isValid = true;
 					this.validPassword = true;
-					this.currentToken = null;
+					this.currentTokenAlreadyUsed = true;
 				}
 				else {
 					this.validPassword = false;

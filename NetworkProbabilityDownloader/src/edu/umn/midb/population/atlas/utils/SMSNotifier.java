@@ -64,6 +64,7 @@ public class SMSNotifier  {
 	private static boolean DISABLE_SMS_NOTIFICATIONS = false;
 	//Adding opt-out message to satisfy SMS delivery requirements in twilio
 	private static String OPT_OUT_MSG = "::::Reply STOP to opt out";
+	private static String TEXTBELT_REPLY_HOOK = "https://midbatlas.io/action=sms_reply";
 	
 	private static String localHostName = null;
 	
@@ -200,6 +201,7 @@ public class SMSNotifier  {
 		textMessage = textMessage + OPT_OUT_MSG;
 
 		if(DISABLE_SMS_NOTIFICATIONS) {
+			LOGGER.trace(textMessage);
 			LOGGER.trace(LOGGER_ID + "sendNotification()...notifications disabled, exit");
 			return;
 		}
@@ -209,6 +211,12 @@ public class SMSNotifier  {
 		else if(SEND_MODE.equalsIgnoreCase("TEXT_BELT")) {
 			sendViaTextBelt(textMessage, invokerClassName);
 		}
+
+		//satisfy message throttling limitation imposed by twilio for 'sole proprietor' account
+		if(!textMessage.contains("FILE_DOWNLOAD")) {
+			Utils.pause(2000);
+		}
+		LOGGER.trace(LOGGER_ID + "sendNotification()...exit");
 	}
 	
 	/**
@@ -222,6 +230,7 @@ public class SMSNotifier  {
 		
 		try {
 			if(AUTH_TOKEN == null) {
+				LOGGER.trace("Exiting because AUTH_TOKEN is null");
 				return;
 			}
 			
@@ -238,8 +247,7 @@ public class SMSNotifier  {
 			LOGGER.error(e.getMessage(), e);
 			DiagnosticsReporter.createDiagnosticsEntry(e, false);
 		}
-		LOGGER.trace(LOGGER_ID + "sendViaTwilio()...exit");
-	
+		LOGGER.trace(LOGGER_ID + "sendViaTwilio()...exit, invoker=" + invokerClassName);
 	}
 	
 	/**
@@ -260,7 +268,8 @@ public class SMSNotifier  {
 			final NameValuePair[] data = {
 				    new BasicNameValuePair("phone", TO_PHONE_NUMBER),
 				    new BasicNameValuePair("message", message),
-				    new BasicNameValuePair("key", TEXT_BELT_KEY)
+				    new BasicNameValuePair("key", TEXT_BELT_KEY),
+				    new BasicNameValuePair("replyWebhookUrl", TEXTBELT_REPLY_HOOK)
 				};
 				HttpClient httpClient = HttpClients.createMinimal();
 				HttpPost httpPost = new HttpPost("https://textbelt.com/text");

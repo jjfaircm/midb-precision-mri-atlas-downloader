@@ -34,9 +34,12 @@ import edu.umn.midb.population.atlas.menu.MenuEntry;
 import edu.umn.midb.population.atlas.menu.NetworkMapData;
 import edu.umn.midb.population.atlas.menu.SingleNetworkFoldersConfig;
 import edu.umn.midb.population.atlas.menu.StudySummary;
+import edu.umn.midb.population.atlas.menu.ThresholdImageCache;
 import edu.umn.midb.population.atlas.security.TokenManager;
 import edu.umn.midb.population.atlas.servlet.NetworkProbabilityDownloader;
 import edu.umn.midb.population.atlas.study.handlers.CreateStudyHandler;
+import edu.umn.midb.population.atlas.study.handlers.LockResetStatus;
+import edu.umn.midb.population.atlas.study.handlers.StudyMaintenanceLock;
 import edu.umn.midb.population.atlas.study.handlers.UpdateStudyHandler;
 import edu.umn.midb.population.atlas.tasks.AdminAccessEntry;
 import edu.umn.midb.population.atlas.utils.SMSNotifier;
@@ -103,6 +106,40 @@ public class WebResponder {
 	     }
 		
 		LOGGER.trace(loggerId + "sendAddStudyResponse()...exit.");
+
+	}
+	
+	public static void sendResetStudyMaintenanceLockResponse(HttpServletResponse response, ApplicationContext appContext, LockResetStatus lockResetStatus) {
+		
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendResetStudyMaintenanceLockResponse()...invoked.");
+		
+		String responseText = lockResetStatus.getMessage(appContext);
+		
+		try {
+			  response.getWriter().println(responseText);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		
+		LOGGER.trace(loggerId + "sendResetStudyMaintenanceLockResponse()...exit: response=" + responseText);		
+	}
+	
+	public static void sendStudyMaintenanceStatusResponse(HttpServletResponse response, ApplicationContext appContext, String status) {
+		
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "sendStudyMaintenanceStudyResponse()...invoked. Status=" + status);
+		
+		try {
+			  response.getWriter().println(status);
+		      Thread.sleep(1000);
+		}
+	    catch(Exception e) {
+	    	  LOGGER.error(e.getMessage(), e);
+	     }
+		LOGGER.trace(loggerId + "sendStudyMaintenanceStudyResponse()...exit.");
 
 	}
 	
@@ -237,7 +274,27 @@ public class WebResponder {
 		}
 		
 		LOGGER.trace(loggerId + "sendFileDownloadResponse()...exit.");
-
+	}
+	
+	/**
+	 * @param filePaths - ArrayList of NIfTI file paths
+	 * @param imageBase64Strings - ArrayList of encoded .png files
+	 * @param networkMapData - {@link NetworkMapData}
+	 * @return String - JSON representation of a {@link ThresholdImageCache} object
+	 */
+	protected static String buildThresholdImagesResponse(ArrayList<String> filePaths, ArrayList<String> imageBase64Strings, NetworkMapData networkMapData) {
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "buildThresholdImagesResponse()...invoked.");
+		
+		ThresholdImageCache imageCache = new ThresholdImageCache();
+		imageCache.setBase64ImageStrings(imageBase64Strings);
+		imageCache.setNiftiFilePaths(filePaths);
+		imageCache.setNetworkMapData(networkMapData);
+		
+		Gson gson = new Gson();
+		String jsonString = gson.toJson(imageCache);
+		LOGGER.trace(loggerId + "buildThresholdImagesResponse()...exit.");
+		return jsonString;
 	}
 	
 
@@ -514,62 +571,41 @@ public class WebResponder {
 		 return webHitsJSON;
 	}
 	
+	
 	/**
-	 * Sends the .png files associated with the different probabilistic threhsolds for a selected
-	 * neural network.  The files are sent as a list of base64 encoded strings.
+	 * Sends the .png files associated with the different probabilistic thresholds for a selected
+	 * neural network. The files are sent to the client as a list of base64 encoded strings. 
+	 * A list of correlated NIfTI file names is also sent along with a NetworkMapData
+	 * object. The data is all encapsulated in a {@link ThresholdImageCache} object which is transformed
+	 * into a JSON object before being sent to the client. 
 	 * 
 	 * @param response - The current HttpServletResponse object
-	 * @param filePaths - ArrayList of all the .png file names representing the different probabilistic thresholds
+	 * @param filePaths - ArrayList of all the NIfTI file names representing the different probabilistic thresholds
 	 * @param imageBase64Strings - ArrayList of the .png files in base64 encoded format
 	 * @param networkMapData - {@link NetworkMapData}
 	 */
 	public static void sendThresholdImagesResponse(HttpServletResponse response, ArrayList<String> filePaths, ArrayList<String> imageBase64Strings,
-			                                       NetworkMapData networkMapData) {
+                       NetworkMapData networkMapData) {
 		
 		 String loggerId = ThreadLocalLogTracker.get();
 		 LOGGER.trace(loggerId + "sendThresholdImagesResponse()...invoked.");
 		 
-		String base64ImageStringsCleaned = imageBase64Strings.toString();
-		long preClean = System.currentTimeMillis();
-		int b64StringSize = base64ImageStringsCleaned.length();
-		//base64ImageStringsCleaned = base64ImageStringsCleaned.substring(1, b64StringSize);
-		base64ImageStringsCleaned = base64ImageStringsCleaned.replace("[", "");
-		base64ImageStringsCleaned = base64ImageStringsCleaned.replace("]", "");
-		long postClean = System.currentTimeMillis();
-		long cleanTime = postClean-preClean;
-		
-		String filePathsCleaned = filePaths.toString();
-		
-		int filePathsSize = filePathsCleaned.length();
-		filePathsCleaned = filePathsCleaned.substring(1, filePathsSize);
-		
-		String responseString = null; 
-		
-		if(networkMapData == null) {
-			responseString = base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
-		}
-		else {
-			String networkMapImagePNG = networkMapData.getNetworkMapImage_Base64_String();
-			String networkMapImageNIIPath = networkMapData.getCorrespondingNiftiFilePathName();
-			responseString = networkMapImagePNG + 
-					         DELIMITER_NETWORK_MAP_ITEMS +  networkMapImageNIIPath + DELIMITER_NETWORK_MAP_DATA +
-					         base64ImageStringsCleaned + DELIMITER + filePathsCleaned;
-		}
-						
-		try {
-		  response.getWriter().println(responseString);
-	      Thread.sleep(1000);
-		}
-	    catch(Exception e) {
-	    	  LOGGER.error(e.getMessage(), e);
-	     }
-		 
+		 String responseString = buildThresholdImagesResponse(filePaths, imageBase64Strings, networkMapData);
+	     try {
+			response.getWriter().println(responseString);
+			Thread.sleep(1000);
+		 }
+	     catch(Exception e) {
+			 LOGGER.error(e.getMessage(), e);
+		 }
+				 
 		 double responseLengthMeg = responseString.length()/(1024*1000d);
 		 DecimalFormat df = new DecimalFormat("0.00");
 		 String resultMeg = df.format(responseLengthMeg);
 		 LOGGER.trace(loggerId + "sendThresholdImagesResponse()...exit, response length meg=" + resultMeg);
+
 	}
-	
+		
 	/**
 	 * Utility method for testing the download functionality.
 	 * 
@@ -622,13 +658,13 @@ public class WebResponder {
 			//if this is the first action, the session has timed out because the
 			//user has signed in to the admin console, but left the screen idle for
 			//more than a half hour
-			responseString = "Access denied<br>Error 100";
+			responseString = "Access denied<br>Error 100 : Expired session, please refresh page and retry";
 		}
 		else {
 			aaEntry = new AdminAccessEntry();
 			//even if the actionCount>1 the user may still just try again after first alert
 			//so just repeat same message
-			responseString = "Access denied<br>Error 100";
+			responseString = "Access denied<br>Error 100 : Expired session, please refresh page and retry";
 			aaEntry.setAction(appContext.getCurrentAction());
 			aaEntry.setRequestorIPAddress(appContext.getRemoteAddress());
 			aaEntry.setFormattedTimeStamp(appContext.getCurrentActionFormattedTimestamp());
@@ -734,10 +770,20 @@ public class WebResponder {
 		LOGGER.trace(loggerId + "sendAdminValidationStatus()...invoked.");
 		
 		boolean isValid = false;
+		boolean isMaintenanceLocked = false;
 		
 		isValid = appContext.isAdminActionValidated();
-		
 		String responseString = (isValid) ? "true":"false";
+		StudyMaintenanceLock studyMaintenanceLock = NetworkProbabilityDownloader.getStudyMaintenanceLock(appContext);
+		isMaintenanceLocked = studyMaintenanceLock.isLocked(appContext);
+		
+		responseString += ":";
+		if(!isMaintenanceLocked) {
+			responseString += "unlocked";
+		}
+		else {
+			responseString += "locked";
+		}
 
 		try {
 		      //response.getWriter().println(jsonArray + DELIMITER_NEURAL_NAMES + base64ImageStringsCleaned + DELIMITER + filePathsCleaned);
@@ -747,7 +793,7 @@ public class WebResponder {
 	    catch(Exception e) {
 	    	  LOGGER.error(e.getMessage(), e);
 	     }
-		LOGGER.trace(loggerId + "sendAdminValidationStatus()...exit.");
+		LOGGER.trace(loggerId + "sendAdminValidationStatus()...exit. Response=" + responseString);
 	}
 	
 	/**
@@ -756,7 +802,7 @@ public class WebResponder {
 	 * @param response - HttpServletResponse
 	 * @param studyFolder - The name of the study folder which serves as the study id.
 	 */
-	public static void sendRemoveStudyResponse(HttpServletResponse response, String studyFolder, boolean isRemoveDisabled) {
+	public static void sendRemoveStudyResponse(HttpServletResponse response, String studyFolder, boolean isRemoveDisabled, String errorMessage) {
 		
 		String loggerId = ThreadLocalLogTracker.get();
 		LOGGER.trace(loggerId + "sendRemoveStudyResponse()...invoked.");
@@ -766,7 +812,10 @@ public class WebResponder {
 		if(isRemoveDisabled) {
 			responseString = "Remove study option has been disabled";
 		}
-		else {
+		else if(errorMessage != null) {
+			responseString = errorMessage;
+		}
+		else if(errorMessage == null){
 			responseString = "Study successfully removed:<br> " + studyFolder
 				              + "<br>Please refresh page to see current menu";
 		}
@@ -774,6 +823,8 @@ public class WebResponder {
 		try {
 			  response.getWriter().println(responseString);
 		      Thread.sleep(1000);
+			  LOGGER.trace(loggerId + "sendRemoveStudyResponse()...response=" + responseString);
+
 		}
 	    catch(Exception e) {
 	    	  LOGGER.error(e.getMessage(), e);

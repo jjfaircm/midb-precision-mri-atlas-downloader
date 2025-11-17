@@ -25,7 +25,9 @@
    var global_networkTypeId = "combined_clusters";
    var webHitsMapURL = null;
    var fileDownloadsMapUrl = null;
+   var removeStudyToken = null;
    var newStudy = {
+	   	   adminToken: token,
 		   studyFolder: null,
 		   selectedDataTypes: null,
 		   menuEntry: null,
@@ -422,7 +424,9 @@
 		 
 		 var webHitsTable = document.getElementById("webHitsTable");
 		 var th_webHitsCount = document.getElementById("th_webHitsFooter");
-		 th_webHitsCount.innerHTML = "Web Hits Record Count: " + webHitsArray.length;
+		 //th_webHitsCount.innerHTML = "Web Hits Record Count: " + webHitsArray.length;
+		 th_webHitsCount.innerHTML = "Web Hits Most Recent 200 Records";
+
 		 var div_dataBaseProgress = document.getElementById("db_progress");
 		 div_dataBaseProgress.style.display = "none";
 		 var div_webHitsView = document.getElementById("div_webHitsView");
@@ -780,11 +784,11 @@
 		   handleTabSelected("div_admin");
 	   }
 	   else if(responseText.includes("false") && responseText.includes("expired")) {
-		   doAdminAlert("Access denied<br>Error 100");
+		   doAdminAlert("Access denied<br>Error 100 : Please refresh page and retry");
 		   return;
 	   }
 	   else if(responseText.includes("false") && responseText.includes("access_denied")) {
-		   doAdminAlert("Access denied<br>Error 200");
+		   doAdminAlert("Access denied<br>Error 200 : Please refresh page and retry");
 		   return;
 	   }
 	   else if(responseText.includes("false") && !responseText.includes("expired")) {
@@ -869,6 +873,8 @@
 		   var ul_studyMenu = document.getElementById("ul_studyMenu");
 		   ul_studyMenu.scrollIntoView({behavior: 'smooth', block: 'start'});
 		   anchor_addStudy.style.color = "#FFC300";
+		   let message = "Click on the help icon (?) for information on adding a study";
+		   doAdminAlert(message);
 		   break;
 	   case "a_removeStudy":
 		   div_removeStudy.style.display = "block";
@@ -994,9 +1000,9 @@
        var select_MenuId = document.getElementById("select_menuId_removeStudy");
        var studyToRemove = select_MenuId.options[select_MenuId.selectedIndex].value;
        
-       if(studyToRemove.includes("abcd_template_matching")) {
-       	//doAdminAlert("Sorry " + studyToRemove + " is not eligible for removal");
-       	//return;
+       if(studyToRemove === "abcd_template_matching") {
+       	doAdminAlert("Sorry " + studyToRemove + " is not eligible for removal because it is the default study to load");
+       	return;
        }
        else if(studyToRemove.includes("none")) {
        	doAdminAlert("Please choose a study id");
@@ -1044,7 +1050,7 @@
 	   	var div_removeStudyProgress = document.getElementById("div_removeStudyProgress");
 
 
-		if(!responseText.includes("disabled")) {
+		if(!responseText.includes("disabled") && !responseText.includes("locked")) {
         	const index = studyMenuIDArray.indexOf(global_studyToRemove);
         	if (index > -1) {
         		studyMenuIDArray.splice(index, 1);
@@ -1062,17 +1068,24 @@
 
    }
    
-   function handleRemoveStudyRequest(shouldContinue) {
+   function handleRemoveStudyRequest(shouldContinue, maintenanceLockChecked) {
         console.log("handleRemoveStudyRequest()...invoked, shouldContinue=" + shouldContinue);
 	   	var div_confirm = document.getElementById("div_confirm");
 	   	div_confirm.style.display = "none";
 	   	
+	   	lastAdminActionRequest = "removeStudy";
+	   	removeStudyToken = token; //this is actually the same value is newStudy.token
 	   	var studyToRemove = null;
 	   	var select_MenuId = null;
 	   	
 	   	if(!shouldContinue) {
 	   		return;
 	   	}
+	   	
+	   	if(shouldContinue && !maintenanceLockChecked) {
+			  validateAdminAccessStatus();
+			  return; 
+		}
 	   	
    		select_MenuId = document.getElementById("select_menuId_removeStudy");
         studyToRemove = select_MenuId.options[select_MenuId.selectedIndex].value;
@@ -1194,24 +1207,30 @@
 				for (var x=0; x < e.dataTransfer.files.length; x++) {
 					fileName = e.dataTransfer.files[x].name;
 					
+					if(fileName.includes("(") || fileName.includes(" ")) {
+						    console.log("Invalid file name encountered: " + fileName);
+							doAdminAlert("Invalid file name: " + fileName +", special characters or spaces not allowed in file name.");
+							return;
+						}
+						
+					if(!fileName.includes("zip")) {
+			         	if((fileName != "folders.txt") && (fileName != "summary.txt")) {
+								doAdminAlert("Invalid file name");
+								return;
+						}
+					}
+					
 					if(selectedDataTypes == "volume") {
 						if(fileName.includes("surface.zip")) {
 							doAdminAlert("surface.zip not allowed for Available Data Type of volume");
 							return;
 						}
 						
-						
-						if(fileName != requiredSurfaceZipName && fileName != requiredVolumeZipName 
-					       && fileName != "summary.txt" && fileName != "folders.txt") {
-						
-						   doAdminAlert("file name must be " + requiredSurfaceZipName + ",<br>" + requiredVolumeZipName + ",<br>" + "summary.txt, or folders.txt");
+						if(fileName.includes(".zip") &&  (fileName != requiredVolumeZipName)) {
+						   doAdminAlert("file name must be " + requiredSurfaceZipName);
 						   return;
 					    }
 												
-						if(fileName.includes("volume.zip") &&  !(fileName===requiredVolumeZipName)) {
-							doAdminAlert("the name of the zip file must be " + requiredVolumeZipName);
-							return;
-                        }
 					}
 					else if(selectedDataTypes == "surface") {
 						console.log("fileName=" + fileName);
@@ -1220,7 +1239,7 @@
 							return;
 						}
 						
-						if(fileName.includes("surface.zip") &&  !(fileName===requiredSurfaceZipName)) {
+						if(fileName.includes(".zip") &&  !(fileName==requiredSurfaceZipName)) {
 							doAdminAlert("the name of the zip file must be " + requiredSurfaceZipName);
 							return;
                         }
@@ -1428,6 +1447,11 @@
            selectedStudy.studyId = study; //ie: abcd_template_matching
            console.log("menuClicked()...invoked, study=" + study);
 	      
+          //check to see if the user just clicked on the already displayed study
+          //and also did not change the dataType of surface vs. volume data
+          //if those 2 conditions are true, then there is no change from the currently
+          //displayed study/dataType combination and there is nothing to do so just
+          //display the currently selected data
 	      if(lastSelectedMenu != null) {
 		      if(lastSelectedMenu.id === element.id) {
 		    	  if(priorSelectedDataType === selectedStudy.selectedDataType) {
@@ -1500,19 +1524,20 @@
 
        if(priorSelectedDataType=="volume" && volumeDataAvailable) {
 			selectedStudy.selectedDataType = "volume";
+			radio_VolumeControl.checked = true;
 	   }
-       else {
+       else if(priorSelectedDataType=="surface" && surfaceDataAvailable) {
 			selectedStudy.selectedDataType = "surface";
-	   }
-
-       if(priorSelectedDataType=="surface" && surfaceDataAvailable) {
-			selectedStudy.selectedDataType = "surface";
-	   }
-       else {
+			radio_SurfaceControl.checked = true;
+       }
+       else if(volumeDataAvailable) {
 			selectedStudy.selectedDataType = "volume";
+			radio_VolumeControl.checked = true;
 	   }
-       
-
+       else if(surfaceDataAvailable) {
+			selectedStudy.selectedDataType = "surface";
+			radio_SurfaceControl.checked = true;
+	   }
        
        if(!volumeDataAvailable) {
     	   radio_VolumeControl.disabled = true;
@@ -1528,16 +1553,16 @@
 
        if(!surfaceDataAvailable) {
     	   radio_SurfaceControl.disabled = true;
-           radio_SurfaceControl.checked = false;
-		   radio_VolumeControl.checked = true;
+           //radio_SurfaceControl.checked = false;
+		   //radio_VolumeControl.checked = true;
     	   label_surface.innerHTML = "Surface Data - not yet available";
     	   label_surface.style.backgroundColor = "lightgrey";
     	   label_volume.style.backgroundColor = "#FFC300";    	   
 
        }
        else {
-	       radio_VolumeControl.checked = false;
-           radio_SurfaceControl.checked = true;
+	       //radio_VolumeControl.checked = false;
+           //radio_SurfaceControl.checked = true;
     	   radio_SurfaceControl.disabled = false;
     	   //label_volume.style.backgroundColor = "#F0EAD6";
     	   label_surface.innerHTML = "Surface Data";
@@ -1813,8 +1838,8 @@
 			   	  updateStudy.studyId = studyId;
 
 				
-			   	 if(!(updateStudy.actionName.includes("addStudyPrefix")) && updateStudy.uploadFileNamesArray.length==0) {
-			   		 doAdminAlert("You must drag/drop a file to upload.");
+			   	 if(!(updateStudy.actionName.includes("addStudyPrefix")) && updateStudy.uploadFileNamesArray.length<1) {
+			   		 doAdminAlert("You must drag/drop files to upload.");
 			   		 return;
 			   	 }
 			 }
@@ -1824,8 +1849,8 @@
 					 doAdminAlert("You must enter a study name and available data types first.");
 			   		 return;
 				 }
-			   	 if(newStudy.uploadFileNamesArray.length==0) {
-			   		 doAdminAlert("You must drag/drop a file to upload.");
+			   	 if(newStudy.uploadFileNamesArray.length<3) {
+			   		 doAdminAlert("You must drag/drop 3 files to upload.");
 			   		 return;
 			   	 }
 			 }
@@ -2018,6 +2043,11 @@
 		    var selectedPropertyKey = selectElement.options[selectElement.selectedIndex].value; 
 			var input_configText = document.getElementById("input_configValue");
 			var configPropertyValue = input_configText.value;
+			
+			if(selectedPropertyKey == "RELEASE_STUDY_MAINTENANCE_LOCK") {
+				sendResetStudyMaintenanceLockRequest();
+				return;
+			}
 			var encodedConfigPropValue = encodeURIComponent(configPropertyValue);
 			
 			var configButton = document.getElementById("button_configTool");
@@ -2451,6 +2481,7 @@
 
 	   }
 	   
+	   
 	   function sendGetWebHitsMapURLRequest() {
 
 	        console.log("sendGetWebHitsMapURLRequest()...invoked.");
@@ -2543,17 +2574,69 @@
 		   
 	   }
 	   
+	   function sendResetStudyMaintenanceLockRequest() {
+		   	console.log("sendResetStudyMaintenanceLockRequest()...invoked.");
+		   	
+		    var ajaxRequest = getAjaxRequest();
+	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=resetStudyMaintenanceLock";
+	       	
+	        var encodedUrl = encodeURI(url);
+	       	ajaxRequest.open('get', encodedUrl, true);
+	       	
+	        ajaxRequest.onreadystatechange=function() {
+	
+	              //console.log(ajaxRequest.responseText);
+	              if(ajaxRequest.responseText.includes("Unexpected Error")) {
+	              	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+	           		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
+	           		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
+	               	var errorArray = errorData.split("&");
+	              	var msg1 = errorArray[0];
+	              	var msg2 = errorArray[1];
+	              	stackTraceData = errorArray[2];
+	              	var divSubmitNotification = document.getElementById("div_submitNotification");
+	              	divSubmitNotification.style.display = "none";
+	              	console.log("sendResetStudyMaintenanceLockRequest()...onreadystatechange...error");
+	              	console.log("msg1=" + msg1);
+	              	console.log("msg2=" + msg2);
+	              	console.log(stackTraceData);
+	              	doErrorAlert(msg1, msg2, errorAlertOK);
+
+	              	return;
+	              }
+	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
+	      	            console.log("sendResetStudyMaintenanceLockRequest()...ajaxRequest.responseText=" + ajaxRequest.responseText);
+	      	            var button_configButton = document.getElementById("button_configTool");
+						button_configButton.disabled = false;
+			           	doAdminAlert(ajaxRequest.responseText);
+	   	          }
+	       	}
+	       	ajaxRequest.send();
+	        console.log("sendResetStudyMaintenanceLockRequest()...exit.");
+
+	   }
+	   
 	   function sendRemoveStudyRequest(study_folder) {
 	        console.log("sendRemoveStudyRequest()...invoked.");
 
 	       	var ajaxRequest = getAjaxRequest();
 	       	var paramString = "&studyFolder=" + study_folder;
+	       	paramString += "&adminToken=" + removeStudyToken;
 	       	var url = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=removeStudy"
 	       		    + paramString;
 	
 	       	var encodedUrl = encodeURI(url);
 	       	ajaxRequest.open('get', encodedUrl, true);
 	       	//ajaxRequest.setRequestHeader("enctype","multipart/form-data");
+	       	
+       		ajaxRequest.onerror=function(error) {
+				console.error("uploadAddStudyFile()...communication/internet error occurred.");
+				console.error(error);
+				div_uploadProgress.style.display = "none";
+	            div_unzipProgress.style.display = "none";
+				doAdminAlert("Internet network communication error encountered.<br>Refresh browser page and retry");
+				return;
+			}
 	       	
 	       	ajaxRequest.onreadystatechange=function() {
 	
@@ -2719,6 +2802,13 @@
 	       	ajaxRequest.open('get', encodedUrl, true);
 	       	//ajaxRequest.setRequestHeader("enctype","multipart/form-data");
 	       	
+	       	ajaxRequest.onerror=function(error) {
+				console.error("validateAdminAccessStatus()...internet communication error occurred.");
+				console.error(error);
+				doAdminAlert("Internet network communication error encountered.<br>Refresh browser page and retry");
+				return;
+			}
+	       	
 	       	ajaxRequest.onreadystatechange=function() {
 	
 	              //console.log(ajaxRequest.responseText);
@@ -2741,7 +2831,19 @@
 	              }
 	              if (ajaxRequest.readyState == 4 && ajaxRequest.status == 200) {
 	      	            console.log("validateAdminAccessStatus()...ajaxRequest.responseText=" + ajaxRequest.responseText);
-			           	if(ajaxRequest.responseText.includes("true")) {
+	      	            
+	      	            var response = ajaxRequest.responseText;
+	      	            var validAccess = false;
+	      	            var unlocked = false;
+	      	            
+	      	            if(response.includes("true")) {
+							 validAccess = true; 
+						}
+						if(response.includes("unlocked")) {
+							unlocked = true;
+						}
+	      	            
+			           	if(validAccess && unlocked) {
 			           		if(lastAdminActionRequest == "createStudy") {
 			           			var button_createStudy = document.getElementById("button_createStudy");
 			           			createStudyEntry(button_createStudy);
@@ -2754,10 +2856,25 @@
 			           				updateStudyEntry();
 								}
 			           		}
+			           		else if(lastAdminActionRequest == "removeStudy") {
+								   handleRemoveStudyRequest(true, true);
+							}
 			           		return;
 			           	}
 			           	else {
-			           		doAdminAlert("Admin access not validated");
+							if(!validAccess) {
+								doAdminAlert("Admin access not validated");
+							}   
+			           		else if(!unlocked && lastAdminActionRequest == "removeStudy") {
+							    var removeButton = document.getElementById("button_remove_study");
+	   	 						removeButton.disabled = false;
+								doAdminAlert("Study maintenance locked by another user and is currently in progress.<br>Please try again in a few minutes");   
+							}
+							else if(!unlocked && lastAdminActionRequest == "createStudy") {
+								var createStudyButton = document.getElementById("button_createStudy");
+								createStudyButton.disabled = false;
+								doAdminAlert("Study maintenance locked by another user and is currently in progress.<br>Please try again in a few minutes");   
+							}
 			           		return;
 			           	}
 	   	       }

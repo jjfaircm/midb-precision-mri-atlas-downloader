@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
 import javax.servlet.http.HttpServletRequest;
@@ -74,8 +75,10 @@ public class CreateStudyHandler extends StudyHandler {
 	private String foldersTextFile = null;
 	private ArrayList<String> summaryEntryLines = new ArrayList<String>();
 	private ArrayList<String> networkFoldersEntryLines = new ArrayList<String>();
+	private static final Object MENU_LOCK = new Object();
 	
 	private static final Logger LOGGER = LogManager.getLogger(CreateStudyHandler.class);
+	
 	
 	
 	/**
@@ -87,9 +90,25 @@ public class CreateStudyHandler extends StudyHandler {
 	private static void createPath(String absolutePath) throws IOException {
 		
 		File targetDirectory = new File(absolutePath);
+		
+		// the directory could already exist if a user previously tried to add a study
+		// with the same name, but closed their browser in the middle of the file uploads
+		// we will just rename the existing folder since it is really an orphaned folder
+		if(targetDirectory.exists()) {
+			int index = absolutePath.lastIndexOf("/");
+			String newPathName = absolutePath.substring(0, index) + "_orphan";
+			Timestamp ts = new Timestamp(System.currentTimeMillis());
+			String tsString = ts.toString();
+			tsString = tsString.replace(" ", "__");
+			tsString = tsString.replace(":", ".");
+			newPathName = newPathName + "_" + tsString;
+			File orphanedDirectory = new File(newPathName);
+			targetDirectory.renameTo(orphanedDirectory);
+		}
+		
 		boolean successIndicator = false;
 		
-		if(!targetDirectory.exists()) {
+		if(!targetDirectory.exists()) { 
 			successIndicator = targetDirectory.mkdirs();
 			if(!successIndicator) {
 				throw new IOException("Unable to create folder:" + absolutePath);
@@ -157,6 +176,8 @@ public class CreateStudyHandler extends StudyHandler {
 		if(!success) {
 			this.errorMessage = "Insufficient storage available.";
 			this.errorEncountered = true;
+			LOGGER.trace(loggerId + "  Insufficient storage available.");
+			LOGGER.trace(loggerId + "completeStudyDeploy()...exit.");
 			return success;
 		}
 		
@@ -173,6 +194,10 @@ public class CreateStudyHandler extends StudyHandler {
 				return false;
 			}
 		}
+		else {
+			LOGGER.trace(loggerId + "completeStudyDeploy()...the surfaceZipFilePath was not found. Possible storage problem or upload problem");
+		}
+		
 		if(this.volumeZipFilePath != null && success) {
 			success = validateZipFileTopLevelFolder("volume");
 			if(!success) {
@@ -194,7 +219,7 @@ public class CreateStudyHandler extends StudyHandler {
 				return success;
 			}
 			
-			success = this.validateDscalarFiles("surface");
+			success = this.validateDscalarFiles("surface", false);
 			if(!success) {
 				this.removeStudyFolder();
 				return success;
@@ -206,7 +231,7 @@ public class CreateStudyHandler extends StudyHandler {
 				return success;
 			}
 			
-			success = validateThresholdFiles("surface");
+			success = validateThresholdFiles("surface", false);
 			if(!success) {
 				this.removeStudyFolder();
 				return false;
@@ -222,7 +247,7 @@ public class CreateStudyHandler extends StudyHandler {
 			}
 			
 			
-			success = this.validateDscalarFiles("volume");
+			success = this.validateDscalarFiles("volume", false);
 			if(!success) {
 				this.removeStudyFolder();
 				return success;
@@ -234,7 +259,7 @@ public class CreateStudyHandler extends StudyHandler {
 				return success;
 			}
 			
-			success = validateThresholdFiles("volume");
+			success = validateThresholdFiles("volume", false);
 			if(!success) {
 				this.removeStudyFolder();
 				return false;
@@ -242,11 +267,13 @@ public class CreateStudyHandler extends StudyHandler {
 			
 		}
 	
-		createConfigBackup();
-		updateMenuConfig();
-		updateSummaryConfig();
-		updateNetworkFolderNamesConfig();
-		
+		synchronized(MENU_LOCK) {
+			createConfigBackup();
+			updateMenuConfig();
+			updateSummaryConfig();
+			updateNetworkFolderNamesConfig();
+		}
+			
 		//the remaining work can be completed asynchronously so the admin user
 		//does not have to wait for the subfolders to be zipped for potential downloads
 		//Refer to AsyncRunner inner class in StudyHandler
@@ -367,7 +394,7 @@ public class CreateStudyHandler extends StudyHandler {
 	 */
 	private void removeStudyFolder() {
 		String loggerId = this.appContext.getLoggerId();
-		LOGGER.trace(loggerId + "removeStudyFolder()...invoked.");
+		LOGGER.trace(loggerId + "removeStudyFolder()...invoked. Folder name=" + this.absoluteStudyFolder);
 		
 		try {
 			File targetDirectory = new File(this.absoluteStudyFolder);
@@ -420,8 +447,8 @@ public class CreateStudyHandler extends StudyHandler {
 	    }
 	    pw.close();
 	    //AtlasDataCacheManager.getInstance().reloadSummaryConfig();
-        File networkFoldersFile = new File(this.foldersTextFile);
-        networkFoldersFile.delete();
+        //File networkFoldersFile = new File(this.foldersTextFile);
+        //networkFoldersFile.delete();
 
 		LOGGER.trace(loggerId + "updateNetworkFolderNamesConfig()...exit.");
 
@@ -451,8 +478,8 @@ public class CreateStudyHandler extends StudyHandler {
 	    pw.close();
 	    //AtlasDataCacheManager.getInstance().reloadSummaryConfig();
 	    
-        File summaryFile = new File(this.summaryTextFile);
-        summaryFile.delete();
+        //File summaryFile = new File(this.summaryTextFile);
+        //summaryFile.delete();
 
 		LOGGER.trace(loggerId + "updateSummaryConfig()...exit.");
 
@@ -473,7 +500,7 @@ public class CreateStudyHandler extends StudyHandler {
 		boolean isSurfaceZip = false;
 		boolean isVolumeZip = false;
 
-		long uploadedZipSize = 0;
+		long uploadedSize = 0;
 
 		String fileName = null;
 
@@ -503,9 +530,9 @@ public class CreateStudyHandler extends StudyHandler {
 		
 		if(isSurfaceZip) {
 			File surfaceZipFile = new File(this.surfaceZipFilePath);
-			uploadedZipSize = surfaceZipFile.length();
-			if(uploadedZipSize != fileSize) {
-				String message = "File upload error, received fileSize=" + uploadedZipSize;
+			uploadedSize = surfaceZipFile.length();
+			if(uploadedSize != fileSize) {
+				String message = "File upload error, received fileSize=" + uploadedSize;
 				message += " Expected fileSize=" + fileSize;
 				StackTraceElement[] ste = Thread.currentThread().getStackTrace();
 				BIDS_FatalException bfE = new BIDS_FatalException(message, ste);
@@ -514,20 +541,24 @@ public class CreateStudyHandler extends StudyHandler {
 		}
 		else if(isVolumeZip) {
 			File volumeZipFile = new File(this.volumeZipFilePath);
-			uploadedZipSize = volumeZipFile.length();
-			if(uploadedZipSize != fileSize) {
+			uploadedSize = volumeZipFile.length();
+			if(uploadedSize != fileSize) {
 				String message = "File upload error for file " + fileName;
 				message += ". Target file size=" + fileSize;
-				message +=  ". Received fileSize=" + uploadedZipSize;
+				message +=  ". Received fileSize=" + uploadedSize;
 				StackTraceElement[] ste = Thread.currentThread().getStackTrace();
 				BIDS_FatalException bfE = new BIDS_FatalException(message, ste);
 				throw bfE;
 			}
 		}
+		else {
+			File textFile = new File(this.absoluteStudyFolder + fileName);
+			uploadedSize = textFile.length();
+		}
 		
 		LOGGER.info(loggerId + "uploadFile()...file name=" + fileName);
 		LOGGER.info(loggerId + "uploadFile()...fileSize parameter=" + fileSize);
-		LOGGER.info(loggerId + "uploadFile()...uploaded file size=" + uploadedZipSize);
+		LOGGER.info(loggerId + "uploadFile()...uploaded file size=" + uploadedSize);
 		
 		LOGGER.trace(loggerId + "uploadFile()...exit.");
 		return fileName;

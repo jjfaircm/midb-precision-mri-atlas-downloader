@@ -197,22 +197,40 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 	protected String createUrlLinkEntry(String summaryLine) {
 		String loggerId = appContext.getLoggerId();
 		LOGGER.trace(loggerId + "createUrlLinkEntry()...invoked.");
-
+		
+		String nonLinkTextPrefix = "";
+		String linkText = "";
+		String nonLinkTextSuffix = "";
 		String linkEntry = null;
-		if(!summaryLine.endsWith("]")) {
-			int endIndex = summaryLine.indexOf("]");
-			summaryLine = summaryLine.substring(0, endIndex);
+		int linkTextBeginIndex = summaryLine.indexOf("[");
+		
+		
+		int linkTextEndIndex = summaryLine.indexOf("]");
+		
+		if(linkTextEndIndex < summaryLine.length()-1) {
+			nonLinkTextSuffix = summaryLine.substring(linkTextEndIndex+1);
 		}
-		summaryLine = summaryLine.replace("[", "");
-		summaryLine = summaryLine.replace("]", "");
 
-		String[] entryArray = summaryLine.split("@");
+		if(linkTextBeginIndex==0) {
+			linkText = summaryLine.substring(0, linkTextEndIndex);
+		}
+		else {
+			nonLinkTextPrefix = summaryLine.substring(0, linkTextBeginIndex);
+			linkText = summaryLine.substring(linkTextBeginIndex+1, linkTextEndIndex);
+		}
+		
+		linkText = linkText.replace("[", "");
+		linkText = linkText.replace("[", "");
+		String[] entryArray = linkText.split("@");
 		linkEntry = TEMPLATE_LINK;
 		linkEntry = linkEntry.replace("${linkText}", entryArray[0]);
 		linkEntry = linkEntry.replace("${url}", entryArray[1]);
+		
+		String newSummaryLine = nonLinkTextPrefix + linkEntry + nonLinkTextSuffix;
+		
 		LOGGER.trace(loggerId + "createUrlLinkEntry()...exit.");
 
-		return linkEntry;
+		return newSummaryLine;
 		
 	}
 	
@@ -331,6 +349,34 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 		return this.errorEncountered;
 	}
 	
+	/**
+	 * Renames a file that is using precision-2 decimal point in the name to use
+	 * precision-1 name. This is done for compatibility with earlier studies that
+	 * used only precision-1 names. An example of a name being changed is as follows:
+	 * abcd_template_matching_v2_Aud_thresh0.10.png
+	 * abcd_template_matching_v2_Aud_thresh0.1.png
+	 * 
+	 * @param oldFileName
+	 * @param newFileName
+	 * @return boolean denoting successful rename
+	 */
+	protected boolean renamePrecision2File(String oldFileName, String newFileName) {
+		String loggerId = this.appContext.getLoggerId();
+		//LOGGER.trace(loggerId + "renamePrecision2File()...invoked, newFileName=" + newFileName);
+		boolean success = true;
+		
+		try {
+			File originalFile = new File(oldFileName);
+			File newFile = new File(newFileName);
+			originalFile.renameTo(newFile);
+		}
+		catch(Exception e) {
+			LOGGER.trace(loggerId + e);
+			success = false;
+		}
+		return success;
+	}
+	
 	
 	/**
      * 
@@ -390,6 +436,10 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
     		brStdIn = new BufferedReader(new InputStreamReader(process.getInputStream()));
     		
 			while ((stdInLine = brStdIn.readLine()) != null && !zipFormatErrorExists) {
+				if(stdInLine.trim().contains("Written using ZipKit")) {
+					LOGGER.trace(stdInLine);
+					continue;
+				}
 				lineCount++;
 				if(lineCount < 4) {
 					LOGGER.trace(stdInLine);
@@ -678,6 +728,26 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 		return success;    	
     }
     
+    public void setErrorEncountered(ApplicationContext appContext, boolean errorIndicator) {
+    	
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "setErrorEncountered()...invoked.");
+		
+		this.errorEncountered = errorIndicator;
+		LOGGER.trace(loggerId + "setErrorEncountered()...exit.");
+
+    }
+    
+    public void setErrorMessage(ApplicationContext appContext, String errorMessage) {
+    	
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "setErrorMessage()...invoked.");
+		
+		this.errorMessage = errorMessage;
+		LOGGER.trace(loggerId + "setErrorMessage()...exit.");
+
+    }
+    
     /**
      * Validates that there is a folder named 'combined_clusters' if combined_clusters
      * was denoted as available data by the admin user in the interface to create a study.
@@ -740,7 +810,7 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
      * @param dataType - String indicating surface or volume data
      * @return success - boolean indicating if all dscalar files for all networks were detected
      */
-    protected boolean validateDscalarFiles(String dataType) {
+    protected boolean validateDscalarFiles(String dataType, boolean isUpdate) {
 		String loggerId = this.appContext.getLoggerId();
 		LOGGER.trace(loggerId + "validateDscalarFiles()...invoked.");
 		
@@ -788,12 +858,11 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 			File currentFile = null;
 			boolean dscalar_nii_found = false;
 			boolean dscalar_png_found = false;
+			boolean duplicate_dscalar_found = false;
 			
 			for(int i=0; i<fileList.length; i++) {
 				currentFileName = fileList[i];
 				currentFile = new File(currentFileName);
-				
-				
 				
 				if(currentFile.isDirectory()) {
 					this.errorMessage = "Unexpected directory found: " + shortFolderName;
@@ -802,18 +871,35 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 				}
 				
 				if(currentFileName.endsWith(".dscalar.nii")) {
+					if(dscalar_nii_found) { // we already found a dscalar file
+						this.errorMessage = "More than 1 dscalar file was found in folder " + shortFolderName;
+						this.errorMessage += "<br><br>Study not created";
+						this.errorEncountered = true;
+						duplicate_dscalar_found = true;
+					}
 					dscalar_nii_found = true;
 				}
 				else if(currentFileName.endsWith("network_probability.png") ||
-						currentFileName.endsWith("number_of_nets.png")) {
+					currentFileName.endsWith("number_of_nets.png")) {
 					dscalar_png_found = true;
 				}
-				if(dscalar_nii_found && dscalar_png_found) {
-					break;
-				}
+				//if(dscalar_nii_found && dscalar_png_found) {
+				//	break;
+				//}
 			}
+			
+			if(duplicate_dscalar_found) { 
+				return false;
+			}
+			
 			if(!dscalar_nii_found || !dscalar_png_found) {
 				this.errorMessage = "...dscalar.nii and/or ...network_probability.png<br> missing in directory: " + shortFolderName;
+	    		if(!isUpdate) {
+	    			this.errorMessage += "<br><br>Study not created";
+	    		}
+	    		else {
+	    			this.errorMessage += "<br><br>Study not updated";
+	    		}
 				this.errorEncountered = true;
 				return false;
 			}
@@ -834,6 +920,9 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 	 */
 	protected boolean validateNetworkFoldersConfig(String dataType, boolean isUpdate) {
     	
+		String loggerId = this.appContext.getLoggerId();
+		LOGGER.trace(loggerId + "validateNetworkFoldersConfig()...invoked.");
+		
     	boolean isValid = true;
     	// targetDirectory will be root + surface or volume
     	String targetDirectory = this.absoluteStudyFolder + dataType;
@@ -845,7 +934,10 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
     	for(int i=0; i<directories.length; i++) {
     		currentFile = directories[i];
     		currentFolderName = currentFile.getName();
+    		LOGGER.trace(loggerId + "current file/dir name=" + currentFolderName);
+
     		if(!currentFile.isDirectory()) {
+        		LOGGER.trace(loggerId + currentFolderName + " is not a directory, aborting study creation");
     			this.errorEncountered = true;
     			this.errorMessage = "Unexpected file found in " + dataType + " folder: " + currentFolderName;
     			return false;
@@ -891,16 +983,19 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 	    			this.errorMessage = "Menu config error: " +
 	    		         "the zip file contains more Single Network folders than are listed" +
 	    				 " in the folders.txt file. The missing entry is: " + missingFolderName;
+	    			this.errorMessage += "<br>Study not created";
     			}
     			else if(dataType.equals("volume")) {
 	    			this.errorMessage = "Menu config error: " +
 		    		         "the zip file contains more Single Network folders than exist in surface data." +
 		    				 "The extra folder is: " + missingFolderName;
+	    			this.errorMessage += "<br>Study not updated";
     			}
        			else if(dataType.equals("surface")) {
 	    			this.errorMessage = "Menu config error: " +
 		    		         "the zip file contains more Single Network folders than exist in volume data." +
 		    				 "The extra folder is: " + missingFolderName;
+	    			this.errorMessage += "<br>Study not updated";
     			}
     		}
     		
@@ -922,18 +1017,24 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 	      			this.errorMessage = "Folder config error: " +
 	       		         "the folders.txt file contains more Single Network folders than are contained" +
 	       				 " in the zip file. The missing folder in the zip file is: " + missingFolderName;
+	    			this.errorMessage += "<br>Study not created";
+
     			}
     			else if(dataType.equals("volume")) {
     		         this.errorMessage = "Menu config error: the zip file contains less Single Network folders than are contained" +
     	       				 " in the surface data. The missing folder in the zip file is: " + missingFolderName;
+ 	    			 this.errorMessage += "<br>Study not updated";
+
     			}
     			else if(dataType.equals("surface")) {
    		         	this.errorMessage = "Menu config error: the zip file contains less Single Network folders than are contained" +
    	       				 " in the volume data. The missing folder in the zip file is: " + missingFolderName;
+	    			this.errorMessage += "<br>Study not updated";
+
 
     			}
     		}
-   		
+    		LOGGER.trace(loggerId + "validateNetworkFoldersConfig()...exit.");
 			return isValid;
     	}
     	
@@ -947,6 +1048,13 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
     			this.errorEncountered = true;
     			this.errorMessage = TEMPLATE_FOLDERS_SPACE_ERROR_MESSAGE;
     			this.errorMessage = this.errorMessage.replace(REPLACE_FOLDER_NAME, aFolderName);
+    			if(!isUpdate) {
+    				this.errorMessage += "Study not created";
+    			}
+    			else {
+    				this.errorMessage += "Study not updated";
+
+    			}
     			break;
     		}
     	}
@@ -1016,7 +1124,7 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 	 * @param dataType - String representing surface or volume data
 	 * @return success - boolean indicating if all files were found
 	 */
-	protected boolean validateThresholdFiles(String dataType) {
+	protected boolean validateThresholdFiles(String dataType, boolean isUpdate) {
 		String loggerId = this.appContext.getLoggerId();
 		LOGGER.trace(loggerId + "validateThresholdFiles()...invoked.");
 		
@@ -1050,8 +1158,12 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 	   int slashIndex = 0;
 	   String baseThreshold = "0.0";
 	   String baseThresholdSuffix = null;
+	   String baseThresholdSuffixPrecision2 = null;
 	   String targetThreshold = null;
+	   String targetThresholdPrecision2 = null;
+	   boolean precision2NameDetected = false;
 	   int currentThreshold = -1;
+	   boolean tryPrecision2 = false;
 	   boolean niiThresholdFound = false;
 	   boolean pngThresholdFound = false;
 	   
@@ -1077,32 +1189,46 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 			baseThreshold = "0.0";
 			targetThreshold = null;
 			currentThreshold = 0;
+			tryPrecision2 = false;
+			
+			LOGGER.trace(loggerId + "validateThresholdFiles()...directory=" + subDir);
+			LOGGER.trace(loggerId + "validateThresholdFiles()...checking files, count=" + fileNamesArray.length);
+
 			
 			while(currentThreshold < 100) {
 				
 				niiThresholdFound = false;
 				pngThresholdFound = false;
+				tryPrecision2 = false;
+				targetThresholdPrecision2 = "-1";
 				
 				currentThreshold++;
 				
 				if(currentThreshold == 100) {
 					targetThreshold = "1.0.";
+					targetThresholdPrecision2 = "1.00.";
+					tryPrecision2 = true;
 				}
 				else {
 					if(currentThreshold == 10) {
 						baseThreshold = "0.";
 					}
 					if((currentThreshold % 10)==0) {
+						tryPrecision2 = true;
 						baseThresholdSuffix = currentThreshold/10 + ".";
+						baseThresholdSuffixPrecision2 = currentThreshold/10 + "0.";
 					}
 					else {
 						baseThresholdSuffix = currentThreshold + ".";
 					}
 					targetThreshold = baseThreshold + baseThresholdSuffix;
+					
+					if(tryPrecision2) {
+						targetThresholdPrecision2 = baseThreshold + baseThresholdSuffixPrecision2;
+					}
 				}
 			
-				for(int i=0;i<fileNamesArray.length;i++) {
-					
+				for(int i=0;i<fileNamesArray.length;i++) {					
 					currentFileName = fileNamesArray[i];
 					currentFile = new File(currentFileName);
 					
@@ -1112,6 +1238,7 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 							String errorFile = currentFileName;
 							this.errorMessage = "Unexpected file encountered<br>directory:<br>" + shortSubDirName;
 							this.errorMessage += "<br>file name:<br>" + errorFile;
+							LOGGER.trace(loggerId + errorMessage);
 							return false;	
 						}
 					}
@@ -1119,6 +1246,7 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 					if(currentFile.isDirectory()) {
 						this.errorEncountered = true;
 						this.errorMessage = "Unexpected directory encountered:" + shortSubDirName;
+						LOGGER.trace(loggerId + errorMessage);
 						return false;		
 					}
 					
@@ -1130,6 +1258,31 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 							pngThresholdFound = true;
 						}
 					}
+					if(tryPrecision2) {
+						if(currentFileName.contains(targetThresholdPrecision2)) {
+							int index = currentFileName.lastIndexOf("0");
+							StringBuilder sb = new StringBuilder(currentFileName);
+							sb.deleteCharAt(index);
+							String oldFileName = subDirName + "/" + currentFileName;
+							String newFileName = subDirName + "/" + sb.toString();
+							boolean renameSuccess = this.renamePrecision2File(oldFileName, newFileName);
+							
+							if(!renameSuccess) {
+								this.errorEncountered = true;
+								this.errorMessage = "Unable to rename file with precision2 notation:<br>" + currentFileName;
+								this.errorMessage += "<br>Unable to create study";
+								LOGGER.trace(loggerId + errorMessage);
+								return false;
+							}
+							
+							if(currentFileName.endsWith(".nii")) {
+								niiThresholdFound = true;
+							}
+							if(currentFileName.endsWith(".png")) {
+								pngThresholdFound = true;
+							}
+						}
+					}
 					if(niiThresholdFound && pngThresholdFound) {
 						break;
 					}
@@ -1137,14 +1290,24 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
 			    if(!niiThresholdFound || !pngThresholdFound) {
 			    	String message = "Threshold file missing.<br>Directory: " + shortSubDirName;
 			    	message += "<br>Threshold: " + targetThreshold;
-			    	message += "<br>Check both .nii and .png files for theshold.";
+			    	message += "<br>Check both .nii and .png files for threshold.";
 			    	message += "<br>Names must follow standard naming conventions";
 			    	message += "<br>Download surface.zip for example data.";
+		    		if(!isUpdate) {
+		    			this.errorMessage += "<br><br>Study not created";
+		    		}
+		    		else {
+		    			this.errorMessage += "<br><br>Study not updated";
+		    		}
 			    	this.errorMessage = message;
 			    	this.errorEncountered = true;
+					LOGGER.trace(loggerId + errorMessage);
 			    	return false;
 			    }
 			}
+			fileNamesArray = subDir.list();
+			LOGGER.trace(loggerId + "validateThresholdFiles()...finished checking directory=" + subDir);
+			LOGGER.trace(loggerId + "validateThresholdFiles()...file count=" + fileNamesArray.length);
 	   }
 	   
 		LOGGER.trace(loggerId + "validateThresholdFiles()...exit.");
@@ -1187,6 +1350,9 @@ import edu.umn.midb.population.atlas.utils.ServerStorageStats;
             ZipEntry entry = entries.nextElement();
             String name = entry.getName();
             if(!name.matches("\\S+/\\S+")){ //it's a top level folder
+            	if(name.equals("./")) { //some zip utils add a ./ folder that only exists inside the zip file
+            		continue;
+            	}
                 if(!name.equals(dataType + "/")) {
                 	this.errorEncountered = true;
                 	this.errorMessage = "Invalid top level folder or file<br>encountered in zip file:<br>" + name;

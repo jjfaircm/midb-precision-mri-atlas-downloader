@@ -1,4 +1,4 @@
-		 var version_buildString = "Version beta_103.0  0703_2204_2023__war=NPDownloader_0703_2204_2023.war";
+		 var version_buildString = "Version beta_132.0  1116_02:00_2025__war=NPDownloader_1116_02:00_2025.war";
 		 var enableTracing = true; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
@@ -27,8 +27,6 @@
    	     var div_snackbar = null;
          var ajaxRequest_startTime = null;
          var currentNetworkMapImage = null;
-         var DELIMITER_NETWORK_MAP_ITEMS = "&@&";
-         var DELIMITER_NETWORK_MAP_DATA = "$@$";
          var download_target_map_nii = null;
          var downloadZIP_path = null;
          var downloadDisabled = false;
@@ -113,9 +111,16 @@
         	 selectElement = document.getElementById("select_neuralNetworkName");
            	 var div_submitNotification = document.getElementById("div_submitNotification");
         	 div_submitNotification.style.display = "block";
+        	 
+        	 //load the default/initial study to view
         	 var anchor_ABCD_combined = document.getElementById("a_abcd_template_matching_combined_clusters");
-        	 //alert("ready to auto click menu");
         	 menuClicked(anchor_ABCD_combined, true, true);
+        	 
+			
+			 /*
+			 var anchor_test_single = document.getElementById("a_test_template_matching_single");
+			 menuClicked(anchor_test_single, true, true);
+			 */addTableRow
         	 range_thresholdSlider = document.getElementById("range_threshold");
         	 anchor_downloadFile = document.getElementById("anchor_downloadFile");
         	 
@@ -666,6 +671,9 @@
          function preprocessDownloadFile(choice) {
         	 console.log("preprocessDownloadFile()...invoked, choice=" + choice);
         	 
+        	 var valueAsString = "";
+        	 var alternateValueAsString = "";
+        	 
         	 if(downloadDisabled) {
         		 doAdminAlert(downloadDisabledMessage, true);
         		 //doAlert(downloadDisabledMessage, alertOK);
@@ -686,12 +694,29 @@
 	        	 anchor_downloadFile.href += "&selectedNeuralNetworkName=" + selectedNeuralNetworkName;
         	 }
         	 else if(choice==0) {
-	        	 var key = range_thresholdSlider.value;
-	        	 if(key.indexOf(".")==-1) {
-	        		 key = key + ".0";
+	        	 var valueAsString = range_thresholdSlider.value + "";
+	        	 if(valueAsString.indexOf(".")==-1) {
+	        		 valueAsString = valueAsString + ".0";
 	        	 }
+	        	 
+	        	 //some files have names based on decimal precision-1, others use decimal precision-2
+	        	 if(valueAsString=="0.0" || valueAsString=="1.0" || !valueAsString.endsWith("0")) {
+					alternateValueAsString = valueAsString.concat("0");
+				 }
+
+				 else if(valueAsString.endsWith("0")) {
+					alternateValueAsString = valueAsString.substring(0, valueAsString.length-1);
+				 }
+
+                 var key = valueAsString;
 	        	 console.log("key=" + key);
 	        	 downloadFilePathAndName = targetDownloadFilesMap.get(key);
+	        	 
+	        	 if(downloadFilePathAndName=="undefined" || downloadFilePathAndName==null) {
+					 key = alternateValueAsString;
+					 downloadFilePathAndName = targetDownloadFilesMap.get(key);
+				 }
+	        	 
 	        	 console.log("downloadTargetFile name=" + downloadFilePathAndName);
 	        	 anchor_downloadFile.href = "/NetworkProbabilityDownloader/NPViewerDownloaderServlet?action=downloadFile&filePathAndName=" + downloadFilePathAndName;
 	        	 anchor_downloadFile.href += "&selectedStudy=" + selectedStudy.studyId;
@@ -990,6 +1015,7 @@
  
                     var responseArray = ajaxRequest.responseText.split("&&&");
                     token = responseArray[0];
+                    newStudy.adminToken = responseArray[0];
                     buildStudySummaryMap(responseArray[1]);
                	    buildStudyMenu(responseArray[2]);
                	    getNetworkFolderNamesConfig();
@@ -1103,7 +1129,10 @@
          	ajaxRequest_startTime = performance.now();
          	    
          	var span_submitNotification = document.getElementById("span_submitNotification");
-         	
+  
+            //selectedStudy.selectedDataType.co
+
+       	
 			/*
          	if(selectedStudy.studyId != priorSelectedStudy) {
 	            if(selectedStudy.availableDataType.includes("surface")) {
@@ -1157,41 +1186,32 @@
             ajaxRequest.onreadystatechange=function() {
 	
                    if (ajaxRequest.readyState==4 && ajaxRequest.status==200) {
-                       //console.log(ajaxRequest.responseText);
-                	   //alert("images response");
+	
                        if(ajaxRequest.responseText.includes("Unexpected Error")) {
-                    	   //alert("images response error");
 
-                       	var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
+                       	    var errorBeginIndex = ajaxRequest.responseText.indexOf(fatalErrorBeginMarker) + 19;
                     		var errorEndIndex = ajaxRequest.responseText.indexOf(fatalErrorEndMarker);
                     		var errorData = ajaxRequest.responseText.substring(errorBeginIndex, errorEndIndex);
                         	var errorArray = errorData.split("&");
-                       	var msg1 = errorArray[0];
-                       	var msg2 = errorArray[1];
-                       	stackTraceData = errorArray[2];
+                       	    var msg1 = errorArray[0];
+                       	    var msg2 = errorArray[1];
+                       	    stackTraceData = errorArray[2];
                        	
-                       	var incidentIdIndex = ajaxRequest.responseText.indexOf("INCIDENT_ID");
-                       	var incidentId = ajaxRequest.responseText.substring(incidentIdIndex, incidentIdIndex+54);
-                       	var headerElement = document.getElementById("stackTraceHeader");
-                       	headerElement.innerHTML = incidentId;
-                       	doErrorAlert(msg1, msg2, errorAlertOK);
-                       	return;
+                       	    var incidentIdIndex = ajaxRequest.responseText.indexOf("INCIDENT_ID");
+                       	    var incidentId = ajaxRequest.responseText.substring(incidentIdIndex, incidentIdIndex+54);
+                       	    var headerElement = document.getElementById("stackTraceHeader");
+                       	    headerElement.innerHTML = incidentId;
+                       	    doErrorAlert(msg1, msg2, errorAlertOK);
+                       	    return;
                        }
-                       if(selectedSubmenuAnchor.id.includes("combined")) {
-                            processThresholdImagesResponse(ajaxRequest.responseText);
-                       }
-                       else {
-                    	   priorSelectedDataType = selectedStudy.selectedDataType;
-                    	   var combinedDataArray = ajaxRequest.responseText.split(DELIMITER_NETWORK_MAP_DATA);
-                    	   /* first, process the image data for the Network Probabilistic Map  */
-                    	   processNetworkProbabilityMapData(combinedDataArray[0]);
-                    	   /* now process all image files for the main image panel */
-                    	   processThresholdImagesResponse(combinedDataArray[1]);
-                       }
+                       
+                       priorSelectedDataType = selectedStudy.selectedDataType;
+                       processThresholdImagesResponse(ajaxRequest.responseText);
+
                    }
                    if (ajaxRequest.readyState==4 && ajaxRequest.status==503) {
-                   	alert("The server is not responding.")
-                   	return;
+                   	 alert("The server is not responding.")
+                   	 return;
                    }
                    
            	}
@@ -1344,6 +1364,8 @@
           	     anchor_addStudy.style.color = "#FFC300";
           	     var ul_studyMenu = document.getElementById("ul_studyMenu");
           	     ul_studyMenu.scrollIntoView({behavior: 'smooth', block: 'start'});
+          	     let message = "Click on the help icon (?) for information on adding a study";
+		         doAdminAlert(message);
                  break;
              }
              console.log("handleTabSelected()...exit.");
@@ -1416,17 +1438,14 @@
              div_uploadProgress.style.display = "none";
              div_unzipProgress.style.display = "block";
          }
-         
-         
-         function processNetworkProbabilityMapData(responseData) {
-        	 
-       	  	  console.log("processNetworkProbabilityMapData()...invoked.")
 
-       	  	  var networkMapDataArray = responseData.split(DELIMITER_NETWORK_MAP_ITEMS);
-       	  	  var base64_png_for_map = networkMapDataArray[0];
-       	  	  download_target_map_nii = networkMapDataArray[1];
+         function processNetworkProbabilityMapData(mapDataJSON_Object) {
+	
+	       	  console.log("processNetworkProbabilityMapData()...invoked.")
+              var base64_png_for_map = mapDataJSON_Object.networkMapImage_Base64_String;
+	          download_target_map_nii = mapDataJSON_Object.niftiFilePathName;
        	  	  console.log(download_target_map_nii);
-       	  	  var imageSrcURLPrefix = "data:image/png;base64,";
+      	  	  var imageSrcURLPrefix = "data:image/png;base64,";
        	  	  
        	  	  var mapImageSrcURL = imageSrcURLPrefix + base64_png_for_map;
        	  	  
@@ -1435,12 +1454,15 @@
        	  	  networkProbabilityMapImage.src = mapImageSrcURL;
        	  	  
        	  	  console.log("processNetworkProbabilityMapData()...exit.")
-
-         }
+	     }
          
          
           /**
-           * The incoming data consists of 2 arrays:
+           * The incoming data is JSON data that consists of a NetworkMapData object and 2 arrays.
+           * The NetworkMapData may be null since 'Combined' data does not have nework map data.
+           * If the NetworkMapData attribute is not null then the processNetworkProbabilityMapData()
+           * function is invoked.
+           * There are also 2 arrays in the incoming JSON data parameter.
            * The first array is the base64 encoded images that appear in the main image panel
            * The second array is a list of target download files that are .nii files on the server
            * When the user selects a threshold image and chooses to download a file, then the
@@ -1452,39 +1474,25 @@
            * The imageDataURLArray elements map to the targetDownloadFilePathsArray elements.
            * 
            */     
-          function processThresholdImagesResponse(ajaxResponseText) {
-        	  
-        	  console.log("processThresholdImagesResponse()...invoked.")
-        	  
-        	  var ajaxRequest_endTime = performance.now();
-        	  var ajaxRequest_elapsedTime = ajaxRequest_endTime - ajaxRequest_startTime;
-        	  
-        	  console.log("processThresholdImagesResponse()...ajaxRequest_elapsedTime=" + ajaxRequest_elapsedTime);
-        	  
+          function processThresholdImagesResponse(thresholdImageCacheJSONText) {
+	
+	           console.log("processThresholdImagesResponse()...invoked.")
+
+	           var thresholdImgCacheJSON_Object = JSON.parse(thresholdImageCacheJSONText);
+               var networkMapDataJSON_Object = thresholdImgCacheJSON_Object.networkMapData;
+
+               if(networkMapDataJSON_Object != null) {
+	              processNetworkProbabilityMapData(networkMapDataJSON_Object);
+               }
+
         	  imageDataURLArray = new Array();
         	  probabilityValueArray = new Array();
         	  targetDownloadFilePathsArray = new Array();
-        	  
-        	  
-        	  var responseArray = ajaxResponseText.split(":@:");
 
-        	  var base64Strings = responseArray[0];
-        	  console.log("processThresholdImagesResponse()...base64Strings.length=" + base64Strings.length);
+              base64ImageStringArray = thresholdImgCacheJSON_Object.base64ImageStrings;
 
-        	  base64ImageStringArray = base64Strings.split(",");
-        	  console.log("processThresholdImagesResponse()...size of base64ImageStringArray=" + base64ImageStringArray.length);
-        	  //console.log("b64_0=" + base64ImageStringArray[0]);
-        	  //console.log("b64_1=" + base64ImageStringArray[1]);
-        	  var filePathsString = responseArray[1];
-        	  //console.log("processThresholdImagesResponse()...size of filePathsString=" + filePathsString.length);
-
-        	  var imageFilePathsArray = filePathsString.split(",");
-        	  //console.log("processThresholdImagesResponse()...size of filePathsString=" + filePathsString.length);
-        	  //console.log("processThresholdImagesResponse()...size of imageFilePathsArray=" + imageFilePathsArray.length);
-        	  //console.log(imageFilePathsArray[0]);
-        	  //console.log(filePathsString);
-        	  //alert("tempFilePathsArray length=" + tempFilePathsArray.length);
-        	  var anImageFileAndPath = null;
+              var imageFilePathsArray = thresholdImgCacheJSON_Object.niftiFilePaths;
+       	      var anImageFileAndPath = null;
         	  var priorPath = "";
         	  var anImageSrcURL = null;
         	  var imageSrcURLPrefix = "data:image/png;base64,";
@@ -1492,20 +1500,14 @@
         	  var downloadTargetFile = null;
         	  var pngMarker = ".png";
         	  var pngIndex = 0;
-        	  
-        	  //currentNetworkMapImage = base64ImageStringArray[0];
-        	  
+
         	  for(var i=0; i<base64ImageStringArray.length; i++) {
         		  aBase64String = base64ImageStringArray[i];
         		  anImageSrcURL = imageSrcURLPrefix + aBase64String;
         		  imageDataURLArray.push(anImageSrcURL);
         	  }
-        	  
-        	  //var compareResult = imageDataURLArray[98].localeCompare(imageDataURLArray[99]);
-        	  //console.log("String.compare result=" + compareResult);
-        	  
-        	  var substringIndex = 1;
-        	  
+
+
         	  for(var i=0; i<imageFilePathsArray.length; i++) {
         		  if(i>0) {
         			  priorPath = anImageFileAndPath;
@@ -1543,11 +1545,9 @@
         		  
         		  if(aProbabilityValue.startsWith(".")) {
         			  aProbabilityValue = "0" + aProbabilityValue;
-        			  //console.log(aProbabilityValue);
         		  }
         		  probabilityValueArray.push(aProbabilityValue);
         	  }
-        	  
         	  
         	  //now load the map of imageSrcURL objects and targetDownloadFiles
         	  imageDataURLMap = new Map();
@@ -1557,8 +1557,6 @@
         	  for(var i=0; i<probabilityValueArray.length; i++) {
         		  //console.log("setting imageURLMap value, key=" + probabilityValueArray[i]);
         		  imageDataURLMap.set(probabilityValueArray[i], imageDataURLArray[i]);
-        		  //console.log("setting targetDownloadFile value, key=" + probabilityValueArray[i]);
-        		  //console.log("setting targetDownloadFile, value=" + targetDownloadFilePathsArray[i]);
         		  targetDownloadFilesMap.set(probabilityValueArray[i], targetDownloadFilePathsArray[i]);
         	  }
         	  
@@ -1566,9 +1564,8 @@
         	  //enableScroll();
        	  
         	  console.log("processThresholdImagesResponse()...exit.");
-          }
-         
-
+               
+	      }
          
 
          function resetSelectedTab() {
@@ -1660,6 +1657,7 @@
         	 
         	 if(propToSet.includes("min")) {
         		 console.log("setting min range value:" + valueString);
+        		 //alert("setRangeValue()...aFilePath=" + aFilePath + "...valueString=" + valueString);
         		 range_thresholdSlider.min = valueString;
         		 number_inputThresholdValueControl.min = valueString;
         	 }
@@ -1727,53 +1725,45 @@
          
          
          function trackThresholdValue(isFirstTrackingEvent) {
-        	 console.log("trackThresholdValue()...invoked...");
-        	 /*
-        	 if(autoScrollEnabled) {
-        		 console.log("autoScrolling into view...");
-        		 document.getElementById("div_thresholdImage").scrollIntoView({ behavior: 'smooth', block: 'center' });
-        	 }
-        	 */
-        	 
+        	 //console.log("trackThresholdValue()...invoked...");
+
         	 if(range_thresholdSlider==null) {
         		 range_thresholdSlider = document.getElementById("range_threshold");
         	 }
         	 var usedAdjustedLabel = false;
         	 var selectedValue = range_thresholdSlider.value;
+        	 var imageSrc =  null;
+        	 var valueAsString = range_thresholdSlider.value + "";
+        	 var alternateValueAsString = "";
         	 
         	 if(selectedValue.indexOf(".")== -1) {
-        		 usedAdjustedLabel = true;
+        		 valueAsString = valueAsString + ".0";
         	 }
         	 
-        	 
-        	 /*
-        	 if(range_thresholdSlider.value==1) {
-        		 //console.log("adjusting range_thresholdSlider.value to 1.0");
-        		 usedAdjustedLabel = true;
-        	 }
-        	 */
-        	 
-        	 if(usedAdjustedLabel) {
-        		 //console.log("setting imageSrc with key=" + adjustedLabel);
-            	 number_RangeThresholdValue.value = selectedValue + ".0";
-            	 
-            	 selected_thresholdImage.src = imageDataURLMap.get(number_RangeThresholdValue.value);
-            	 //console.log(selected_thresholdImage.src);
-        	 }
-        	 
-        	 else if(isFirstTrackingEvent) {
-            	 //console.log("trackThresholdValue()...isFirstTrackingEvent=true");
-            	 //console.log("trackThresholdValue()...probabilityValueArray[0]=" + probabilityValueArray[0]);
-            	 //range_thresholdSlider.value = probabilityValueArray[1];
-         	     //selected_thresholdImage.src = imageDataURLMap.get(probabilityValueArray[1]);
+        	 if(isFirstTrackingEvent) {
             	 range_thresholdSlider.value = probabilityValueArray[0];
          	     selected_thresholdImage.src = imageDataURLMap.get(probabilityValueArray[0]);
         	 }
-        	 else {
-        	    selected_thresholdImage.src = imageDataURLMap.get(range_thresholdSlider.value);
-           	    //console.log("trackThresholdValue()...range_thresholdSlider.value=" + range_thresholdSlider.value);
-           	    number_RangeThresholdValue.value = range_thresholdSlider.value; 
-        	 }
+        
+        	 //sometimes the file name uses decimal precision-2 and sometimes it uses decimal precision-1
+             //this only happens with numbers such as 0.1 vs 0.10, etc.
+                    
+            else {
+				if(valueAsString=="0.0" || valueAsString=="1.0" || !valueAsString.endsWith("0")) {
+					alternateValueAsString = valueAsString.concat("0");
+				}
+				else if(valueAsString.endsWith("0")) {
+					alternateValueAsString = valueAsString.substring(0, valueAsString.length-1);
+				}
+			
+				imageSrc = imageDataURLMap.get(valueAsString);
+				if(imageSrc=="undefined" || imageSrc==null) {
+				   imageSrc = imageDataURLMap.get(alternateValueAsString);
+				}
+				selected_thresholdImage.src = imageSrc;
+           		number_RangeThresholdValue.value = range_thresholdSlider.value;
+           	}
+       
 
         	 if(!adminLoginFocusPending) {
 	        	 range_thresholdSlider.focus({preventScroll: true});
@@ -1790,7 +1780,7 @@
            	     autoScrollHelpPending = false;
         	 }
         	 */
-        	 console.log("trackThresholdValue()...exit.");
+        	 //console.log("trackThresholdValue()...exit.");
          }
          
       
@@ -1883,6 +1873,7 @@
          	paramString += "&currentFileNumber=" + newStudy.currentFileNumber;
          	paramString += "&totalFileNumber=" + newStudy.totalFileNumber;
          	paramString += "&fileSize=" + fileSize;
+         	paramString += "&adminToken=" + newStudy.adminToken;
 
          	
          	url += paramString;
@@ -1894,25 +1885,35 @@
          	
      		newStudy.span_progress_0.style.display = "none";
      		newStudy.span_progress_1.style.display = "none";
+     		var warning = "<br><span style=\"color: red; font-weight: 800;\">DO NOT CLOSE BROWSER</span>";
    	
          	var remainder =  newStudy.totalFileNumber % newStudy.currentFileNumber;
          	console.log("remainder=" + remainder);
 			//changes the upload message without flickering
          	if(remainder == 0) {
          		console.log("in remainder=0 code");
-         		newStudy.span_progress_0.innerHTML = "Uploading File:  " + fileName + "...";
+         		newStudy.span_progress_0.innerHTML = "Uploading File:  " + fileName + "..." + warning;
          		newStudy.span_progress_1.style.display = "none";
          		newStudy.span_progress_0.style.display = "block";
          	}
          	else {
          		console.log("in remainder=1 code");
-         		newStudy.span_progress_1.innerHTML = "Uploading File:  " + fileName + "...";
+         		newStudy.span_progress_1.innerHTML = "Uploading File:  " + fileName + "..." + warning;
          		newStudy.span_progress_0.style.display = "none";
          		newStudy.span_progress_1.style.display = "block";
          	}
          	
          	if(newStudy.currentFileNumber == 1) {
 				div_uploadProgress.style.display = "block";
+			}
+			
+			ajaxRequest.onerror=function(error) {
+				console.error("uploadAddStudyFile()...communication/internet error occurred.");
+				console.error(error);
+				div_uploadProgress.style.display = "none";
+                div_unzipProgress.style.display = "none";
+				doAdminAlert("Internet network communication error encountered.<br>Refresh browser page and retry");
+				return;
 			}
        
          	ajaxRequest.onreadystatechange=function() {

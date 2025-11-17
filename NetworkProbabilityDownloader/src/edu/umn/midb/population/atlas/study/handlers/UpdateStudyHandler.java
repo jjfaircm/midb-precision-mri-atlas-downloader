@@ -374,7 +374,7 @@ public class UpdateStudyHandler extends StudyHandler {
 			String entryLine = null;
 			
 			while ((entryLine = br.readLine()) != null) {
-				if(entryLine.contains("[") && entryLine.contains("]")) {
+				if(entryLine.contains("[") && entryLine.contains("]") && entryLine.contains("@")) {
 					entryLine = createUrlLinkEntry(entryLine);
 				}
 				this.newSummaryLines.add(entryLine);
@@ -478,8 +478,9 @@ public class UpdateStudyHandler extends StudyHandler {
 		}
 		
 		//delete the uploaded file
-		File uploadedFile = new File(this.newSummaryTextFilePath);
-		uploadedFile.delete();
+		//File uploadedFile = new File(this.newSummaryTextFilePath);
+		//we now keep the uploaded files
+		//uploadedFile.delete();
 		//load the new config
 		AtlasDataCacheManager.getInstance().reloadSummaryConfig();
 
@@ -523,13 +524,13 @@ public class UpdateStudyHandler extends StudyHandler {
 			return false;
 		}
 		
-		success = validateDscalarFiles("surface");
+		success = validateDscalarFiles("surface", true);
 		if(!success) {
 			rollback("surface");
 			return false;
 		}
 		
-		success = validateThresholdFiles("surface");
+		success = validateThresholdFiles("surface", true);
 		if(!success) {
 			rollback("surface");
 			return false;
@@ -581,7 +582,7 @@ public class UpdateStudyHandler extends StudyHandler {
 			return false;
 		}
 		
-		success = validateDscalarFiles("volume");
+		success = validateDscalarFiles("volume", true);
 		if(!success) {
 			rollback("volume");
 			return false;
@@ -904,6 +905,11 @@ public class UpdateStudyHandler extends StudyHandler {
 		File targetZipFile = new File(this.surfaceZipFilePath);
 		File sourceZipFile = new File(this.surfaceZipFilePath + "_backup");
 		
+		if(!sourceZipFile.exists()) {
+			LOGGER.trace(loggerId + "renameBackupSurfaceZipFile()...there was no original zip file, nothing to do...returning true");
+			return true;
+		}
+		
 		success = sourceZipFile.renameTo(targetZipFile);
 		LOGGER.trace(loggerId + "renameBackupSurfaceZipFile()...exit.");
 		return success;
@@ -935,7 +941,8 @@ public class UpdateStudyHandler extends StudyHandler {
 		
 	/**
 	 * When the Update Study process begins the original (or n-1) zip file is renamed
-	 * by adding '_backup' to it.
+	 * by adding '_backup' to it. If the original file does not exist then this method
+	 * will just return true.
 	 * 
 	 * @param zipFileName - String
 	 * @return success - boolean
@@ -947,6 +954,10 @@ public class UpdateStudyHandler extends StudyHandler {
 		boolean success = true;
 		
 		File sourceZipFile = new File(this.absoluteStudyFolder + zipFileName);
+		if(!sourceZipFile.exists()) {
+			LOGGER.trace(loggerId + "renameExistingZipFile()...no original zip file found...returning true.");
+			return true;
+		}
 		File targetZipFile = new File(this.absoluteStudyFolder + zipFileName + "_backup");
 		
 		success = sourceZipFile.renameTo(targetZipFile);
@@ -1090,7 +1101,9 @@ public class UpdateStudyHandler extends StudyHandler {
 					isSummaryText = true;
 					this.newSummaryTextFilePath = absoluteStudyFolder + fileName;
 				}
-				renameExistingZipFile(fileName);
+				if(!isSummaryText) {
+					renameExistingZipFile(fileName);
+				}
 			    part.write(absoluteStudyFolder + fileName);
 			}
 		}

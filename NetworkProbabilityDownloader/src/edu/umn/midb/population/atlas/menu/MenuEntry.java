@@ -10,8 +10,20 @@ package edu.umn.midb.population.atlas.menu;
  * <li>Integration Zone</li>
  * <li>Single Networks</li>
  * </ul>
+ * 
  * <p>
  * The data type can either be 'surface, 'volume', or 'surface_volume'.
+ * <p>
+ * A MenuEntry object is constructed from entries in the menu.conf file that is found in the
+ * midb folder (which is located in the root directory of the system). Here is an excerpt
+ * from that file which represents a menu entry:
+ * 
+ * <p>MENU ENTRY (ID=abcd_template_matching)
+ * <p>ABCD - Template Matching (abcd_template_matching) (surface)
+ * <p>Single Networks (single)
+ * <p>Combined Networks (combined_clusters)
+ * <p>Integration Zone (overlapping)
+ * <p>END MENU ENTRY
  * 
  * 
  * @author jjfair

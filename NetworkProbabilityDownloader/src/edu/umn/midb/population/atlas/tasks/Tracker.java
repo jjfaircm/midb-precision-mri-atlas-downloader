@@ -427,7 +427,11 @@ public class Tracker extends Thread {
 				this.preparedInsertStatement.clearParameters();
 				this.preparedInsertStatement.setString(1, whEntry.getId());
 				this.preparedInsertStatement.setString(2, whEntry.getRequestorIPAddress());
-				this.preparedInsertStatement.setString(3, whEntry.getUserAgent());
+				String userAgent = whEntry.getUserAgent();
+				if(userAgent.length()>256) {
+					userAgent = userAgent.substring(0, 255);
+				}
+				this.preparedInsertStatement.setString(3, userAgent);
 				this.preparedInsertStatement.setString(4, whEntry.getCity());
 				this.preparedInsertStatement.setString(5, whEntry.getState());
 				this.preparedInsertStatement.setString(6, whEntry.getCountry());

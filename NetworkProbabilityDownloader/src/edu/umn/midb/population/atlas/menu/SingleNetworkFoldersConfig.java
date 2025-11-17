@@ -6,7 +6,7 @@ import java.util.ArrayList;
 /**
  * 
  * Encapsulates the types of Single Neural Networks available for a specific study.
- * Each study will have a folderNamesConfig which is alist of available Single Network
+ * Each study will have a folderNamesConfig which is a list of available Single Network
  * names and the folders that map to the Single Network names. Examples are:
 
  * <ul>

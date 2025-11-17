@@ -115,7 +115,7 @@ td.tipToTheLeft:hover span, th.tipToTheLeft:hover span, h2.tipToTheLeft:hover sp
     left: 0px;
     margin: 10px;
     width: 225px;
-    position: absolute;
+    position: relative;
     text-decoration: none;
     /* next 2 lines added by jjf */
      top: -5px;
@@ -255,6 +255,7 @@ select option.networkOption {
 
 #div_thresholdSlider {
 	margin-top: 20px;
+	position: relative;
 }
 
 #snackbar {
@@ -457,6 +458,14 @@ input[type=number] {
 
 */
 
+/*
+#div_tabs {
+	position: fixed;
+	top: 35%;
+	width: 100%;
+	z-index: 100;
+}
+*/
 
 input.tabs_input { display: none; }
 input.tabs_input + label { display: inline-block }
@@ -916,6 +925,25 @@ h1.sitename {
   top: 0;
   left: 10%;
   z-index: 10;
+}
+
+#textarea_datalad {
+  width: 48%;
+  height: 60px;
+  padding: 12px 15px;
+  box-sizing: border-box;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  background-color: #f8f8f8;
+  font-size: 16px;
+  text-align: center;
+  resize: none;	
+}
+
+#img_dropdown {
+	height: 20px;
+	width: 20px;
+    padding-top: 6px;
 }
 
 /*

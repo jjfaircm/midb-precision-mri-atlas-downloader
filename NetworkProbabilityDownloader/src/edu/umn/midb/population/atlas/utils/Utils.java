@@ -23,7 +23,7 @@ public class Utils {
 	private static String LOGGER_ID = " ::LOGGERID=Utils:: ";
 
 	static {
-		LOGGER = LogManager.getLogger(DBManager.class);
+		LOGGER = LogManager.getLogger(Utils.class);
 	}
 
 	/**

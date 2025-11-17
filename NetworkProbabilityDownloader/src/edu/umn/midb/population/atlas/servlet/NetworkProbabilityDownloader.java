@@ -39,7 +39,10 @@ import edu.umn.midb.population.atlas.exception.DiagnosticsReporter;
 import edu.umn.midb.population.atlas.menu.NetworkMapData;
 import edu.umn.midb.population.atlas.security.TokenManager;
 import edu.umn.midb.population.atlas.study.handlers.CreateStudyHandler;
+import edu.umn.midb.population.atlas.study.handlers.LockResetStatus;
+import edu.umn.midb.population.atlas.study.handlers.LockType;
 import edu.umn.midb.population.atlas.study.handlers.RemoveStudyHandler;
+import edu.umn.midb.population.atlas.study.handlers.StudyMaintenanceLock;
 import edu.umn.midb.population.atlas.study.handlers.UpdateStudyHandler;
 import edu.umn.midb.population.atlas.tasks.AdminAccessEntry;
 import edu.umn.midb.population.atlas.tasks.DownloadTracker;
@@ -98,7 +101,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 
 	
 	private static final long serialVersionUID = 1L;
-	public static final String BUILD_DATE = "Version beta_103.0  0703_2204_2023__war=NPDownloader_0703_2204_2023.war"; 
+	public static final String BUILD_DATE = "Version beta_132.0  1116_02:00_2025__war=NPDownloader_1116_02:00_2025.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";
@@ -109,7 +112,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	public static final String DIAGNOSTICS_FILE = "/midb/diagnostics/diagnostics.txt";
 	public static final String DIAGNOSTICS_DEMARCATION = "*********************************************************************";
 	public static Logger LOGGER = null;
-	public static final String DOWNLOAD_ENTRY_TEMPLATE = "ID,IP_ADDRESS,TIMESTAMP,DOWNLOAD_REQUESTED_FILE";
+	//public static final String DOWNLOAD_ENTRY_TEMPLATE = "ID,IP_ADDRESS,TIMESTAMP,DOWNLOAD_REQUESTED_FILE";
     private static final DateTimeFormatter DT_FORMATTER_FOR_ID = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
 
 	public static final String ECLIPSE_RESOURCES_PATH = "/Users/jjfair/git/network_probability_downloader/NetworkProbabilityDownloader/build/classes/edu/umn/midb/population/atlas/config/files/";
@@ -118,8 +121,13 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	private static int HIT_COUNT = 0;
 	private static Object HIT_COUNT_LOCK = new Object();
 	private static String ENCRYPTION_KEY = null;
+	//private static boolean STUDY_MAINTENANCE_IN_PROGRESS = false;
+	//private static Object STUDY_MAINTENANCE_LOCK = new Object();
+	//private static String STUDY_MAINTENANCE_LOCK_ID = "000000";
+	private static StudyMaintenanceLock STUDY_MAINTENANCE_LOCK = null;
 	
 	private String localHostName = "UNKNOWN";
+	//local dev link: http://localhost:8080/NetworkProbabilityDownloader/
 
 	
 	
@@ -161,6 +169,23 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		}
 		
 		return isDuplicate;
+	}
+	
+	protected void createAdminAccessRecord(HttpServletRequest request, ApplicationContext appContext) {
+		
+		String formattedTS = appContext.getCurrentActionFormattedTimestamp();
+		formattedTS = formattedTS.replace(" ", ",");
+
+		AdminAccessEntry aaEntry = new AdminAccessEntry();
+		String ipAddress = appContext.getRemoteAddress();
+		String action = appContext.getCurrentAction();
+		aaEntry.setAction(action);
+		aaEntry.setAppContext(appContext);
+		aaEntry.setRequestorIPAddress(ipAddress);
+		aaEntry.setFormattedTimeStamp(formattedTS);
+		aaEntry.setRequest(request);
+
+		DBManager.getInstance().insertAdminAccessRecord(aaEntry, appContext);
 	}
 	
 	/**
@@ -215,7 +240,10 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			switch (action) {
 			
 			case "downloadFile":
+				long downloadActionBeginTime = System.currentTimeMillis();
 				handleDownloadFile(appContext, request, response);
+				long downloadActionEndTime = System.currentTimeMillis();
+				LOGGER.info("Processing time in ms for downloadFile=" + (downloadActionEndTime - downloadActionBeginTime));
 				break;
 			case "getMenuData":
 				appContext.setTokenManager(new TokenManager(appContext, ipAddress));
@@ -282,6 +310,10 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				break;	
 			case "sms":
 				handleSMSReceived(request, response, appContext);
+				break;
+			case "resetStudyMaintenanceLock":
+				handleResetStudyMaintenanceLock(appContext, request, response);
+				break;
 			}
 		
 		}
@@ -365,6 +397,13 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		return ipAddress;
 	}
 	
+	public static StudyMaintenanceLock getStudyMaintenanceLock(ApplicationContext appContext) {
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "getStudyMaintenanceLock()...invoked.");
+		LOGGER.trace(loggerId + "getStudyMaintenanceLock()...exit.");
+		return STUDY_MAINTENANCE_LOCK;
+	}
+	
 	
 	/**
 	 * Handles a request to add a study to the studies repository. This allows for
@@ -388,6 +427,30 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		String loggerId = appContext.getLoggerId();
 		LOGGER.trace(loggerId + "handleAddStudy()...invoked.");
 		
+		CreateStudyHandler createStudyHandler = null;
+		String adminToken = request.getParameter("adminToken");
+		
+		synchronized (STUDY_MAINTENANCE_LOCK) {
+			if(STUDY_MAINTENANCE_LOCK.isLocked(appContext)) {
+				String lockId = STUDY_MAINTENANCE_LOCK.getLockId(appContext);
+				if(!adminToken.equals(lockId)) {
+					LOGGER.trace(loggerId + "handleAddStudy()...studyMaintenance locked and id does not match loggerId. lockId=" + lockId);
+					createStudyHandler = new CreateStudyHandler(appContext, request, response);
+					createStudyHandler.setErrorEncountered(appContext, true);
+					String errorMessage = "Study maintenance by another session is currently in progress.";
+					errorMessage += " <br> Please try again in a few minutes.";
+					createStudyHandler.setErrorMessage(appContext, errorMessage);
+					WebResponder.sendAddStudyResponse(appContext, response);
+					createAdminAccessRecord(request, appContext);
+					LOGGER.trace(loggerId + "handleAddStudy()...exit. Study maintenance currently locked");
+					return;
+				}
+			}
+			else {
+				STUDY_MAINTENANCE_LOCK.lock(appContext, LockType.ADD);
+			}
+		} // end synchronized block
+		
 		//Part part = null;	
 		String fileName = null;
 		String currentFileNumberString = request.getParameter("currentFileNumber");
@@ -402,11 +465,11 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 			finished = true;
 		}
 
-		CreateStudyHandler createStudyHandler = null;
 		if(currentFileNumber == 1) {
 			createStudyHandler = new CreateStudyHandler(appContext, request, response);
 			appContext.setCreateStudyHandler(createStudyHandler);
 			fileName = createStudyHandler.uploadFile(request, fileSize);
+			createAdminAccessRecord(request, appContext);
 		}
 		else {
 			createStudyHandler = appContext.getCreateStudyHandler();
@@ -414,21 +477,9 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		}
 		
 		if(finished) {
-			String formattedTS = appContext.getCurrentActionFormattedTimestamp();
-			formattedTS = formattedTS.replace(" ", ",");
-
-			AdminAccessEntry aaEntry = new AdminAccessEntry();
-			String ipAddress = appContext.getRemoteAddress();
-			String action = appContext.getCurrentAction();
-			aaEntry.setAction(action);
-			aaEntry.setAppContext(appContext);
-			aaEntry.setRequestorIPAddress(ipAddress);
-			aaEntry.setFormattedTimeStamp(formattedTS);
-			aaEntry.setRequest(request);
-
-			DBManager.getInstance().insertAdminAccessRecord(aaEntry, appContext);
 			createStudyHandler.completeStudyDeploy();
 			WebResponder.sendAddStudyResponse(appContext, response);
+			STUDY_MAINTENANCE_LOCK.unlock(appContext);
 		}
 		if(!finished) {
 			WebResponder.sendUploadFileResponse(response, fileName);
@@ -511,8 +562,9 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	protected void handleDownloadFile(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		
 		String loggerId = appContext.getLoggerId();
-		LOGGER.trace(loggerId + "handleDownloadFile()...invoked.");
 		String filePathAndName = request.getParameter("filePathAndName");
+		
+		LOGGER.trace(loggerId + "handleDownloadFile()...invoked, filePathAndName=" + filePathAndName);
 		
 		//we don't track file downloads for admin files
 		if(filePathAndName.contains("addStudy_sample.zip") || filePathAndName.contains(".csv") ||
@@ -759,6 +811,20 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		LOGGER.trace(loggerId + "handleGetMenuDataRequest()...exit.");
 	}
 	
+	protected void handleGetStudyMaintenanceStatus(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleGetStudyMaintenanceStatus()...invoked.");
+		String status = "unlocked";
+		
+		synchronized(STUDY_MAINTENANCE_LOCK) {
+			if(STUDY_MAINTENANCE_LOCK.isLocked(appContext)) {
+				status = "locked";
+			}
+		}
+		WebResponder.sendStudyMaintenanceStatusResponse(response, appContext, status);
+		LOGGER.trace(loggerId + "handleGetStudyMaintenanceStatus()...exit.");
+	}
+	
 	
 	/**
 	 * Handles the request to get the single network folders configuration. Each study
@@ -938,45 +1004,66 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	 * @throws IOException - unhandled exception
 	 * @throws BIDS_FatalException - application-generated exception
 	 */
-	protected void handleRemoveStudy(ApplicationContext appContext, HttpServletRequest request,
+	protected synchronized void handleRemoveStudy(ApplicationContext appContext, HttpServletRequest request,
             HttpServletResponse response) throws IOException, BIDS_FatalException {
 		
 		String loggerId = appContext.getLoggerId();
-		LOGGER.trace(loggerId + "handleRemoveStudy()...invoked");
-				
+		String adminToken = request.getParameter("adminToken");
+		LOGGER.trace(loggerId + "handleRemoveStudy()...invoked, adminToken=" + adminToken);		
+		
+		createAdminAccessRecord(request, appContext);
+		
 		if(!appContext.isAdminActionValidated()) {
 			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
 			LOGGER.trace(loggerId + "handleRemoveStudy()...exit");
 			return;
 		}
 		
-		String formattedTS = appContext.getCurrentActionFormattedTimestamp();
-		formattedTS = formattedTS.replace(" ", ",");
-
-		AdminAccessEntry aaEntry = new AdminAccessEntry();
-		String ipAddress = appContext.getRemoteAddress();
-		String action = appContext.getCurrentAction();
-		aaEntry.setAction(action);
-		aaEntry.setAppContext(appContext);
-		aaEntry.setRequestorIPAddress(ipAddress);
-		aaEntry.setFormattedTimeStamp(formattedTS);
-		aaEntry.setRequest(request);
-
-		DBManager.getInstance().insertAdminAccessRecord(aaEntry, appContext);
-		String studyFolder = request.getParameter("studyFolder");
+		if(STUDY_MAINTENANCE_LOCK.isLocked(appContext)) {
+			String errorMessage = "Study maintenance locked by another process and is currently in progress.";
+			errorMessage += " <br> Please try again in a few minutes.";
+			WebResponder.sendRemoveStudyResponse(response, loggerId, false, errorMessage);
+			LOGGER.trace(loggerId + "handleRemoveStudy()...exit. Study maintenance currently locked");
+			return;
+		}
 		
+		String studyFolder = request.getParameter("studyFolder");
 		String removeStudyDisabled = PropertyManager.getInstance().getApplicationConfigProperty("removeStudyDisabled");
 		
 		if(removeStudyDisabled.equalsIgnoreCase("true")) {
-			WebResponder.sendRemoveStudyResponse(response, studyFolder, true);
+			WebResponder.sendRemoveStudyResponse(response, studyFolder, true, null);
 			LOGGER.trace(loggerId + "handleRemoveStudy()...exit");
 			return;
 		}
 		
+		STUDY_MAINTENANCE_LOCK.lock(appContext, LockType.REMOVE);
+		
 		RemoveStudyHandler rsh = new RemoveStudyHandler(studyFolder);
 		rsh.removeStudy();
-		WebResponder.sendRemoveStudyResponse(response, studyFolder, false);
+		WebResponder.sendRemoveStudyResponse(response, studyFolder, false, null);
+		STUDY_MAINTENANCE_LOCK.unlock(appContext);
+
 		LOGGER.trace(loggerId + "handleRemoveStudy()...exit");
+	}
+	
+	protected void handleResetStudyMaintenanceLock(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
+		String loggerId = appContext.getLoggerId();
+		LOGGER.trace(loggerId + "handleResetStudyMaintenanceLock()...invoked.");
+		
+		if(!appContext.isAdminActionValidated()) {
+			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+			LOGGER.trace(loggerId + "handleResetStudyMaintenanceLock()...exit");
+			return;
+		}
+		
+		LockResetStatus lockResetStatus = null;
+		
+		synchronized(STUDY_MAINTENANCE_LOCK) {
+			lockResetStatus = STUDY_MAINTENANCE_LOCK.reset(appContext);
+		}
+		
+		WebResponder.sendResetStudyMaintenanceLockResponse(response, appContext, lockResetStatus);
+		LOGGER.trace(loggerId + "handleResetStudyMaintenanceLock()...exit.");				
 	}
 	
 	/**
@@ -1160,36 +1247,43 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		String loggerId = appContext.getLoggerId();
 		LOGGER.trace(loggerId + "handleUpdateStudy()...invoked.");
 		
-		if(!appContext.isAdminActionValidated()) {
-			WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
-			LOGGER.trace(loggerId + "handleUpdateStudy()...exit.");
-			return;
-		}
-		
-		String studyId = request.getParameter("studyFolderName");
-		String updateAction = request.getParameter("updateAction");
-		String fileSizeString = request.getParameter("fileSize");
-		
-		UpdateStudyHandler updateHandler = new UpdateStudyHandler(studyId, appContext);
-		
-		if(!updateAction.contains("addStudyPrefix")) {
-			long fileSize = Long.parseLong(fileSizeString);
-			updateHandler.uploadFile(request, fileSize);
-		}
-		else {
-			String dataType = null;
-			if(updateAction.contains("Surface")) {
-				dataType = "surface";
+		synchronized(STUDY_MAINTENANCE_LOCK) {
+			
+			createAdminAccessRecord(request, appContext);
+			
+			STUDY_MAINTENANCE_LOCK.lock(appContext, LockType.UPDATE);
+			if(!appContext.isAdminActionValidated()) {
+				WebResponder.sendAdminAccessDeniedResponse(response, appContext, false);
+				LOGGER.trace(loggerId + "handleUpdateStudy()...exit.");
+				return;
 			}
-			else if(updateAction.contains("Volume")) {
-				dataType = "volume";
+			
+			String studyId = request.getParameter("studyFolderName");
+			String updateAction = request.getParameter("updateAction");
+			String fileSizeString = request.getParameter("fileSize");
+			
+			UpdateStudyHandler updateHandler = new UpdateStudyHandler(studyId, appContext);
+			
+			if(!updateAction.contains("addStudyPrefix")) {
+				long fileSize = Long.parseLong(fileSizeString);
+				updateHandler.uploadFile(request, fileSize);
 			}
-			updateHandler.addStudyPrefixToFileNames(dataType);
+			else {
+				String dataType = null;
+				if(updateAction.contains("Surface")) {
+					dataType = "surface";
+				}
+				else if(updateAction.contains("Volume")) {
+					dataType = "volume";
+				}
+				updateHandler.addStudyPrefixToFileNames(dataType);
+			}
+	
+			WebResponder.sendUpdateStudyResponse(appContext, response, updateHandler);
+			STUDY_MAINTENANCE_LOCK.unlock(appContext);
 		}
-
-		WebResponder.sendUpdateStudyResponse(appContext, response, updateHandler);
-
-		
+	
+			
 		LOGGER.trace(loggerId + "handleUpdateStudy()...exit.");
 	}
 
@@ -1266,6 +1360,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		WebHitsTracker.getInstance();
 		EmailTracker.getInstance();
 		CountryNamesResolver.getInstance();
+		STUDY_MAINTENANCE_LOCK = StudyMaintenanceLock.getInstance();
 				
 		LOGGER.info("exiting init().");
 	}
@@ -1422,6 +1517,26 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 		LOGGER.trace(DEFAULT_LOGGER_ID + "initSMSNotifier()...exit.");
 		
 	}
+	
+	/*
+	protected void setStudyMaintenanceStatus(boolean inProgressIndicator, String adminToken) {
+		
+		String loggerId = ThreadLocalLogTracker.get();
+		LOGGER.trace(loggerId + "setStudyMaintenanceStatus()...invoked. inProgressIndicator=" + inProgressIndicator);
+		
+		synchronized(STUDY_MAINTENANCE_LOCK) {
+			STUDY_MAINTENANCE_IN_PROGRESS = inProgressIndicator;
+			if(STUDY_MAINTENANCE_IN_PROGRESS) {
+				STUDY_MAINTENANCE_LOCK_ID = adminToken;
+			}
+			else {
+				STUDY_MAINTENANCE_LOCK_ID = "";
+			}
+		}
+		LOGGER.trace(loggerId + "setStudyMaintenanceStatus()...exit.");
+
+	}
+	*/
 	
 	
 	

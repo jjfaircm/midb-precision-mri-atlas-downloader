@@ -112,7 +112,7 @@ public class CommandRunner {
 	 */
 	public static ServerStorageStats getFreeStorageStats() {
 		String loggerId = ThreadLocalLogTracker.get();
-		LOGGER.trace(loggerId + "executeCommand()...invoked");
+		LOGGER.trace(loggerId + "getFreeStorageStats()...invoked");
 		
 		String command = "df -h";
 		ProcessBuilder pb = new ProcessBuilder();
@@ -207,7 +207,7 @@ public class CommandRunner {
 			LOGGER.trace(LOGGER_ID + "Error running command:" + command);
 			LOGGER.trace(ioE.getMessage(), ioE);
 		}
-		LOGGER.trace(loggerId + "executeCommand()...exit");
+		LOGGER.trace(loggerId + "getFreeStorageStats()...exit");
 		return stats;
 	}
 	

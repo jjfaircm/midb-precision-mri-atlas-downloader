@@ -70,7 +70,7 @@ public class DBManager {
 	private String queryEmailAddresses = "SELECT email_address, first_name, last_name FROM email_addresses";
 	private String queryWebHitsMapUrl = "SELECT url from map_urls WHERE map_name LIKE 'WEB_HITS_MAP'";
 	private String queryDownloadHitsMapUrl = "SELECT url from map_urls WHERE map_name LIKE 'FILE_DOWNLOADS_MAP'";
-    private String queryWebHits = "SELECT create_date, ip_address, city, state, country, latitude, longitude from web_hits order by create_date";
+    private String queryWebHits = "SELECT create_date, ip_address, city, state, country, latitude, longitude from web_hits order by create_date desc limit 200";
 	private String queryFileDownloads = "SELECT create_date, file_name, study, ip_address, email_address, city, state, country, latitude, longitude from file_downloads"; 
 	private String queryAdminAccessRecords = "SELECT create_date, ip_address, action, valid_password, city, state, country FROM admin_access ORDER BY create_date";
 	private String insertAdminAccessRecord = "INSERT INTO admin_access (ip_address, action, valid_password, city, state, country) VALUES(?,?,?,?,?,?)";

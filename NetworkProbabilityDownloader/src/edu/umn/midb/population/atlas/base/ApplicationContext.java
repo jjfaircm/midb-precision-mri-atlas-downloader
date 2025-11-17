@@ -60,12 +60,15 @@ public class ApplicationContext {
 	 * @param queryString - String
 	 */
 	public void addQueryStringToHistoryChain(String queryString) {
+		//LOGGER.trace(loggerId + "addQueryStringToHistoryChain()...invoked.");
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 		String entryString = queryString.replace("&", "...");
 		entryString += "::";
 		entryString += NEW_LINE;
 		entryString = timestamp + "  " + entryString;
 		this.queryStringChain.add(entryString);
+		//LOGGER.trace(loggerId + "addQueryStringToHistoryChain()...queryString=>>" + this.queryStringChain);
+		//LOGGER.trace(loggerId + "addQueryStringToHistoryChain()...exit.");
 	}
 
 	/**
