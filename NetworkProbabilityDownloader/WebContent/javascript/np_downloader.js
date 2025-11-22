@@ -1,4 +1,4 @@
-		 var version_buildString = "Version beta_133.0  1121_12:21_2025__war=NPDownloader_1116_02:00_2025.war";
+		 var version_buildString = "Version beta_134.0  1121_23:00_2025__war=NPDownloader_1121_23:00_2025.war";
 		 var enableTracing = true; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";

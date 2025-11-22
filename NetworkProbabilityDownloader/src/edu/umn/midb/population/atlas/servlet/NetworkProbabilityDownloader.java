@@ -101,7 +101,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 //https://github.com/jjfaircm/midb-precision-mri-atlas-downloader.git
 	
 	private static final long serialVersionUID = 1L;
-	public static final String BUILD_DATE = "Version beta_133.0  1121_12:20_2025__war=NPDownloader_1121_12:20_2025.war"; 
+	public static final String BUILD_DATE = "Version beta_134.0  1121_23:00_2025__war=NPDownloader_1121_23:00_2025.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";

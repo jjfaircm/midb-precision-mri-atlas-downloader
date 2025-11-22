@@ -65,12 +65,6 @@ import logs.ThreadLocalLogTracker;
  */
 public class WebResponder {
 	
-	private static final String DELIMITER = ":@:";
-	private static final String DELIMITER_NEURAL_NAMES = "!@!";
-	private static final String DELIMITER_NETWORK_MAP_DATA = "$@$";
-	private static final String DELIMITER_NETWORK_MAP_ITEMS = "&@&";
-
-
 	private static final Logger LOGGER = LogManager.getLogger(WebResponder.class);
 	
 	
