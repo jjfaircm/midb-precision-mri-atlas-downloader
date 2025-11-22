@@ -972,7 +972,7 @@ public class WebResponder {
 	    	  LOGGER.error(e.getMessage(), e);
 	     }
 		
-		LOGGER.trace(loggerId + "sendUpdateStudyResponse()...exit");
+		LOGGER.trace(loggerId + "sendUpdateStudyResponse()...exit, responseString=" + responseString);
 	}
 
 	

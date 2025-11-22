@@ -1,4 +1,4 @@
-		 var version_buildString = "Version beta_132.0  1116_02:00_2025__war=NPDownloader_1116_02:00_2025.war";
+		 var version_buildString = "Version beta_133.0  1121_12:21_2025__war=NPDownloader_1116_02:00_2025.war";
 		 var enableTracing = true; 
          var fatalErrorBeginMarker = "$$$_FATAL_BEGIN_$$$";
          var fatalErrorEndMarker = "$$$_FATAL_END_$$$";
@@ -701,10 +701,12 @@
 	        	 
 	        	 //some files have names based on decimal precision-1, others use decimal precision-2
 	        	 if(valueAsString=="0.0" || valueAsString=="1.0" || !valueAsString.endsWith("0")) {
+					//this will allow searching map based on double precision
 					alternateValueAsString = valueAsString.concat("0");
 				 }
 
 				 else if(valueAsString.endsWith("0")) {
+					//this will allow searching map based on single precision
 					alternateValueAsString = valueAsString.substring(0, valueAsString.length-1);
 				 }
 
@@ -713,7 +715,7 @@
 	        	 downloadFilePathAndName = targetDownloadFilesMap.get(key);
 	        	 
 	        	 if(downloadFilePathAndName=="undefined" || downloadFilePathAndName==null) {
-					 key = alternateValueAsString;
+					 key = alternateValueAsString; //for clarity
 					 downloadFilePathAndName = targetDownloadFilesMap.get(key);
 				 }
 	        	 

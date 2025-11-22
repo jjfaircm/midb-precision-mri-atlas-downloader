@@ -483,7 +483,9 @@ public class AtlasDataCacheManager {
 				}
 				else if(menuSubEntriesPending) {
 					menuSubEntry = outputLine;
-					subMenuEntries.add(menuSubEntry);
+					if(!menuSubEntry.contains("END MENU ENTRY")) {
+						subMenuEntries.add(menuSubEntry);
+					}
 				}
 				else if(outputLine.contains("END MENU")) {
 					menuSubEntriesPending = false;

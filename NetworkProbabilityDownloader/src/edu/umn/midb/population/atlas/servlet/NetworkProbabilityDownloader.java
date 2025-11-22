@@ -101,7 +101,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 //https://github.com/jjfaircm/midb-precision-mri-atlas-downloader.git
 	
 	private static final long serialVersionUID = 1L;
-	public static final String BUILD_DATE = "Version beta_132.0  1116_02:00_2025__war=NPDownloader_1116_02:00_2025.war"; 
+	public static final String BUILD_DATE = "Version beta_133.0  1121_12:20_2025__war=NPDownloader_1121_12:20_2025.war"; 
 	public static final String CONTENT_TEXT_PLAIN = "text/plain";
 	public static final String CHARACTER_ENCODING_UTF8 = "UTF-8";
 	public static final String DEFAULT_ROOT_PATH = "/midb/studies/abcd_template_matching/surface/";
@@ -1243,9 +1243,28 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 	 * @param request - HttpServletRequest
 	 * @param response - HttpServletResponse
 	 */
-	protected void handleUpdateStudy(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) {
+	protected void handleUpdateStudy(ApplicationContext appContext, HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String loggerId = appContext.getLoggerId();
 		LOGGER.trace(loggerId + "handleUpdateStudy()...invoked.");
+		
+		String studyId = request.getParameter("studyFolderName");
+		String updateAction = request.getParameter("updateAction");
+		String fileSizeString = request.getParameter("fileSize");
+		
+		
+		if(STUDY_MAINTENANCE_LOCK.isLocked(appContext)) {
+			LOGGER.trace(loggerId + "handleUpdateStudy()...studyMaintenance locked.");
+			UpdateStudyHandler updateStudyHandler = new UpdateStudyHandler(studyId, appContext);
+			updateStudyHandler.setErrorEncountered(appContext, true);
+			String errorMessage = "Study maintenance by another session is currently in progress.";
+			errorMessage += " <br> Please try again in a few minutes.";
+			updateStudyHandler.setErrorMessage(appContext, errorMessage);
+			WebResponder.sendAddStudyResponse(appContext, response);
+			createAdminAccessRecord(request, appContext);
+			LOGGER.trace(loggerId + "handleAddStudy()...exit. Study maintenance currently locked");
+			return;
+		}
+
 		
 		synchronized(STUDY_MAINTENANCE_LOCK) {
 			
@@ -1258,10 +1277,7 @@ public class NetworkProbabilityDownloader extends HttpServlet {
 				return;
 			}
 			
-			String studyId = request.getParameter("studyFolderName");
-			String updateAction = request.getParameter("updateAction");
-			String fileSizeString = request.getParameter("fileSize");
-			
+
 			UpdateStudyHandler updateHandler = new UpdateStudyHandler(studyId, appContext);
 			
 			if(!updateAction.contains("addStudyPrefix")) {
